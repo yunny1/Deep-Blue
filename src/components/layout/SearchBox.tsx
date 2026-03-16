@@ -1,13 +1,12 @@
 // src/components/layout/SearchBox.tsx
-// 全局搜索框组件 — 顶部导航栏中的搜索入口
-// 实时搜索海缆、登陆站和国家，结果以下拉列表形式展示
+// 全局搜索框 — 搜索海缆/登陆站/国家
+// 点击海缆结果时触发地图飞行动画+高亮+打开详情面板
 
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMapStore } from '@/stores/mapStore';
 
-// 搜索结果类型定义
 interface SearchResults {
   cables: Array<{ id: string; name: string; slug: string; status: string; lengthKm: number | null }>;
   stations: Array<{ id: string; name: string; countryCode: string }>;
@@ -29,16 +28,17 @@ export default function SearchBox() {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { setSelectedCable } = useMapStore();
 
-  // 防抖搜索：用户停止输入300ms后才发起请求（避免每敲一个字母都发请求）
+  // 使用 flyToCable 代替 setSelectedCable —— 这会同时触发飞行动画+高亮+打开详情面板
+  const { flyToCable } = useMapStore();
+
+  // 防抖搜索
   useEffect(() => {
     if (query.length < 2) {
       setResults(null);
       setIsOpen(false);
       return;
     }
-
     setLoading(true);
     const timer = setTimeout(() => {
       fetch(`/api/search?q=${encodeURIComponent(query)}`)
@@ -50,11 +50,10 @@ export default function SearchBox() {
         })
         .catch(() => setLoading(false));
     }, 300);
-
     return () => clearTimeout(timer);
   }, [query]);
 
-  // 点击搜索结果外部时关闭下拉列表
+  // 点击外部关闭
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
@@ -66,12 +65,12 @@ export default function SearchBox() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 点击海缆结果：打开详情面板
+  // 点击海缆结果：触发飞行+高亮+详情面板
   const handleCableClick = useCallback((slug: string) => {
-    setSelectedCable(slug);
+    flyToCable(slug); // 这一个调用同时触发三件事：地图飞行、海缆高亮、详情面板打开
     setIsOpen(false);
     setQuery('');
-  }, [setSelectedCable]);
+  }, [flyToCable]);
 
   return (
     <div style={{ position: 'relative', width: 360 }}>
@@ -88,8 +87,7 @@ export default function SearchBox() {
           backgroundColor: 'rgba(255, 255, 255, 0.07)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           padding: '0 12px 0 36px',
-          color: '#EDF2F7', fontSize: 13,
-          outline: 'none',
+          color: '#EDF2F7', fontSize: 13, outline: 'none',
           transition: 'border-color 0.2s',
         }}
         onMouseOver={(e) => (e.currentTarget.style.borderColor = 'rgba(42, 157, 143, 0.4)')}
@@ -113,7 +111,6 @@ export default function SearchBox() {
           animation: 'spin 0.8s linear infinite',
         }} />
       )}
-
       <style>{`@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }`}</style>
 
       {/* 搜索结果下拉列表 */}
@@ -125,10 +122,8 @@ export default function SearchBox() {
             backgroundColor: 'rgba(13, 27, 42, 0.97)',
             backdropFilter: 'blur(16px)',
             border: '1px solid rgba(42, 157, 143, 0.2)',
-            borderRadius: 10,
-            maxHeight: 420, overflowY: 'auto',
-            zIndex: 200,
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
+            borderRadius: 10, maxHeight: 420, overflowY: 'auto',
+            zIndex: 200, boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
           }}
         >
           {/* 海缆结果 */}
@@ -154,18 +149,20 @@ export default function SearchBox() {
                   onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <div>
-                    <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>
-                      {cable.name}
-                    </div>
+                    <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{cable.name}</div>
                     <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
                       {cable.lengthKm ? `${cable.lengthKm.toLocaleString()} km` : ''}
                     </div>
                   </div>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    backgroundColor: STATUS_COLORS[cable.status] || '#6B7280',
-                    boxShadow: `0 0 4px ${STATUS_COLORS[cable.status] || '#6B7280'}`,
-                  }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {/* 飞行图标提示 */}
+                    <span style={{ fontSize: 10, color: '#4B5563' }}>fly to</span>
+                    <div style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      backgroundColor: STATUS_COLORS[cable.status] || '#6B7280',
+                      boxShadow: `0 0 4px ${STATUS_COLORS[cable.status] || '#6B7280'}`,
+                    }} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -220,16 +217,13 @@ export default function SearchBox() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ fontSize: 13, color: '#EDF2F7' }}>{country.nameEn}</div>
-                    <div style={{ fontSize: 11, color: '#6B7280' }}>
-                      {country._count.landingStations} stations
-                    </div>
+                    <div style={{ fontSize: 11, color: '#6B7280' }}>{country._count.landingStations} stations</div>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* 无结果 */}
           {results.total === 0 && (
             <div style={{ padding: 20, textAlign: 'center', color: '#6B7280', fontSize: 13 }}>
               No results for &ldquo;{query}&rdquo;

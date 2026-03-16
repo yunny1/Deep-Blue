@@ -1,15 +1,15 @@
 // src/app/api/cables/route.ts
-// 海缆数据API - 返回所有海缆的基本信息和GeoJSON路由
-// 前端地图组件调用这个API来获取数据并渲染
+// 海缆数据API - 返回所有海缆
+// ?geo=true 包含GeoJSON路由（用于地图渲染）
+// ?details=true 包含vendor和owners信息（用于颜色编码）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
-// GET /api/cables — 获取所有海缆
-// 可选参数: ?geo=true (包含GeoJSON路由数据，用于地图渲染)
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const includeGeo = searchParams.get('geo') === 'true';
+  const includeDetails = searchParams.get('details') === 'true';
 
   try {
     const cables = await prisma.cable.findMany({
@@ -22,8 +22,12 @@ export async function GET(request: NextRequest) {
         lengthKm: true,
         designCapacityTbps: true,
         fiberPairs: true,
-        // GeoJSON数据很大（每条海缆几十KB），只在需要地图渲染时才返回
         routeGeojson: includeGeo,
+        // 当 details=true 时，也返回建造商和运营商信息（用于颜色编码）
+        vendor: includeDetails ? { select: { name: true } } : false,
+        owners: includeDetails ? {
+          select: { company: { select: { name: true } } },
+        } : false,
       },
       orderBy: { name: 'asc' },
     });
@@ -34,9 +38,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to fetch cables:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch cables' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch cables' }, { status: 500 });
   }
 }

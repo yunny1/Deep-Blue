@@ -1,13 +1,17 @@
 // src/components/map/CesiumGlobe.tsx
-// Deep Blue 核心组件 —— 3D地球仪（带交互功能）
-// 支持：海缆路由渲染、鼠标悬停高亮、点击选中、颜色编码切换
+// Deep Blue 核心组件 - 3D地球仪 v4
+// 支持：渲染、悬停、点击、飞行聚焦、动态颜色切换
 
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/stores/mapStore';
+import {
+  VENDOR_COLOR_MAP, VENDOR_DEFAULT,
+  OPERATOR_COLOR_MAP, OPERATOR_DEFAULT,
+  getYearColor,
+} from '@/components/panels/ColorControlPanel';
 
-// 海缆数据类型
 interface Cable {
   id: string;
   name: string;
@@ -15,21 +19,21 @@ interface Cable {
   status: string;
   lengthKm: number | null;
   fiberPairs: number | null;
+  rfsDate: string | null;
   routeGeojson: any;
+  vendor: { name: string } | null;
+  owners: Array<{ company: { name: string } }>;
 }
 
-// 颜色方案：按状态着色
 const STATUS_COLORS: Record<string, [number, number, number, number]> = {
-  IN_SERVICE:         [0.02, 0.84, 0.63, 0.7],  // 青绿
-  UNDER_CONSTRUCTION: [0.91, 0.77, 0.42, 0.7],  // 琥珀
-  PLANNED:            [0.23, 0.51, 0.96, 0.5],  // 蓝
-  DECOMMISSIONED:     [0.42, 0.42, 0.42, 0.4],  // 灰
+  IN_SERVICE:         [0.02, 0.84, 0.63, 0.7],
+  UNDER_CONSTRUCTION: [0.91, 0.77, 0.42, 0.7],
+  PLANNED:            [0.23, 0.51, 0.96, 0.5],
+  DECOMMISSIONED:     [0.42, 0.42, 0.42, 0.4],
 };
 
-// 高亮色（悬停时）
-const HIGHLIGHT_COLOR: [number, number, number, number] = [1.0, 1.0, 1.0, 1.0];
+const DIM_ALPHA = 0.08;
 
-// 从onHover/onClick回调中传出的海缆信息
 export interface CableHoverInfo {
   name: string;
   status: string;
@@ -39,238 +43,304 @@ export interface CableHoverInfo {
 
 interface CesiumGlobeProps {
   onHover?: (cable: CableHoverInfo | null, position: { x: number; y: number }) => void;
-  onClick?: (cableId: string | null) => void;
+  onClick?: (cableSlug: string | null) => void;
+}
+
+// 根据颜色模式和海缆属性计算应该使用的颜色
+function getCableColor(
+  mode: string,
+  status: string,
+  vendorName: string | null,
+  ownerNames: string[],
+  rfsYear: number | null,
+): [number, number, number, number] {
+  switch (mode) {
+    case 'vendor':
+      if (!vendorName) return VENDOR_DEFAULT;
+      return VENDOR_COLOR_MAP[vendorName] || VENDOR_DEFAULT;
+
+    case 'operator':
+      // 用第一个运营商的颜色（大多数海缆有多个运营商，取最主要的）
+      for (const name of ownerNames) {
+        if (OPERATOR_COLOR_MAP[name]) return OPERATOR_COLOR_MAP[name];
+      }
+      return OPERATOR_DEFAULT;
+
+    case 'year':
+      return getYearColor(rfsYear);
+
+    case 'status':
+    default:
+      return STATUS_COLORS[status] || STATUS_COLORS.IN_SERVICE;
+  }
 }
 
 export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
-  const cablesRef = useRef<Cable[]>([]);
+  const cesiumRef = useRef<any>(null); // 保存Cesium模块引用
+
+  // 每个entity关联的海缆元数据（用于重新着色）
+  const entityMetaRef = useRef<Map<any, {
+    slug: string; status: string; vendor: string | null;
+    owners: string[]; rfsYear: number | null;
+  }>>(new Map());
+
+  const entitiesMapRef = useRef<Map<string, any[]>>(new Map());
+  const allEntitiesRef = useRef<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, rendered: 0 });
-  const { colorMode } = useMapStore();
 
+  const { flyToSlug, flyToCounter, clearFlyTo, colorMode } = useMapStore();
+
+  // ═══ 初始化 ═══
   useEffect(() => {
     async function initCesium() {
       const Cesium = await import('cesium');
+      cesiumRef.current = Cesium;
       (window as any).CESIUM_BASE_URL = '/cesium';
 
       if (viewerRef.current || !containerRef.current) return;
 
-      // 创建Viewer（使用OpenStreetMap免费底图）
       const viewer = new Cesium.Viewer(containerRef.current, {
-        animation: false,
-        timeline: false,
-        fullscreenButton: false,
-        vrButton: false,
-        geocoder: false,
-        homeButton: false,
-        sceneModePicker: false,
-        baseLayerPicker: false,
-        navigationHelpButton: false,
-        infoBox: false,
-        selectionIndicator: false,
+        animation: false, timeline: false, fullscreenButton: false,
+        vrButton: false, geocoder: false, homeButton: false,
+        sceneModePicker: false, baseLayerPicker: false,
+        navigationHelpButton: false, infoBox: false, selectionIndicator: false,
         baseLayer: new Cesium.ImageryLayer(
-          new Cesium.OpenStreetMapImageryProvider({
-            url: 'https://tile.openstreetmap.org/',
-          })
+          new Cesium.OpenStreetMapImageryProvider({ url: 'https://tile.openstreetmap.org/' })
         ),
       });
 
-      // 初始视角：亚太地区
-      viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000),
-      });
-
+      viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000) });
       if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = true;
       if (viewer.scene.globe) viewer.scene.globe.enableLighting = false;
-
       viewerRef.current = viewer;
 
-      // ═══ 加载海缆数据 ═══
+      // 加载海缆（这次包含vendor和owners信息，用于颜色编码）
       try {
-        const response = await fetch('/api/cables?geo=true');
+        const response = await fetch('/api/cables?geo=true&details=true');
         const data = await response.json();
         const cables: Cable[] = data.cables || [];
-        cablesRef.current = cables;
 
         setStats({ total: cables.length, rendered: 0 });
         let renderedCount = 0;
+        const entitiesMap = new Map<string, any[]>();
+        const allEntities: any[] = [];
+        const entityMeta = new Map();
 
         for (const cable of cables) {
           if (!cable.routeGeojson) continue;
 
-          const colorArr = STATUS_COLORS[cable.status] || STATUS_COLORS.IN_SERVICE;
+          // 计算初始颜色（默认按状态）
+          const vendorName = cable.vendor?.name || null;
+          const ownerNames = cable.owners?.map(o => o.company.name) || [];
+          const rfsYear = cable.rfsDate ? new Date(cable.rfsDate).getFullYear() : null;
+          const colorArr = getCableColor('status', cable.status, vendorName, ownerNames, rfsYear);
           const color = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
 
           try {
             const geometry = cable.routeGeojson;
             const lines = geometry.type === 'MultiLineString'
               ? geometry.coordinates
-              : geometry.type === 'LineString'
-                ? [geometry.coordinates]
-                : [];
+              : geometry.type === 'LineString' ? [geometry.coordinates] : [];
+
+            const cableEntities: any[] = [];
 
             for (const line of lines) {
               const positions: number[] = [];
-              for (const coord of line) {
-                positions.push(coord[0], coord[1]);
-              }
+              for (const coord of line) { positions.push(coord[0], coord[1]); }
               if (positions.length >= 4) {
-                viewer.entities.add({
+                const entity = viewer.entities.add({
                   name: cable.name,
                   polyline: {
                     positions: Cesium.Cartesian3.fromDegreesArray(positions),
-                    width: 1.5,
-                    material: color,
-                    clampToGround: false,
+                    width: 1.5, material: color, clampToGround: false,
                   },
                   properties: new Cesium.PropertyBag({
-                    cableId: cable.id,
-                    cableSlug: cable.slug,
-                    status: cable.status,
-                    lengthKm: cable.lengthKm,
+                    cableId: cable.id, cableSlug: cable.slug,
+                    status: cable.status, lengthKm: cable.lengthKm,
                     fiberPairs: cable.fiberPairs,
                   }),
                 });
+                cableEntities.push(entity);
+                allEntities.push(entity);
+                // 保存元数据（重新着色时需要）
+                entityMeta.set(entity, {
+                  slug: cable.slug, status: cable.status,
+                  vendor: vendorName, owners: ownerNames, rfsYear,
+                });
               }
             }
+            if (cableEntities.length > 0) entitiesMap.set(cable.slug, cableEntities);
             renderedCount++;
-          } catch (e) {
-            // 跳过无法解析的数据
-          }
+          } catch (e) { /* skip */ }
         }
 
+        entitiesMapRef.current = entitiesMap;
+        allEntitiesRef.current = allEntities;
+        entityMetaRef.current = entityMeta;
         setStats({ total: cables.length, rendered: renderedCount });
       } catch (error) {
         console.error('Failed to load cable data:', error);
       }
 
-      // ═══ 鼠标悬停事件 ═══
+      // ═══ 鼠标悬停 ═══
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-      let lastHoveredEntity: any = null;
-      let lastOriginalColor: any = null;
+      let lastHovered: any = null;
+      let lastMaterial: any = null;
 
-      handler.setInputAction((movement: any) => {
-        const picked = viewer.scene.pick(movement.endPosition);
-
-        // 恢复上一个悬停实体的颜色
-        if (lastHoveredEntity && lastOriginalColor) {
-          try {
-            if (lastHoveredEntity.polyline) {
-              lastHoveredEntity.polyline.material = lastOriginalColor;
-              lastHoveredEntity.polyline.width = new Cesium.ConstantProperty(1.5);
-            }
-          } catch (e) {}
-          lastHoveredEntity = null;
-          lastOriginalColor = null;
+      handler.setInputAction((m: any) => {
+        if (lastHovered && lastMaterial) {
+          try { lastHovered.polyline.material = lastMaterial; lastHovered.polyline.width = new Cesium.ConstantProperty(1.5); } catch (e) {}
+          lastHovered = null; lastMaterial = null;
         }
-
-        if (Cesium.defined(picked) && picked.id && picked.id.polyline) {
-          const entity = picked.id;
-
-          // 保存原始颜色，设置高亮
-          lastOriginalColor = entity.polyline.material;
-          lastHoveredEntity = entity;
-          entity.polyline.material = new Cesium.Color(
-            HIGHLIGHT_COLOR[0], HIGHLIGHT_COLOR[1],
-            HIGHLIGHT_COLOR[2], HIGHLIGHT_COLOR[3]
-          );
-          entity.polyline.width = new Cesium.ConstantProperty(3);
-
-          // 通知父组件显示HoverCard
-          if (onHover && entity.properties) {
+        const picked = viewer.scene.pick(m.endPosition);
+        if (Cesium.defined(picked) && picked.id?.polyline) {
+          const e = picked.id;
+          lastMaterial = e.polyline.material; lastHovered = e;
+          e.polyline.material = new Cesium.Color(1, 1, 1, 1);
+          e.polyline.width = new Cesium.ConstantProperty(3);
+          if (onHover && e.properties) {
             onHover({
-              name: entity.name || 'Unknown',
-              status: entity.properties.status?.getValue() || 'IN_SERVICE',
-              lengthKm: entity.properties.lengthKm?.getValue() || null,
-              fiberPairs: entity.properties.fiberPairs?.getValue() || null,
-            }, {
-              x: movement.endPosition.x,
-              y: movement.endPosition.y,
-            });
+              name: e.name || 'Unknown',
+              status: e.properties.status?.getValue() || 'IN_SERVICE',
+              lengthKm: e.properties.lengthKm?.getValue() || null,
+              fiberPairs: e.properties.fiberPairs?.getValue() || null,
+            }, { x: m.endPosition.x, y: m.endPosition.y });
           }
-
-          // 改变鼠标样式
           viewer.scene.canvas.style.cursor = 'pointer';
         } else {
-          // 没有悬停在任何海缆上
           if (onHover) onHover(null, { x: 0, y: 0 });
           viewer.scene.canvas.style.cursor = 'default';
         }
       }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
-      // ═══ 鼠标点击事件 ═══
-      handler.setInputAction((click: any) => {
-        const picked = viewer.scene.pick(click.position);
-
-        if (Cesium.defined(picked) && picked.id && picked.id.properties) {
+      // ═══ 鼠标点击 ═══
+      handler.setInputAction((c: any) => {
+        const picked = viewer.scene.pick(c.position);
+        if (Cesium.defined(picked) && picked.id?.properties) {
           const slug = picked.id.properties.cableSlug?.getValue();
-          if (slug && onClick) {
-            onClick(slug);
-          }
+          if (slug && onClick) onClick(slug);
         } else {
-          // 点击空白处关闭详情面板
           if (onClick) onClick(null);
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
       setLoading(false);
     }
-
     initCesium();
-
-    return () => {
-      if (viewerRef.current) {
-        viewerRef.current.destroy();
-        viewerRef.current = null;
-      }
-    };
+    return () => { if (viewerRef.current) { viewerRef.current.destroy(); viewerRef.current = null; } };
   }, []);
+
+  // ═══ 监听颜色模式变化 → 重新着色所有海缆 ═══
+  useEffect(() => {
+    const Cesium = cesiumRef.current;
+    if (!Cesium || allEntitiesRef.current.length === 0) return;
+
+    for (const entity of allEntitiesRef.current) {
+      const meta = entityMetaRef.current.get(entity);
+      if (!meta || !entity.polyline) continue;
+
+      const colorArr = getCableColor(colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
+      try {
+        entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
+        entity.polyline.width = new Cesium.ConstantProperty(1.5);
+      } catch (e) {}
+    }
+  }, [colorMode]);
+
+  // ═══ 飞行指令 ═══
+  useEffect(() => {
+    if (!flyToSlug || !viewerRef.current) return;
+    async function performFlyTo() {
+      const Cesium = cesiumRef.current;
+      const viewer = viewerRef.current;
+      if (!Cesium || !viewer) return;
+
+      const targetEntities = entitiesMapRef.current.get(flyToSlug!);
+      if (!targetEntities || targetEntities.length === 0) { clearFlyTo(); return; }
+
+      // 暗化非目标
+      for (const entity of allEntitiesRef.current) {
+        if (!targetEntities.includes(entity)) {
+          try { entity.polyline.material = new Cesium.Color(0.3, 0.3, 0.3, DIM_ALPHA); entity.polyline.width = new Cesium.ConstantProperty(0.5); } catch (e) {}
+        }
+      }
+      // 高亮目标
+      for (const entity of targetEntities) {
+        try { entity.polyline.material = new Cesium.Color(1, 1, 1, 1); entity.polyline.width = new Cesium.ConstantProperty(4); } catch (e) {}
+      }
+
+      // 飞行
+      let minLon = 180, maxLon = -180, minLat = 90, maxLat = -90;
+      for (const entity of targetEntities) {
+        try {
+          const positions = entity.polyline.positions.getValue(Cesium.JulianDate.now());
+          if (!positions) continue;
+          for (const pos of positions) {
+            const c = Cesium.Cartographic.fromCartesian(pos);
+            const lon = Cesium.Math.toDegrees(c.longitude);
+            const lat = Cesium.Math.toDegrees(c.latitude);
+            if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon;
+            if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+          }
+        } catch (e) {}
+      }
+      if (minLon < maxLon && minLat < maxLat) {
+        const lp = (maxLon - minLon) * 0.3 + 2;
+        const ap = (maxLat - minLat) * 0.3 + 2;
+        viewer.camera.flyTo({
+          destination: Cesium.Rectangle.fromDegrees(minLon - lp, minLat - ap, maxLon + lp, maxLat + ap),
+          duration: 2.0, easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+        });
+      }
+
+      // 8秒后恢复颜色（使用当前colorMode的颜色，而不是固定的状态色）
+      setTimeout(() => {
+        const currentMode = useMapStore.getState().colorMode;
+        for (const entity of allEntitiesRef.current) {
+          const meta = entityMetaRef.current.get(entity);
+          if (!meta) continue;
+          const colorArr = getCableColor(currentMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
+          try {
+            entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
+            entity.polyline.width = new Cesium.ConstantProperty(1.5);
+          } catch (e) {}
+        }
+      }, 8000);
+
+      clearFlyTo();
+    }
+    performFlyTo();
+  }, [flyToSlug, flyToCounter, clearFlyTo]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-
-      {/* 加载中 */}
       {loading && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           backgroundColor: 'rgba(13, 27, 42, 0.9)', zIndex: 100,
         }}>
-          <div style={{
-            width: 40, height: 40, border: '3px solid rgba(42, 157, 143, 0.3)',
-            borderTopColor: '#2A9D8F', borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-          }} />
-          <p style={{ color: '#EDF2F7', marginTop: 16, fontSize: 14 }}>
-            Loading global submarine cable network...
-          </p>
+          <div style={{ width: 40, height: 40, border: '3px solid rgba(42,157,143,0.3)', borderTopColor: '#2A9D8F', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <p style={{ color: '#EDF2F7', marginTop: 16, fontSize: 14 }}>Loading global submarine cable network...</p>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
-
-      {/* 左下角信息 */}
       {!loading && (
         <div style={{
-          position: 'absolute', bottom: 20, left: 20,
-          backgroundColor: 'rgba(27, 58, 92, 0.85)',
-          backdropFilter: 'blur(8px)',
-          padding: '12px 16px', borderRadius: 8,
-          color: '#EDF2F7', fontSize: 12, zIndex: 10,
-          border: '1px solid rgba(42, 157, 143, 0.3)',
+          position: 'absolute', bottom: 20, right: 20,
+          backgroundColor: 'rgba(27,58,92,0.85)', backdropFilter: 'blur(8px)',
+          padding: '10px 14px', borderRadius: 8, color: '#EDF2F7', fontSize: 11, zIndex: 10,
+          border: '1px solid rgba(42,157,143,0.3)',
         }}>
-          <div style={{ fontWeight: 600, marginBottom: 4, color: '#2A9D8F' }}>DEEP BLUE</div>
-          <div>Cables rendered: {stats.rendered} / {stats.total}</div>
-          <div style={{ marginTop: 6, display: 'flex', gap: 12, fontSize: 11 }}>
-            <span><span style={{ color: '#06D6A0' }}>●</span> In service</span>
-            <span><span style={{ color: '#E9C46A' }}>●</span> Building</span>
-            <span><span style={{ color: '#3B82F6' }}>●</span> Planned</span>
-          </div>
-          <div style={{ marginTop: 6, fontSize: 10, color: '#6B7280' }}>
-            Hover to preview · Click for details
-          </div>
+          <span style={{ color: '#2A9D8F', fontWeight: 600 }}>DEEP BLUE</span>
+          <span style={{ color: '#6B7280', marginLeft: 8 }}>
+            {stats.rendered} cables rendered
+          </span>
         </div>
       )}
     </div>
