@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev  --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "@prisma/client": "^7.5.0",
+    "@prisma/client": "^6.19.2",
     "@tanstack/react-query": "^5.90.21",
     "@upstash/redis": "^1.37.0",
     "cesium": "^1.139.1",
@@ -21,6 +21,8 @@
     "maplibre-gl": "^5.20.1",
     "next": "16.1.6",
     "next-intl": "^4.8.3",
+    "pg": "^8.20.0",
+    "prisma": "^6.19.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-map-gl": "^8.1.0",
@@ -37,7 +39,6 @@
     "copy-webpack-plugin": "^14.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

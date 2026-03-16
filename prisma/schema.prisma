@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cable {
+  id                   String   @id @default(cuid())
+  name                 String   @unique
+  slug                 String   @unique
+  status               String   @default("IN_SERVICE")
+  rfsDate              DateTime? @map("rfs_date")
+  lengthKm             Float?   @map("length_km")
+  designCapacityTbps   Float?   @map("design_capacity_tbps")
+  fiberPairs           Int?     @map("fiber_pairs")
+  technology           String?
+  investmentAmountUsd  Float?   @map("investment_amount_usd")
+  estimatedLifespan    Int?     @map("estimated_lifespan") @default(25)
+  routeGeojson         Json?    @map("route_geojson")
+  notes                String?
+  vendorId             String?  @map("vendor_id")
+  vendor               Company? @relation("CableVendor", fields: [vendorId], references: [id])
+  owners               CableOwnership[]
+  landingStations      CableLandingStation[]
+  events               CableEvent[]
+  riskScores           RiskScore[]
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  @@map("cables")
+}
+
+model LandingStation {
+  id          String   @id @default(cuid())
+  name        String
+  city        String?
+  countryCode String   @map("country_code")
+  latitude    Float
+  longitude   Float
+  operator    String?
+  country     Country  @relation(fields: [countryCode], references: [code])
+  cables      CableLandingStation[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  @@map("landing_stations")
+}
+
+model CableLandingStation {
+  cableId          String         @map("cable_id")
+  landingStationId String         @map("landing_station_id")
+  cable            Cable          @relation(fields: [cableId], references: [id])
+  landingStation   LandingStation @relation(fields: [landingStationId], references: [id])
+  @@id([cableId, landingStationId])
+  @@map("cable_landing_stations")
+}
+
+model Company {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  type        String
+  hqCountry   String?          @map("hq_country")
+  website     String?
+  ownerships  CableOwnership[]
+  builtCables Cable[]          @relation("CableVendor")
+  @@map("companies")
+}
+
+model CableOwnership {
+  cableId      String  @map("cable_id")
+  companyId    String  @map("company_id")
+  sharePercent Float?  @map("share_percent")
+  cable        Cable   @relation(fields: [cableId], references: [id])
+  company      Company @relation(fields: [companyId], references: [id])
+  @@id([cableId, companyId])
+  @@map("cable_ownerships")
+}
+
+model Country {
+  code            String           @id
+  nameEn          String           @map("name_en")
+  nameZh          String?          @map("name_zh")
+  region          String?
+  landingStations LandingStation[]
+  events          CountryEvent[]
+  @@map("countries")
+}
+
+model Event {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  eventCategory String         @map("event_category")
+  severityLevel Int            @map("severity_level") @default(1)
+  date          DateTime
+  resolvedDate  DateTime?      @map("resolved_date")
+  sourceUrl     String?        @map("source_url")
+  confidence    Float?         @default(1.0)
+  locationLat   Float?         @map("location_lat")
+  locationLng   Float?         @map("location_lng")
+  cables        CableEvent[]
+  countries     CountryEvent[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+  @@index([date])
+  @@map("events")
+}
+
+model CableEvent {
+  cableId String @map("cable_id")
+  eventId String @map("event_id")
+  cable   Cable  @relation(fields: [cableId], references: [id])
+  event   Event  @relation(fields: [eventId], references: [id])
+  @@id([cableId, eventId])
+  @@map("cable_events")
+}
+
+model CountryEvent {
+  countryCode String  @map("country_code")
+  eventId     String  @map("event_id")
+  country     Country @relation(fields: [countryCode], references: [code])
+  event       Event   @relation(fields: [eventId], references: [id])
+  @@id([countryCode, eventId])
+  @@map("country_events")
+}
+
+model RiskScore {
+  id               String   @id @default(cuid())
+  cableId          String   @map("cable_id")
+  scoreOverall     Float    @map("score_overall")
+  scoreGeopolitical Float   @map("score_geopolitical")
+  scoreNatural     Float    @map("score_natural")
+  scoreOperational Float    @map("score_operational")
+  scoreAge         Float    @map("score_age")
+  confidencePct    Float?   @map("confidence_pct")
+  calculatedAt     DateTime @default(now()) @map("calculated_at")
+  cable            Cable    @relation(fields: [cableId], references: [id])
+  @@map("risk_scores")
+}

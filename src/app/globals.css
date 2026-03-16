@@ -1,26 +1,51 @@
+/* src/app/globals.css */
+/* Deep Blue 全局样式 - 深海科技暗色主题 */
+
 @import "tailwindcss";
 
+/* CesiumJS 样式（3D地球的UI组件需要这些） */
+@import "cesium/Build/Cesium/Widgets/widgets.css";
+
+/* 全局变量 */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --deep-navy: #0D1B2A;
+  --deep-blue: #1B3A5C;
+  --ocean: #1E6091;
+  --teal: #2A9D8F;
+  --coral: #E76F51;
+  --light: #EDF2F7;
+  --muted: #6B7280;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* 基础样式 */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--deep-navy);
+  color: var(--light);
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 防止出现滚动条，地图要全屏 */
+}
+
+/* 隐藏CesiumJS默认的Logo和信息栏（我们会用自己的UI） */
+.cesium-viewer-bottom,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-fullscreenContainer {
+  display: none !important;
+}
+
+/* 自定义滚动条（面板内使用） */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }

@@ -39,3 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# CesiumJS static assets (generated from node_modules, too large for Git)
+public/cesium/
