@@ -70,8 +70,8 @@ export default function CesiumGlobe() {
       });
 
       // 设置地球大气层效果
-      viewer.scene.skyAtmosphere.show = true;
-      viewer.scene.globe.enableLighting = false; // 关闭日照效果（保持全球统一亮度）
+      if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = true;
+      if (viewer.scene.globe) viewer.scene.globe.enableLighting = false;// 关闭日照效果（保持全球统一亮度）
 
       viewerRef.current = viewer;
 
