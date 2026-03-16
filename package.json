@@ -1,0 +1,44 @@
+{
+  "name": "deep-blue",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.5.0",
+    "@tanstack/react-query": "^5.90.21",
+    "@upstash/redis": "^1.37.0",
+    "cesium": "^1.139.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "echarts": "^6.0.0",
+    "echarts-for-react": "^3.0.6",
+    "lucide-react": "^0.577.0",
+    "maplibre-gl": "^5.20.1",
+    "next": "16.1.6",
+    "next-intl": "^4.8.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-map-gl": "^8.1.0",
+    "resium": "^1.19.4",
+    "tailwind-merge": "^3.5.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "copy-webpack-plugin": "^14.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "prisma": "^6.19.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
