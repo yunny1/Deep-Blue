@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev  --webpack",
-    "build": "mkdir -p public/cesium && cp -r node_modules/cesium/Build/Cesium/Workers public/cesium/ && cp -r node_modules/cesium/Build/Cesium/Assets public/cesium/ && cp -r node_modules/cesium/Build/Cesium/ThirdParty public/cesium/ && cp -r node_modules/cesium/Build/Cesium/Widgets public/cesium/ && next build --webpack",
+    "build": "mkdir -p public/cesium && cp -r node_modules/cesium/Build/Cesium/Workers public/cesium/ && cp -r node_modules/cesium/Build/Cesium/Assets public/cesium/ && cp -r node_modules/cesium/Build/Cesium/ThirdParty public/cesium/ && cp -r node_modules/cesium/Build/Cesium/Widgets public/cesium/ && next build",
     "start": "next start",
     "lint": "eslint"
   },
