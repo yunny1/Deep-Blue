@@ -187,6 +187,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       }
 
       // ═══ 鼠标悬停 ═══
+       if (!viewer || !viewer.scene) return;
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
       let lastHovered: any = null;
       let lastMaterial: any = null;

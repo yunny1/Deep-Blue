@@ -181,16 +181,25 @@ export default function CableDetailPanel() {
               {activeTab === 'overview' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {/* 属性网格 */}
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: '1fr 1fr',
-                    gap: 12,
-                  }}>
-                    <InfoCard label="Length" value={cable.lengthKm ? `${cable.lengthKm.toLocaleString()} km` : 'N/A'} />
-                    <InfoCard label="Service Years" value={getServiceYears(cable.rfsDate)} />
-                    <InfoCard label="Capacity" value={cable.designCapacityTbps ? `${cable.designCapacityTbps} Tbps` : 'N/A'} />
-                    <InfoCard label="Fiber Pairs" value={cable.fiberPairs ? String(cable.fiberPairs) : 'N/A'} />
-                    <InfoCard label="RFS Date" value={cable.rfsDate ? new Date(cable.rfsDate).getFullYear().toString() : 'N/A'} />
-                    <InfoCard label="Technology" value={cable.technology || 'N/A'} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    {cable.lengthKm && (
+                      <InfoCard label="Length" value={`${cable.lengthKm.toLocaleString()} km`} />
+                    )}
+                    {cable.rfsDate && (
+                      <InfoCard label="RFS Date" value={new Date(cable.rfsDate).getFullYear().toString()} />
+                    )}
+                    {cable.rfsDate && (
+                      <InfoCard label="Service Years" value={getServiceYears(cable.rfsDate)} />
+                    )}
+                    {cable.designCapacityTbps && (
+                      <InfoCard label="Capacity" value={`${cable.designCapacityTbps} Tbps`} />
+                    )}
+                    {cable.fiberPairs && (
+                      <InfoCard label="Fiber Pairs" value={String(cable.fiberPairs)} />
+                    )}
+                    {cable.technology && (
+                      <InfoCard label="Technology" value={cable.technology} />
+                    )}
                   </div>
 
                   {/* 服役寿命进度条 */}

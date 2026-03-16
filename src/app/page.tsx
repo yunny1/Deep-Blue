@@ -96,9 +96,9 @@ export default function HomePage() {
 
         {/* 右侧统计（平板和移动端精简） */}
         <div style={{ display: 'flex', gap: isMobile ? 12 : 24, fontSize: 12 }}>
-          {stats ? (
+          {stats && stats.cables ? (
             <>
-              <StatBadge number={stats.cables.total} label={isMobile ? 'Total' : 'Cables'} color="#2A9D8F" />
+              <StatBadge number={stats.cables.total || 0} label={isMobile ? 'Total' : 'Cables'} color="#2A9D8F" />
               {!isMobile && (
                 <>
                   <StatBadge number={stats.cables.inService} label="In Service" color="#06D6A0" />
