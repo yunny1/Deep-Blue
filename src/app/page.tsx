@@ -1,7 +1,5 @@
 // src/app/page.tsx
-// Deep Blue 首页 — Phase 2: 加入地震预警功能
-// 整合：3D/2D地图 + 搜索 + 悬停 + 详情 + 颜色 + 过滤 + 地震预警 + 响应式
-
+// Deep Blue 首页 — Phase 2: 地震预警 + 新闻ticker + 事件数据
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -12,6 +10,7 @@ import CableDetailPanel from '@/components/panels/CableDetailPanel';
 import ColorControlPanel from '@/components/panels/ColorControlPanel';
 import FilterPanel from '@/components/panels/FilterPanel';
 import EarthquakePanel from '@/components/panels/EarthquakePanel';
+import NewsTicker from '@/components/dashboard/NewsTicker';
 import SearchBox from '@/components/layout/SearchBox';
 import ViewModeToggle from '@/components/layout/ViewModeToggle';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
@@ -34,9 +33,9 @@ export default function HomePage() {
   const [windowWidth, setWindowWidth] = useState(1280);
   useEffect(() => {
     setWindowWidth(window.innerWidth);
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const h = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
   }, []);
   const isMobile = windowWidth < 768;
 
@@ -44,9 +43,9 @@ export default function HomePage() {
     fetch('/api/stats').then(r => r.json()).then(setStats).catch(console.error);
   }, []);
 
-  const handleHover = useCallback((cable: CableHoverInfo | null, position: { x: number; y: number }) => {
+  const handleHover = useCallback((cable: CableHoverInfo | null, pos: { x: number; y: number }) => {
     if (isMobile) return;
-    setHoverCable(cable); setHoverPos(position);
+    setHoverCable(cable); setHoverPos(pos);
   }, [isMobile]);
 
   const handleClick = useCallback((slug: string | null) => {
@@ -55,12 +54,10 @@ export default function HomePage() {
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-
       {/* ═══ 顶部导航栏 ═══ */}
       <nav style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: isMobile ? 48 : 56,
-        backgroundColor: 'rgba(13, 27, 42, 0.85)',
-        backdropFilter: 'blur(12px)',
+        backgroundColor: 'rgba(13, 27, 42, 0.85)', backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(42, 157, 143, 0.2)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: isMobile ? '0 12px' : '0 24px', zIndex: 50,
@@ -74,31 +71,26 @@ export default function HomePage() {
           }}>DB</div>
           <div>
             <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: 700, color: '#EDF2F7', lineHeight: 1.2 }}>DEEP BLUE</div>
-            {!isMobile && (
-              <div style={{ fontSize: 9, color: '#6B7280', letterSpacing: 1.5, textTransform: 'uppercase' as const }}>
-                Submarine Cable Intelligence
-              </div>
-            )}
+            {!isMobile && <div style={{ fontSize: 9, color: '#6B7280', letterSpacing: 1.5, textTransform: 'uppercase' as const }}>Submarine Cable Intelligence</div>}
           </div>
         </div>
-
         {!isMobile && <SearchBox />}
-
         <div style={{ display: 'flex', gap: isMobile ? 12 : 24, fontSize: 12 }}>
           {stats && stats.cables ? (
             <>
               <StatBadge number={stats.cables.total || 0} label={isMobile ? 'Total' : 'Cables'} color="#2A9D8F" />
-              {!isMobile && (
-                <>
-                  <StatBadge number={stats.cables.inService || 0} label="In Service" color="#06D6A0" />
-                  <StatBadge number={stats.cables.underConstruction || 0} label="Building" color="#E9C46A" />
-                </>
-              )}
+              {!isMobile && <>
+                <StatBadge number={stats.cables.inService || 0} label="In Service" color="#06D6A0" />
+                <StatBadge number={stats.cables.underConstruction || 0} label="Building" color="#E9C46A" />
+              </>}
               <StatBadge number={stats.landingStations || 0} label="Stations" color="#2A9D8F" />
             </>
           ) : <span style={{ color: '#6B7280' }}>Loading...</span>}
         </div>
       </nav>
+
+      {/* ═══ 新闻滚动条（导航栏正下方） ═══ */}
+      {!isMobile && <NewsTicker />}
 
       {/* ═══ 地图 ═══ */}
       {viewMode === '3d' ? (
@@ -110,15 +102,13 @@ export default function HomePage() {
       {/* ═══ 3D/2D切换 ═══ */}
       <ViewModeToggle />
 
-      {/* ═══ 左侧面板（桌面端） ═══ */}
-      {!isMobile && (
-        <>
-          <ColorControlPanel />
-          <FilterPanel />
-        </>
-      )}
+      {/* ═══ 左侧面板 ═══ */}
+      {!isMobile && <>
+        <ColorControlPanel />
+        <FilterPanel />
+      </>}
 
-      {/* ═══ 地震预警面板（左下角） ═══ */}
+      {/* ═══ 地震预警面板 ═══ */}
       <EarthquakePanel />
 
       {/* ═══ 悬停卡片 ═══ */}
@@ -131,13 +121,10 @@ export default function HomePage() {
       {isMobile && (
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
-          backgroundColor: 'rgba(13, 27, 42, 0.95)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(13, 27, 42, 0.95)', backdropFilter: 'blur(12px)',
           borderTop: '1px solid rgba(42, 157, 143, 0.2)',
           padding: '8px 12px', zIndex: 50,
-        }}>
-          <SearchBox />
-        </div>
+        }}><SearchBox /></div>
       )}
     </div>
   );
