@@ -10,6 +10,7 @@ import { useMapStore } from '@/stores/mapStore';
 import HoverCard from '@/components/panels/HoverCard';
 import CableDetailPanel from '@/components/panels/CableDetailPanel';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
+import SearchBox from '@/components/layout/SearchBox';
 
 // 动态导入CesiumGlobe（禁用SSR）
 const CesiumGlobe = dynamic(
@@ -84,16 +85,7 @@ export default function HomePage() {
         </div>
 
         {/* 搜索框 */}
-        <div style={{
-          width: 360, height: 36, borderRadius: 8,
-          backgroundColor: 'rgba(255, 255, 255, 0.07)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex', alignItems: 'center', padding: '0 12px',
-          color: '#6B7280', fontSize: 13, cursor: 'text',
-        }}>
-          <span style={{ marginRight: 8, fontSize: 14 }}>🔍</span>
-          Search cables, stations, countries...
-        </div>
+         <SearchBox />
 
         {/* 右侧统计 */}
         <div style={{ display: 'flex', gap: 24, fontSize: 12 }}>
