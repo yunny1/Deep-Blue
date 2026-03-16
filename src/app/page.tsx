@@ -1,14 +1,17 @@
 // src/app/page.tsx
-// Deep Blue 首页
-// 显示3D地球 + 顶部导航栏 + 统计卡片
+// Deep Blue 首页 - 整合3D地球 + 悬停卡片 + 详情面板 + 导航栏 + 统计
+// 这是用户看到的主页面
 
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useMapStore } from '@/stores/mapStore';
+import HoverCard from '@/components/panels/HoverCard';
+import CableDetailPanel from '@/components/panels/CableDetailPanel';
+import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
 
-// 动态导入CesiumGlobe（禁用SSR，因为CesiumJS需要浏览器环境）
-// 这样Next.js在服务端渲染时不会尝试加载CesiumJS（它会报错）
+// 动态导入CesiumGlobe（禁用SSR）
 const CesiumGlobe = dynamic(
   () => import('@/components/map/CesiumGlobe'),
   { ssr: false }
@@ -23,14 +26,30 @@ interface Stats {
 
 export default function HomePage() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const { setSelectedCable, selectedCableId } = useMapStore();
 
-  // 页面加载时获取统计数据
+  // 悬停卡片状态
+  const [hoverCable, setHoverCable] = useState<CableHoverInfo | null>(null);
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
+
+  // 获取统计数据
   useEffect(() => {
     fetch('/api/stats')
-      .then((res) => res.json())
-      .then((data) => setStats(data))
+      .then(res => res.json())
+      .then(data => setStats(data))
       .catch(console.error);
   }, []);
+
+  // 悬停回调
+  const handleHover = useCallback((cable: CableHoverInfo | null, position: { x: number; y: number }) => {
+    setHoverCable(cable);
+    setHoverPos(position);
+  }, []);
+
+  // 点击回调
+  const handleClick = useCallback((cableSlug: string | null) => {
+    setSelectedCable(cableSlug);
+  }, [setSelectedCable]);
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
@@ -44,13 +63,13 @@ export default function HomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 24px', zIndex: 50,
       }}>
-        {/* 左侧：Logo */}
+        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 8,
             background: 'linear-gradient(135deg, #1E6091, #2A9D8F)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, fontWeight: 700, color: 'white',
+            fontSize: 14, fontWeight: 700, color: 'white',
           }}>
             DB
           </div>
@@ -58,54 +77,64 @@ export default function HomePage() {
             <div style={{ fontSize: 16, fontWeight: 700, color: '#EDF2F7', lineHeight: 1.2 }}>
               DEEP BLUE
             </div>
-            <div style={{ fontSize: 10, color: '#6B7280', letterSpacing: 1 }}>
-              SUBMARINE CABLE INTELLIGENCE
+            <div style={{ fontSize: 9, color: '#6B7280', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+              Submarine Cable Intelligence
             </div>
           </div>
         </div>
 
-        {/* 中间：搜索框（Phase 1后半段实现功能，现在先放个壳） */}
+        {/* 搜索框 */}
         <div style={{
           width: 360, height: 36, borderRadius: 8,
           backgroundColor: 'rgba(255, 255, 255, 0.07)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           display: 'flex', alignItems: 'center', padding: '0 12px',
-          color: '#6B7280', fontSize: 13,
+          color: '#6B7280', fontSize: 13, cursor: 'text',
         }}>
+          <span style={{ marginRight: 8, fontSize: 14 }}>🔍</span>
           Search cables, stations, countries...
         </div>
 
-        {/* 右侧：统计数字 */}
-        <div style={{ display: 'flex', gap: 20, fontSize: 12, color: '#6B7280' }}>
+        {/* 右侧统计 */}
+        <div style={{ display: 'flex', gap: 24, fontSize: 12 }}>
           {stats ? (
             <>
-              <div>
-                <span style={{ color: '#2A9D8F', fontWeight: 700, fontSize: 16 }}>
-                  {stats.cables.total}
-                </span>{' '}
-                cables
-              </div>
-              <div>
-                <span style={{ color: '#2A9D8F', fontWeight: 700, fontSize: 16 }}>
-                  {stats.landingStations}
-                </span>{' '}
-                stations
-              </div>
-              <div>
-                <span style={{ color: '#2A9D8F', fontWeight: 700, fontSize: 16 }}>
-                  {stats.countries}
-                </span>{' '}
-                countries
-              </div>
+              <StatBadge number={stats.cables.inService} label="In Service" color="#06D6A0" />
+              <StatBadge number={stats.cables.underConstruction} label="Building" color="#E9C46A" />
+              <StatBadge number={stats.cables.planned} label="Planned" color="#3B82F6" />
+              <StatBadge number={stats.landingStations} label="Stations" color="#2A9D8F" />
             </>
           ) : (
-            <span>Loading...</span>
+            <span style={{ color: '#6B7280' }}>Loading...</span>
           )}
         </div>
       </nav>
 
-      {/* ═══ 3D地球（占满全屏） ═══ */}
-      <CesiumGlobe />
+      {/* ═══ 3D地球（带交互） ═══ */}
+      <CesiumGlobe
+        onHover={handleHover}
+        onClick={handleClick}
+      />
+
+      {/* ═══ 悬停预览卡片 ═══ */}
+      <HoverCard cable={hoverCable} position={hoverPos} />
+
+      {/* ═══ 右侧详情面板 ═══ */}
+      <CableDetailPanel />
+    </div>
+  );
+}
+
+// 导航栏中的统计徽章组件
+function StatBadge({ number, label, color }: { number: number; label: string; color: string }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color, lineHeight: 1 }}>
+        {number}
+      </div>
+      <div style={{ fontSize: 10, color: '#6B7280', marginTop: 2 }}>
+        {label}
+      </div>
     </div>
   );
 }
