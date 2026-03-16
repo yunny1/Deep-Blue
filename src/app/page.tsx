@@ -1,6 +1,6 @@
 // src/app/page.tsx
-// Deep Blue 首页 — Phase 1 完整版
-// 整合：3D/2D地图切换 + 搜索 + 悬停卡片 + 详情面板 + 颜色控制 + 过滤 + 响应式
+// Deep Blue 首页 — Phase 2: 加入地震预警功能
+// 整合：3D/2D地图 + 搜索 + 悬停 + 详情 + 颜色 + 过滤 + 地震预警 + 响应式
 
 'use client';
 
@@ -11,11 +11,11 @@ import HoverCard from '@/components/panels/HoverCard';
 import CableDetailPanel from '@/components/panels/CableDetailPanel';
 import ColorControlPanel from '@/components/panels/ColorControlPanel';
 import FilterPanel from '@/components/panels/FilterPanel';
+import EarthquakePanel from '@/components/panels/EarthquakePanel';
 import SearchBox from '@/components/layout/SearchBox';
 import ViewModeToggle from '@/components/layout/ViewModeToggle';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
 
-// 动态导入两个地图组件（都禁用SSR）
 const CesiumGlobe = dynamic(() => import('@/components/map/CesiumGlobe'), { ssr: false });
 const MapLibre2D = dynamic(() => import('@/components/map/MapLibre2D'), { ssr: false });
 
@@ -31,7 +31,6 @@ export default function HomePage() {
   const [hoverCable, setHoverCable] = useState<CableHoverInfo | null>(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
-  // 检测窗口宽度（用于响应式布局）
   const [windowWidth, setWindowWidth] = useState(1280);
   useEffect(() => {
     setWindowWidth(window.innerWidth);
@@ -39,20 +38,15 @@ export default function HomePage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
   const isMobile = windowWidth < 768;
-  const isTablet = windowWidth >= 768 && windowWidth < 1280;
 
-  // 获取统计数据
   useEffect(() => {
     fetch('/api/stats').then(r => r.json()).then(setStats).catch(console.error);
   }, []);
 
   const handleHover = useCallback((cable: CableHoverInfo | null, position: { x: number; y: number }) => {
-    // 移动端不显示悬停卡片（没有鼠标悬停的概念）
     if (isMobile) return;
-    setHoverCable(cable);
-    setHoverPos(position);
+    setHoverCable(cable); setHoverPos(position);
   }, [isMobile]);
 
   const handleClick = useCallback((slug: string | null) => {
@@ -71,7 +65,6 @@ export default function HomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: isMobile ? '0 12px' : '0 24px', zIndex: 50,
       }}>
-        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
           <div style={{
             width: isMobile ? 28 : 32, height: isMobile ? 28 : 32, borderRadius: 8,
@@ -80,9 +73,7 @@ export default function HomePage() {
             fontSize: isMobile ? 11 : 14, fontWeight: 700, color: 'white',
           }}>DB</div>
           <div>
-            <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: 700, color: '#EDF2F7', lineHeight: 1.2 }}>
-              DEEP BLUE
-            </div>
+            <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: 700, color: '#EDF2F7', lineHeight: 1.2 }}>DEEP BLUE</div>
             {!isMobile && (
               <div style={{ fontSize: 9, color: '#6B7280', letterSpacing: 1.5, textTransform: 'uppercase' as const }}>
                 Submarine Cable Intelligence
@@ -91,37 +82,35 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 搜索框（移动端隐藏，用户可以通过其他方式搜索） */}
         {!isMobile && <SearchBox />}
 
-        {/* 右侧统计（平板和移动端精简） */}
         <div style={{ display: 'flex', gap: isMobile ? 12 : 24, fontSize: 12 }}>
           {stats && stats.cables ? (
             <>
               <StatBadge number={stats.cables.total || 0} label={isMobile ? 'Total' : 'Cables'} color="#2A9D8F" />
               {!isMobile && (
                 <>
-                  <StatBadge number={stats.cables.inService} label="In Service" color="#06D6A0" />
-                  <StatBadge number={stats.cables.underConstruction} label="Building" color="#E9C46A" />
+                  <StatBadge number={stats.cables.inService || 0} label="In Service" color="#06D6A0" />
+                  <StatBadge number={stats.cables.underConstruction || 0} label="Building" color="#E9C46A" />
                 </>
               )}
-              <StatBadge number={stats.landingStations} label="Stations" color="#2A9D8F" />
+              <StatBadge number={stats.landingStations || 0} label="Stations" color="#2A9D8F" />
             </>
           ) : <span style={{ color: '#6B7280' }}>Loading...</span>}
         </div>
       </nav>
 
-      {/* ═══ 地图区域（根据viewMode显示3D或2D） ═══ */}
+      {/* ═══ 地图 ═══ */}
       {viewMode === '3d' ? (
         <CesiumGlobe onHover={handleHover} onClick={handleClick} />
       ) : (
         <MapLibre2D onHover={handleHover} onClick={handleClick} />
       )}
 
-      {/* ═══ 3D/2D 切换按钮（右上角） ═══ */}
+      {/* ═══ 3D/2D切换 ═══ */}
       <ViewModeToggle />
 
-      {/* ═══ 左侧面板区域（桌面端显示） ═══ */}
+      {/* ═══ 左侧面板（桌面端） ═══ */}
       {!isMobile && (
         <>
           <ColorControlPanel />
@@ -129,13 +118,16 @@ export default function HomePage() {
         </>
       )}
 
-      {/* ═══ 悬停卡片（桌面端显示） ═══ */}
+      {/* ═══ 地震预警面板（左下角） ═══ */}
+      <EarthquakePanel />
+
+      {/* ═══ 悬停卡片 ═══ */}
       {!isMobile && <HoverCard cable={hoverCable} position={hoverPos} />}
 
       {/* ═══ 详情面板 ═══ */}
       <CableDetailPanel />
 
-      {/* ═══ 移动端底部搜索栏（替代顶部搜索框） ═══ */}
+      {/* ═══ 移动端底部搜索 ═══ */}
       {isMobile && (
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -151,7 +143,6 @@ export default function HomePage() {
   );
 }
 
-// 导航栏统计徽章
 function StatBadge({ number, label, color }: { number: number; label: string; color: string }) {
   return (
     <div style={{ textAlign: 'center' }}>
