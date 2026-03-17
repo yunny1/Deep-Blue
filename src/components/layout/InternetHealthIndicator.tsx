@@ -11,7 +11,21 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import type { CloudflareHealthData } from '@/app/api/signals/cloudflare/route';
+// 直接在组件里定义类型，避免跨边界引用 API Route
+interface CloudflareHealthData {
+  status: 'NORMAL' | 'DEGRADED' | 'DISRUPTED';
+  activeOutages: number;
+  affectedCountries: string[];
+  events: {
+    id: string;
+    description: string;
+    affectedCountries: string[];
+    startDate: string;
+    isOngoing: boolean;
+  }[];
+  lastChecked: string;
+  source: 'cloudflare_radar' | 'fallback';
+}
 
 // ── 状态配置表 ─────────────────────────────────────────────────
 const STATUS_CONFIG = {
