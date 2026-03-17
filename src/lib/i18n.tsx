@@ -51,19 +51,20 @@ function getNestedValue(obj: any, path: string): string | undefined {
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   // 从localStorage读取上次选择的语言，默认英文
   const [locale, setLocaleState] = useState<Locale>('en');
+  const [mounted, setMounted] = useState(false);
 
-  // 初始化时从localStorage读取
+  // 挂载后再读取保存的语言，避免服务端/客户端渲染不匹配
   useEffect(() => {
     const saved = localStorage.getItem('deep-blue-locale') as Locale;
     if (saved && dictionaries[saved]) {
       setLocaleState(saved);
     } else {
-      // 自动检测浏览器语言
       const browserLang = navigator.language.toLowerCase();
       if (browserLang.startsWith('zh')) {
         setLocaleState('zh');
       }
     }
+    setMounted(true);
   }, []);
 
   // 切换语言时保存到localStorage
@@ -97,6 +98,15 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
     return value;
   }, [locale]);
+
+  // 挂载前用一个空的占位，避免服务端/客户端渲染不匹配
+  if (!mounted) {
+    return (
+      <I18nContext.Provider value={{ locale: 'en', setLocale, t }}>
+        <div suppressHydrationWarning>{children}</div>
+      </I18nContext.Provider>
+    );
+  }
 
   return (
     <I18nContext.Provider value={{ locale, setLocale, t }}>

@@ -138,8 +138,13 @@ Extract structured intelligence as JSON.`;
     }
     cleanContent = cleanContent.slice(jsonStart, jsonEnd + 1);
 
-    const analysis = JSON.parse(cleanContent) as AiNewsAnalysis;
-    return analysis;
+    try {
+      const analysis = JSON.parse(cleanContent) as AiNewsAnalysis;
+      return analysis;
+    } catch (parseError) {
+      console.error('JSON parse failed, raw content:', cleanContent.slice(0, 200));
+      return null;
+    }
 
   } catch (error) {
     console.error('AI analysis failed:', error);

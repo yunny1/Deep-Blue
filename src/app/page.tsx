@@ -18,6 +18,7 @@ import ViewModeToggle from '@/components/layout/ViewModeToggle';
 import AiToggle from '@/components/layout/AiToggle';
 import LangSwitcher from '@/components/layout/LangSwitcher';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
+import AnalysisMenu from '@/components/layout/AnalysisMenu';
 
 const CesiumGlobe = dynamic(() => import('@/components/map/CesiumGlobe'), { ssr: false });
 const MapLibre2D = dynamic(() => import('@/components/map/MapLibre2D'), { ssr: false });
@@ -85,6 +86,7 @@ function HomeContent() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <SearchBox />
             <AiToggle />
+            <AnalysisMenu />
             <LangSwitcher />
           </div>
         )}
