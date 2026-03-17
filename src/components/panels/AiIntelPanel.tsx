@@ -31,7 +31,7 @@ export default function AiIntelPanel() {
 
   return (
     <div style={{
-      position: 'absolute', top: 72, right: 16, width: 300,
+      position: 'absolute', top: 136, right: 16, width: 300,
       backgroundColor: 'rgba(10, 17, 34, 0.95)', backdropFilter: 'blur(16px)',
       border: `1px solid ${relevantResults.some(r => r.analysis.severity >= 4) ? 'rgba(239,68,68,0.3)' : 'rgba(139, 92, 246, 0.2)'}`,
       borderRadius: 'var(--radius-lg)', zIndex: 40, overflow: 'hidden',

@@ -89,7 +89,6 @@ function HomeContent() {
         {!isMobile && (
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{ width: '100%', maxWidth: 320 }}>
-              <InternetHealthIndicator locale={locale} />
               <SearchBox />
             </div>
           </div>
@@ -139,6 +138,11 @@ function HomeContent() {
       )}
 
       {/* ═══ AI情报面板 ═══ */}
+      {!isMobile && (
+        <div style={{ position: 'absolute', top: 92, right: 16, zIndex: 41 }}>
+          <InternetHealthIndicator locale={locale} />
+        </div>
+      )}
       {!isMobile && <AiIntelPanel />}
 
       {/* ═══ 地震预警面板 ═══ */}
