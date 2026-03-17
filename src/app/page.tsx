@@ -70,15 +70,14 @@ function HomeContent() {
         padding: isMobile ? '0 12px' : '0 24px', zIndex: 50,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
-          <div style={{
-            width: isMobile ? 28 : 32, height: isMobile ? 28 : 32, borderRadius: 8,
-            background: 'linear-gradient(135deg, #1E6091, #2A9D8F)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: isMobile ? 11 : 14, fontWeight: 700, color: 'white',
-          }}>DB</div>
+          <img src="/icons/deep-blue-icon.png" alt="Deep Blue" style={{
+            width: isMobile ? 28 : 32, height: isMobile ? 28 : 32, borderRadius: 6,
+          }} />
           <div>
             <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: 700, color: '#EDF2F7', lineHeight: 1.2 }}>DEEP BLUE</div>
             {!isMobile && <div style={{ fontSize: 9, color: '#6B7280', letterSpacing: 1.5, textTransform: 'uppercase' as const }}>{t('nav.subtitle')}</div>}
+           
+            {!isMobile && <div style={{ fontSize: 8, color: '#4B5563', marginTop: 1 }}>by Jiang Yun</div>}
           </div>
         </div>
 
