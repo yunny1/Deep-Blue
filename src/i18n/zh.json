@@ -1,0 +1,126 @@
+{
+  "nav": {
+    "subtitle": "全球海底光缆智能监测平台",
+    "search": "搜索海缆、登陆站、国家...",
+    "cables": "海缆",
+    "inService": "在役",
+    "building": "在建",
+    "planned": "规划中",
+    "stations": "登陆站",
+    "total": "总计",
+    "loading": "加载中..."
+  },
+  "globe": {
+    "loading": "正在加载全球海底光缆网络...",
+    "cablesRendered": "条海缆已渲染",
+    "inService": "在役",
+    "building": "在建",
+    "planned": "规划中",
+    "hoverTip": "悬停预览 · 点击详情 · 搜索定位"
+  },
+  "search": {
+    "cables": "海缆",
+    "stations": "登陆站",
+    "countries": "国家",
+    "noResults": "未找到相关结果：",
+    "flyTo": "飞往"
+  },
+  "detail": {
+    "overview": "概览",
+    "stations": "登陆站",
+    "events": "事件",
+    "length": "长度",
+    "serviceYears": "服役年限",
+    "capacity": "设计容量",
+    "fiberPairs": "光纤对数",
+    "rfsDate": "投产日期",
+    "technology": "传输技术",
+    "lifespan": "预计使用寿命",
+    "years": "年",
+    "builtBy": "建造商：",
+    "owners": "运营商：",
+    "noStations": "暂无登陆站数据",
+    "fetchingNews": "正在获取相关新闻...",
+    "noNews": "暂无近期新闻",
+    "noNewsDesc": "在近期行业新闻中未找到提及「{name}」的报道。",
+    "newsSource": "新闻通过海缆名称匹配，来源为 SubTel Forum 和 Submarine Networks RSS。",
+    "moreSourcesComing": "更多数据源（GDELT、NewsAPI、Cloudflare Radar）将在后续版本中接入。",
+    "relatedArticles": "来自行业媒体的 {count} 篇相关报道"
+  },
+  "color": {
+    "title": "着色模式",
+    "status": "状态",
+    "builder": "建造商",
+    "operator": "运营商",
+    "age": "年代",
+    "legend": "图例",
+    "inService": "在役",
+    "underConstruction": "在建",
+    "planned": "规划中",
+    "decommissioned": "已退役",
+    "others": "其他",
+    "before2000": "2000年以前",
+    "new2020": "2020-2025",
+    "future": "2026+"
+  },
+  "filter": {
+    "title": "筛选",
+    "status": "状态",
+    "yearRange": "投产年份范围",
+    "quickFilters": "快捷筛选",
+    "new2020": "新建 (2020+)",
+    "aging": "老化 (<2010)",
+    "allYears": "全部年份",
+    "to": "至"
+  },
+  "earthquake": {
+    "title": "地震活动",
+    "quakes": "次地震",
+    "cablesNear": "{count} 条海缆位于地震影响范围内",
+    "affectingCables": "受影响海缆",
+    "recent": "近7天 4.5级以上（共 {count} 次）",
+    "kmAway": "距离 {km} 公里",
+    "kmDeep": "深度 {km} 公里",
+    "source": "数据来源：美国地质调查局（USGS）· 每5分钟自动刷新",
+    "flyTo": "飞往 {name}"
+  },
+  "ai": {
+    "toggle": "AI洞察",
+    "on": "开启",
+    "off": "关闭",
+    "intelTitle": "AI情报分析",
+    "scanned": "已扫描",
+    "analyzed": "已分析",
+    "relevant": "相关",
+    "disruptions": "中断",
+    "otherArticles": "另有 {count} 篇文章经分析与海缆无关",
+    "poweredBy": "由 MiniMax AI 驱动",
+    "cached": "缓存结果",
+    "fresh": "最新分析"
+  },
+  "risk": {
+    "title": "地缘政治风险",
+    "risk": "风险",
+    "conflict": "冲突水域",
+    "sanctions": "制裁风险",
+    "military": "军事活动",
+    "ownership": "所有权集中度",
+    "legal": "法律复杂度",
+    "historical": "历史破坏",
+    "events": "近期事件",
+    "conflictZones": "经过的冲突水域",
+    "sanctionedCountries": "连接的受制裁国家",
+    "description": "基于7个加权因子的综合风险评分，分数越高风险越大。"
+  },
+  "viewMode": {
+    "globe3d": "3D 地球",
+    "map2d": "2D 地图"
+  },
+  "ticker": {
+    "live": "实时"
+  },
+  "common": {
+    "close": "关闭",
+    "source": "来源"
+  }
+}

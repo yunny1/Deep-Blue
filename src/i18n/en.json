@@ -1,0 +1,126 @@
+{
+  "nav": {
+    "subtitle": "Submarine Cable Intelligence",
+    "search": "Search cables, stations, countries...",
+    "cables": "Cables",
+    "inService": "In Service",
+    "building": "Building",
+    "planned": "Planned",
+    "stations": "Stations",
+    "total": "Total",
+    "loading": "Loading..."
+  },
+  "globe": {
+    "loading": "Loading global submarine cable network...",
+    "cablesRendered": "cables rendered",
+    "inService": "In service",
+    "building": "Building",
+    "planned": "Planned",
+    "hoverTip": "Hover to preview · Click for details · Search to fly"
+  },
+  "search": {
+    "cables": "Cables",
+    "stations": "Landing Stations",
+    "countries": "Countries",
+    "noResults": "No results for",
+    "flyTo": "fly to"
+  },
+  "detail": {
+    "overview": "Overview",
+    "stations": "Stations",
+    "events": "Events",
+    "length": "Length",
+    "serviceYears": "Service Years",
+    "capacity": "Capacity",
+    "fiberPairs": "Fiber Pairs",
+    "rfsDate": "RFS Date",
+    "technology": "Technology",
+    "lifespan": "Estimated Lifespan",
+    "years": "years",
+    "builtBy": "Built by",
+    "owners": "Owners",
+    "noStations": "No landing station data available",
+    "fetchingNews": "Fetching related news...",
+    "noNews": "No recent news found",
+    "noNewsDesc": "No articles mentioning \"{name}\" were found in recent industry news feeds.",
+    "newsSource": "News matched by cable name from SubTel Forum and Submarine Networks RSS feeds.",
+    "moreSourcesComing": "More sources (GDELT, NewsAPI, Cloudflare Radar) coming in Phase 3.",
+    "relatedArticles": "{count} related article(s) from industry sources"
+  },
+  "color": {
+    "title": "Color by",
+    "status": "Status",
+    "builder": "Builder",
+    "operator": "Operator",
+    "age": "Age",
+    "legend": "Legend",
+    "inService": "In Service",
+    "underConstruction": "Under Construction",
+    "planned": "Planned",
+    "decommissioned": "Decommissioned",
+    "others": "Others",
+    "before2000": "Before 2000",
+    "new2020": "2020-2025",
+    "future": "2026+"
+  },
+  "filter": {
+    "title": "Filters",
+    "status": "Status",
+    "yearRange": "RFS Year Range",
+    "quickFilters": "Quick Filters",
+    "new2020": "New (2020+)",
+    "aging": "Aging (<2010)",
+    "allYears": "All Years",
+    "to": "to"
+  },
+  "earthquake": {
+    "title": "Seismic Activity",
+    "quakes": "quakes",
+    "cablesNear": "{count} cable(s) near seismic activity",
+    "affectingCables": "Affecting cables",
+    "recent": "Recent M4.5+ ({count} total, 7 days)",
+    "kmAway": "{km} km away",
+    "kmDeep": "{km}km deep",
+    "source": "Source: USGS Earthquake Hazards Program · Auto-refreshes every 5min",
+    "flyTo": "Fly to {name}"
+  },
+  "ai": {
+    "toggle": "AI Insights",
+    "on": "ON",
+    "off": "OFF",
+    "intelTitle": "AI Intelligence",
+    "scanned": "scanned",
+    "analyzed": "analyzed",
+    "relevant": "relevant",
+    "disruptions": "disruptions",
+    "otherArticles": "{count} other articles analyzed — not cable-related",
+    "poweredBy": "Powered by MiniMax AI",
+    "cached": "Cached result",
+    "fresh": "Fresh analysis"
+  },
+  "risk": {
+    "title": "Geopolitical Risk",
+    "risk": "RISK",
+    "conflict": "Conflict",
+    "sanctions": "Sanctions",
+    "military": "Military",
+    "ownership": "Ownership",
+    "legal": "Legal",
+    "historical": "Historical",
+    "events": "Events",
+    "conflictZones": "Conflict zones traversed",
+    "sanctionedCountries": "Sanctioned countries connected",
+    "description": "Risk score based on 7 weighted factors. Higher score = higher geopolitical risk."
+  },
+  "viewMode": {
+    "globe3d": "3D Globe",
+    "map2d": "2D Map"
+  },
+  "ticker": {
+    "live": "LIVE"
+  },
+  "common": {
+    "close": "Close",
+    "source": "Source"
+  }
+}
