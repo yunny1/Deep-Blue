@@ -1,15 +1,10 @@
 // src/app/page.tsx
-// Deep Blue 首页 — 导航栏终极修复版
-//
-// 导航栏布局方案（彻底解决重叠）：
-//   左侧：Logo（固定宽度 ~160px）
-//   中间：SearchBox 单独绝对居中（width: 280px，不含其他按钮，不可能溢出）
-//   右侧：AnalysisMenu + LangSwitcher + 统计数字（全部在右侧 flex 区域）
-//
-// 其他改动：
-//   - FilterPanel 移到右下角（ColorControlPanel 保留左侧）
-//   - BottomLeftPanel 管理地震 + 互联网健康
-//   - 点击海缆时 hoverCable 立即清空
+// Deep Blue 首页
+// 导航栏：Logo | SearchBox(绝对居中) | AnalysisMenu + 统计数字
+// LangSwitcher 移到右下角浮动元素，不再占用导航栏空间
+// ColorControlPanel: top:96（组件内部已改）
+// FilterPanel: bottom:160，往上移，右侧
+// BottomLeftPanel: 左下角，bottom:20
 
 'use client';
 
@@ -66,7 +61,6 @@ function HomeContent() {
     setHoverPos(pos);
   }, [isMobile]);
 
-  // 点击时先清除悬停卡片，再打开详情面板
   const handleClick = useCallback((slug: string | null) => {
     setHoverCable(null);
     setSelectedCable(slug);
@@ -76,9 +70,11 @@ function HomeContent() {
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
 
       {/* ═══ 顶部导航栏 ═══
-          三区分离法：左右用 flex space-between，中间用 absolute 居中。
-          中间只放 SearchBox（280px），不含任何其他按钮。
-          AnalysisMenu 和 LangSwitcher 移至右侧 flex 区域，彻底消除溢出风险。 */}
+          最简布局：
+          左侧  → Logo（固定宽度）
+          中间  → SearchBox（absolute居中，只有这一个元素，280px不可能溢出）
+          右侧  → AnalysisMenu + 分隔线 + 统计数字
+          LangSwitcher 已移出导航栏，放到右下角 */}
       <nav style={{
         position: 'absolute', top: 0, left: 0, right: 0,
         height: isMobile ? 48 : 56,
@@ -89,7 +85,7 @@ function HomeContent() {
         zIndex: 50,
       }}>
 
-        {/* 左：Logo，固定不压缩 */}
+        {/* 左：Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 10, flexShrink: 0 }}>
           <img src="/icons/deep-blue-icon.png" alt="Deep Blue"
             style={{ width: isMobile ? 28 : 32, height: isMobile ? 28 : 32, borderRadius: 6 }} />
@@ -105,8 +101,7 @@ function HomeContent() {
           </div>
         </div>
 
-        {/* 中：SearchBox 单独绝对居中
-            宽度 280px，half=140px，不会碰到任何东西 */}
+        {/* 中：SearchBox 单独居中，宽280px，两侧各延伸140px，不会碰到任何东西 */}
         {!isMobile && (
           <div style={{
             position: 'absolute',
@@ -118,30 +113,23 @@ function HomeContent() {
           </div>
         )}
 
-        {/* 右：分析工具 + 语言切换 + 统计数字
-            AnalysisMenu 和 LangSwitcher 从中间移到这里 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14, flexShrink: 0 }}>
+        {/* 右：分析工具 + 统计数字（LangSwitcher 已移走） */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, flexShrink: 0 }}>
           {!isMobile && (
             <>
               <AnalysisMenu />
-              <LangSwitcher />
-              {/* 细分隔线 */}
-              <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.1)' }} />
             </>
           )}
-          {/* 统计数字 */}
           {stats && stats.cables ? (
             <>
               <StatBadge number={stats.cables.total || 0}
                 label={isMobile ? t('nav.total') : t('nav.cables')} color="#2A9D8F" />
               {!isMobile && <>
-                <StatBadge number={stats.cables.inService || 0}
-                  label={t('nav.inService')} color="#06D6A0" />
-                <StatBadge number={stats.cables.underConstruction || 0}
-                  label={t('nav.building')} color="#E9C46A" />
+                <StatBadge number={stats.cables.inService || 0}   label={t('nav.inService')} color="#06D6A0" />
+                <StatBadge number={stats.cables.underConstruction || 0} label={t('nav.building')} color="#E9C46A" />
               </>}
-              <StatBadge number={stats.landingStations || 0}
-                label={t('nav.stations')} color="#2A9D8F" />
+              <StatBadge number={stats.landingStations || 0} label={t('nav.stations')} color="#2A9D8F" />
             </>
           ) : <span style={{ fontSize: 12, color: '#6B7280' }}>{t('nav.loading')}</span>}
         </div>
@@ -150,14 +138,14 @@ function HomeContent() {
       {/* 新闻滚动条 */}
       {!isMobile && <NewsTicker />}
 
-      {/* 地图主体 */}
+      {/* 地图 */}
       {viewMode === '3d' ? (
         <CesiumGlobe onHover={handleHover} onClick={handleClick} />
       ) : (
         <MapLibre2D onHover={handleHover} onClick={handleClick} />
       )}
 
-      {/* ═══ 右侧控制栏（top = 56+32+8 = 96px）═══ */}
+      {/* ═══ 右侧控制栏 top=96 ═══ */}
       {!isMobile && (
         <div style={{
           position: 'absolute', top: 96, right: 16,
@@ -165,26 +153,22 @@ function HomeContent() {
           display: 'flex', flexDirection: 'column', gap: 8,
           width: 300, overflow: 'visible',
         }}>
-          {/* 第一行：视图切换 + AI 开关 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <ViewModeToggle />
             <AiToggle />
           </div>
-          {/* 第二行：AI 情报面板 */}
           <AiIntelPanel />
         </div>
       )}
 
-      {/* 左侧：着色模式面板 */}
+      {/* 左侧：着色模式（top在组件内改为96） */}
       {!isMobile && <ColorControlPanel />}
 
-      {/* ═══ 右下角：筛选面板
-          位置：bottom 从下往上算，预留 BottomLeftPanel 的高度（约 100px）+间距
-          由于 FilterPanel 展开方向向上，不会遮挡左下角 BottomLeftPanel ═══ */}
+      {/* ═══ 右下角：筛选面板（往上移到bottom:160，展开向上，不遮挡署名）═══ */}
       {!isMobile && (
         <div style={{
           position: 'absolute',
-          bottom: 28,   // 距底部 28px，和右下角署名留出距离
+          bottom: 160,
           right: 16,
           zIndex: 40,
         }}>
@@ -192,7 +176,19 @@ function HomeContent() {
         </div>
       )}
 
-      {/* 左下角事件监控栏：地震 + 互联网健康 */}
+      {/* ═══ 右下角：语言切换（从导航栏移出，独立悬浮）═══ */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute',
+          bottom: 100,
+          right: 16,
+          zIndex: 40,
+        }}>
+          <LangSwitcher />
+        </div>
+      )}
+
+      {/* 左下角：地震 + 互联网健康 */}
       {!isMobile && <BottomLeftPanel />}
 
       {/* 悬停卡片 */}
@@ -212,7 +208,7 @@ function HomeContent() {
         </div>
       )}
 
-      {/* 移动端底部搜索栏 */}
+      {/* 移动端底部搜索 */}
       {isMobile && (
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
