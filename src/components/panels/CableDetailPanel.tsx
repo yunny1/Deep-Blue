@@ -8,6 +8,7 @@ import { getTooltip } from '@/lib/tooltips';
 import Tooltip from '@/components/ui/Tooltip';
 import { SkeletonDetailPanel, SkeletonNewsList } from '@/components/ui/Skeleton';
 import RiskScoreCard from '@/components/panels/RiskScoreCard';
+import DataChangeBadge from '@/components/ui/DataChangeBadge';
 
 interface CableDetail { id: string; name: string; slug: string; status: string; rfsDate: string | null; lengthKm: number | null; designCapacityTbps: number | null; fiberPairs: number | null; technology: string | null; investmentAmountUsd: number | null; estimatedLifespan: number | null; notes: string | null; vendor: { name: string } | null; owners: Array<{ company: { name: string } }>; landingStations: Array<{ landingStation: { name: string; countryCode: string; latitude: number; longitude: number; country: { nameEn: string } | null } }>; }
 interface NewsItem { title: string; link: string; pubDate: string; description: string; source: string; eventCategory: string; }
@@ -89,7 +90,10 @@ export default function CableDetailPanel() {
             <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--border-subtle)', animation: 'fadeInUp 0.3s ease 0.1s both' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{cable.name}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{cable.name}</h2>
+                   <DataChangeBadge cableSlug={cable.slug} locale={locale} />
+</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: statusInfo.color, boxShadow: `0 0 6px ${statusInfo.color}` }} />
                     <span style={{ fontSize: 13, color: statusInfo.color, fontWeight: 500 }}>{t(statusInfo.labelKey)}</span>

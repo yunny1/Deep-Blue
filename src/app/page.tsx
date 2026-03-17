@@ -22,6 +22,7 @@ import AiToggle from '@/components/layout/AiToggle';
 import LangSwitcher from '@/components/layout/LangSwitcher';
 import AnalysisMenu from '@/components/layout/AnalysisMenu';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
+import InternetHealthIndicator from '@/components/layout/InternetHealthIndicator';
 
 const CesiumGlobe = dynamic(() => import('@/components/map/CesiumGlobe'), { ssr: false });
 const MapLibre2D = dynamic(() => import('@/components/map/MapLibre2D'), { ssr: false });
@@ -88,6 +89,7 @@ function HomeContent() {
         {!isMobile && (
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{ width: '100%', maxWidth: 320 }}>
+              <InternetHealthIndicator locale={locale} />
               <SearchBox />
             </div>
           </div>
