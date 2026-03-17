@@ -1,5 +1,5 @@
 // src/app/page.tsx
-// Deep Blue 首页 — Phase 2: 地震预警 + 新闻ticker + 事件数据
+// Deep Blue 首页 — Phase 3: 真正的AI驱动（MiniMax）
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -10,9 +10,12 @@ import CableDetailPanel from '@/components/panels/CableDetailPanel';
 import ColorControlPanel from '@/components/panels/ColorControlPanel';
 import FilterPanel from '@/components/panels/FilterPanel';
 import EarthquakePanel from '@/components/panels/EarthquakePanel';
+import CableHealthPanel from '@/components/panels/CableHealthPanel';
+import AiIntelPanel from '@/components/panels/AiIntelPanel';
 import NewsTicker from '@/components/dashboard/NewsTicker';
 import SearchBox from '@/components/layout/SearchBox';
 import ViewModeToggle from '@/components/layout/ViewModeToggle';
+import AiToggle from '@/components/layout/AiToggle';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
 
 const CesiumGlobe = dynamic(() => import('@/components/map/CesiumGlobe'), { ssr: false });
@@ -74,7 +77,14 @@ export default function HomePage() {
             {!isMobile && <div style={{ fontSize: 9, color: '#6B7280', letterSpacing: 1.5, textTransform: 'uppercase' as const }}>Submarine Cable Intelligence</div>}
           </div>
         </div>
-        {!isMobile && <SearchBox />}
+
+        {!isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <SearchBox />
+            <AiToggle />
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: isMobile ? 12 : 24, fontSize: 12 }}>
           {stats && stats.cables ? (
             <>
@@ -89,7 +99,7 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* ═══ 新闻滚动条（导航栏正下方） ═══ */}
+      {/* ═══ 新闻滚动条 ═══ */}
       {!isMobile && <NewsTicker />}
 
       {/* ═══ 地图 ═══ */}
@@ -108,7 +118,13 @@ export default function HomePage() {
         <FilterPanel />
       </>}
 
-      {/* ═══ 地震预警面板 ═══ */}
+      {/* ═══ 右侧AI面板区域 ═══ */}
+      {!isMobile && <>
+        {/* AI情报面板（MiniMax驱动，真正的AI分析） */}
+        <AiIntelPanel />
+      </>}
+
+      {/* ═══ 地震预警面板（左下角） ═══ */}
       <EarthquakePanel />
 
       {/* ═══ 悬停卡片 ═══ */}
