@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMapStore } from '@/stores/mapStore';
+import RiskScoreCard from '@/components/panels/RiskScoreCard';
 
 interface CableDetail {
   id: string;
@@ -193,6 +194,7 @@ export default function CableDetailPanel() {
                   {cable.notes && (
                     <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 14, fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
                       {cable.notes}
+                      <RiskScoreCard cableSlug={cable.slug} />
                     </div>
                   )}
                 </div>
