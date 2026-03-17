@@ -51,7 +51,24 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   const allEntitiesRef = useRef<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, rendered: 0 });
-  const { flyToSlug, flyToCounter, clearFlyTo, colorMode } = useMapStore();
+  const { flyToSlug, flyToCounter, clearFlyTo, colorMode, filterStatuses, filterYearRange } = useMapStore();
+
+  // 监听筛选条件变化，通过 show 属性控制海缆显示/隐藏
+  useEffect(() => {
+    if (!viewerRef.current) return;
+    for (const [slug, entities] of entitiesMapRef.current) {
+      if (entities.length === 0) continue;
+      const meta = entityMetaRef.current.get(entities[0]);
+      if (!meta) continue;
+      const statusMatch = filterStatuses.includes(meta.status);
+      const yearMatch = !meta.rfsYear ||
+        (meta.rfsYear >= filterYearRange[0] && meta.rfsYear <= filterYearRange[1]);
+      const visible = statusMatch && yearMatch;
+      for (const entity of entities) {
+        entity.show = visible;
+      }
+    }
+  }, [filterStatuses, filterYearRange]);
 
   useEffect(() => {
     async function initCesium() {
