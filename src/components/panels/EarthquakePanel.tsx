@@ -32,7 +32,7 @@ export default function EarthquakePanel() {
 
   return (
     <div style={{
-      position: 'absolute', bottom: 20, left: 16, width: 240,
+      position: 'absolute', bottom: 20, left: 16, width: 200,
       backgroundColor: 'rgba(10, 17, 34, 0.95)', backdropFilter: 'blur(16px)',
       border: `1px solid ${affectedCount > 0 ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-default)'}`,
       borderRadius: 'var(--radius-lg)', zIndex: 40, overflow: 'hidden',
