@@ -97,7 +97,7 @@ Extract structured intelligence as JSON.`;
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userMessage },
         ],
-        max_tokens: 800,
+        max_tokens: 1500,
         temperature: 0.1, // 低温度=更精确、更一致的输出
       }),
     });

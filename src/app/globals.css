@@ -1,51 +1,52 @@
 /* src/app/globals.css */
-/* Deep Blue 全局样式 - 深海科技暗色主题 */
+/* Deep Blue — 仅添加CSS变量和动画，不修改任何布局 */
 
-@import "tailwindcss";
-
-/* CesiumJS 样式（3D地球的UI组件需要这些） */
-@import "cesium/Build/Cesium/Widgets/widgets.css";
-
-/* 全局变量 */
 :root {
-  --deep-navy: #0D1B2A;
-  --deep-blue: #1B3A5C;
-  --ocean: #1E6091;
-  --teal: #2A9D8F;
-  --coral: #E76F51;
-  --light: #EDF2F7;
-  --muted: #6B7280;
+  --bg-deepest: #060B14;
+  --bg-base: #0A1122;
+  --bg-raised: #0E1A2E;
+  --bg-surface: #152238;
+  --bg-hover: rgba(42, 157, 143, 0.08);
+  --border-subtle: #111D33;
+  --border-default: #1A2744;
+  --border-accent: rgba(42, 157, 143, 0.25);
+  --text-primary: #C8D6E5;
+  --text-secondary: #8BA3C7;
+  --text-tertiary: #5A7899;
+  --text-muted: #3D5A80;
+  --accent-primary: #2A9D8F;
+  --accent-blue: #3B82F6;
+  --accent-orange: #E9712B;
+  --accent-amber: #F59E0B;
+  --accent-red: #EF4444;
+  --accent-pink: #EC4899;
+  --accent-purple: #8B5CF6;
+  --duration-fast: 0.15s;
+  --duration-normal: 0.25s;
+  --duration-slow: 0.4s;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 }
 
-/* 基础样式 */
 body {
-  background-color: var(--deep-navy);
-  color: var(--light);
-  font-family: system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* 防止出现滚动条，地图要全屏 */
+  background-color: #0D1B2A;
+  color: #EDF2F7;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif;
+  overflow: hidden;
 }
 
-/* 隐藏CesiumJS默认的Logo和信息栏（我们会用自己的UI） */
-.cesium-viewer-bottom,
-.cesium-viewer-animationContainer,
-.cesium-viewer-timelineContainer,
-.cesium-viewer-fullscreenContainer {
-  display: none !important;
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-/* 自定义滚动条（面板内使用） */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
+::selection { background: rgba(42, 157, 143, 0.3); color: #EDF2F7; }
+
+.cesium-viewer-bottom { display: none !important; }
+.cesium-widget-credits { display: none !important; }
