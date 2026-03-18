@@ -35,7 +35,7 @@ body {
   background-color: #0D1B2A;
   color: #EDF2F7;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif;
-  overflow: hidden;
+  
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
