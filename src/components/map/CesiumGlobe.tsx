@@ -11,7 +11,7 @@ import {
   OPERATOR_COLOR_MAP, OPERATOR_DEFAULT,
   getYearColor,
 } from '@/components/panels/ColorControlPanel';
-import { fixAntimeridian } from '@/lib/antimeridian';
+import { splitAtAntimeridian } from '@/lib/antimeridian';
 
 interface Cable {
   id: string; name: string; slug: string; status: string;
@@ -132,8 +132,10 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
           const color = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
 
           try {
-            const geometry = fixAntimeridian(cable.routeGeojson);
-            const lines = geometry.type === 'MultiLineString' ? geometry.coordinates : geometry.type === 'LineString' ? [geometry.coordinates] : [];
+            const geometry = cable.routeGeojson;
+            const rawLines = geometry.type === 'MultiLineString' ? geometry.coordinates : geometry.type === 'LineString' ? [geometry.coordinates] : [];
+            // 在反子午线处拆分每条折线，防止 Cesium 在 180° 经线两侧的点之间画出错误弧线
+            const lines = rawLines.flatMap((line: number[][]) => splitAtAntimeridian(line));
             const cableEntities: any[] = [];
             for (const line of lines) {
               const positions: number[] = [];

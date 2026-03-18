@@ -1,69 +1,60 @@
 // src/lib/antimeridian.ts
-// 修复跨越国际日期变更线（180°经线）的 GeoJSON 路由渲染问题
-//
-// 问题背景：太平洋海缆从日本（东经约140°）延伸到美国（西经约120°），
-// 经度会从 +170° 跳到 -170°。地图渲染时会把这两点直接连成一条
-// 横穿整个地图的错误线段，或者干脆断开显示。
-//
-// 修复思路：检测相邻坐标点经度差是否超过180°，超过则把后续所有点
-// 的经度加减360°，使路线在平面坐标系里保持连续。
-
+// 2D地图用：展开跨反子午线的经度（供 MapLibre2D 使用）
 export function fixAntimeridian(geojson: any): any {
   if (!geojson) return geojson;
-
-  // 递归处理 FeatureCollection 或单个 Geometry
   if (geojson.type === 'FeatureCollection') {
-    return {
-      ...geojson,
-      features: geojson.features.map((f: any) => fixAntimeridian(f)),
-    };
+    return { ...geojson, features: geojson.features.map((f: any) => fixAntimeridian(f)) };
   }
-
   if (geojson.type === 'Feature') {
-    return {
-      ...geojson,
-      geometry: fixAntimeridian(geojson.geometry),
-    };
+    return { ...geojson, geometry: fixAntimeridian(geojson.geometry) };
   }
-
   if (geojson.type === 'LineString') {
-    return {
-      ...geojson,
-      coordinates: fixLineCoords(geojson.coordinates),
-    };
+    return { ...geojson, coordinates: fixLineCoords(geojson.coordinates) };
   }
-
   if (geojson.type === 'MultiLineString') {
-    return {
-      ...geojson,
-      coordinates: geojson.coordinates.map((line: number[][]) => fixLineCoords(line)),
-    };
+    return { ...geojson, coordinates: geojson.coordinates.map((line: number[][]) => fixLineCoords(line)) };
   }
-
   return geojson;
 }
 
 function fixLineCoords(coords: number[][]): number[][] {
   if (!coords || coords.length < 2) return coords;
-
   const result: number[][] = [coords[0]];
-
   for (let i = 1; i < coords.length; i++) {
     const prev = result[i - 1];
     const curr = coords[i];
-
     let lng = curr[0];
     const diff = lng - prev[0];
+    if (diff > 180) lng -= 360;
+    else if (diff < -180) lng += 360;
+    result.push([lng, curr[1], ...curr.slice(2)]);
+  }
+  return result;
+}
 
-    // 经度差超过180°，说明跨越了反子午线，需要"展开"
-    if (diff > 180) {
-      lng -= 360;
-    } else if (diff < -180) {
-      lng += 360;
+// 3D地球用：在反子午线处把折线拆分成多段（供 CesiumGlobe 使用）
+// Cesium 渲染球体时不需要展开经度，但需要在 180° 处截断折线，
+// 否则跨线的两个点之间会画出一条穿越整个地球背面的错误弧线
+export function splitAtAntimeridian(coords: number[][]): number[][][] {
+  if (!coords || coords.length < 2) return [coords];
+
+  const segments: number[][][] = [];
+  let current: number[][] = [coords[0]];
+
+  for (let i = 1; i < coords.length; i++) {
+    const prev = coords[i - 1];
+    const curr = coords[i];
+    const diff = curr[0] - prev[0];
+
+    if (Math.abs(diff) > 180) {
+      // 检测到跨越反子午线，截断当前段，开启新段
+      if (current.length >= 2) segments.push(current);
+      current = [curr];
+    } else {
+      current.push(curr);
     }
-
-    result.push([lng, curr[1], ...(curr.slice(2))]);
   }
 
-  return result;
+  if (current.length >= 2) segments.push(current);
+  return segments.length > 0 ? segments : [coords];
 }
