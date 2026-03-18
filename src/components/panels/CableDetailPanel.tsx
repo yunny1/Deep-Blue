@@ -69,7 +69,8 @@ export default function CableDetailPanel() {
 
       {/* 面板（带滑入/滑出动画） */}
       <div style={{
-        position: 'fixed', top: 56, right: 0, bottom: 0, width: 420,
+        position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(420px, 100vw)',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
         backgroundColor: 'rgba(10, 17, 34, 0.98)',
         backdropFilter: 'blur(20px)',
         borderLeft: '1px solid var(--border-default)',
