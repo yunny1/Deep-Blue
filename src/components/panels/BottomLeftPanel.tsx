@@ -108,7 +108,7 @@ function EarthquakeSubPanel({ zh }: { zh: boolean }) {
                 <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 600, color: '#EF4444', textTransform: 'uppercase', letterSpacing: 1 }}>
                   {zh ? '影响海缆' : 'Affecting cables'}
                 </div>
-                {data.analysis.events.slice(0, 5).map((event) => (
+                {(data.analysis?.events || []).slice(0, 5).map((event) => (
                   <div key={event.earthquakeId} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                     <div
                       onClick={() => setSelectedQuake(selectedQuake === event.earthquakeId ? null : event.earthquakeId)}
