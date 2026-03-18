@@ -182,8 +182,8 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
         if (Cesium.defined(picked) && picked.id?.polyline) {
           const e = picked.id;
           // 通过 entityMeta 找到这个实体的 slug，再用 entitiesMap 找到所有同名分段
-          const meta = entityMeta.get(e);
-          const allCableEntities = meta ? (entitiesMap.get(meta.slug) || [e]) : [e];
+          const meta = entityMetaRef.current.get(e);
+          const allCableEntities = meta ? (entitiesMapRef.current.get(meta.slug) || [e]) : [e];
 
           lastHoveredEntities = allCableEntities;
           lastMaterials = allCableEntities.map(ent => ent.polyline.material);
