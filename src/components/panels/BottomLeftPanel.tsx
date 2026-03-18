@@ -103,7 +103,7 @@ function EarthquakeSubPanel({ zh }: { zh: boolean }) {
                 {zh ? `${affectedCount} 条海缆受地震影响` : `${affectedCount} cable(s) near seismic activity`}
               </div>
             )}
-            {data.analysis?.events && data.analysis.events.length > 0 && (
+            {(data.analysis?.events || []).length > 0 && (
               <>
                 <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 600, color: '#EF4444', textTransform: 'uppercase', letterSpacing: 1 }}>
                   {zh ? '影响海缆' : 'Affecting cables'}
@@ -149,7 +149,7 @@ function EarthquakeSubPanel({ zh }: { zh: boolean }) {
                 ))}
               </>
             )}
-            {data.earthquakes.slice(0, 6).map((eq) => (
+            {(data.earthquakes || []).slice(0, 6).map((eq) => (
               <div key={eq.id} style={{ padding: '6px 14px', borderBottom: '1px solid rgba(255,255,255,0.02)', fontSize: 11 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: SEVERITY_COLORS[eq.severity], fontWeight: 600 }}>M{eq.magnitude.toFixed(1)}</span>
