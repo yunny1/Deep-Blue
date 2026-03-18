@@ -163,21 +163,44 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       // 鼠标交互
       if (!viewer || !viewer.scene) { setLoading(false); return; }
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-      let lastHovered: any = null, lastMaterial: any = null;
+      // 改为数组，支持同一条海缆拆分多段后整体高亮
+      let lastHoveredEntities: any[] = [];
+      let lastMaterials: any[] = [];
 
       handler.setInputAction((m: any) => {
-        if (lastHovered && lastMaterial) {
-          try { lastHovered.polyline.material = lastMaterial; lastHovered.polyline.width = new Cesium.ConstantProperty(1.5); } catch (e) {}
-          lastHovered = null; lastMaterial = null;
-        }
+        // 恢复上一次悬停的所有分段实体
+        lastHoveredEntities.forEach((ent, i) => {
+          try {
+            ent.polyline.material = lastMaterials[i];
+            ent.polyline.width = new Cesium.ConstantProperty(1.5);
+          } catch (e) {}
+        });
+        lastHoveredEntities = [];
+        lastMaterials = [];
+
         const picked = viewer.scene.pick(m.endPosition);
         if (Cesium.defined(picked) && picked.id?.polyline) {
           const e = picked.id;
-          lastMaterial = e.polyline.material; lastHovered = e;
-          e.polyline.material = new Cesium.Color(1, 1, 1, 1);
-          e.polyline.width = new Cesium.ConstantProperty(3);
+          // 通过 entityMeta 找到这个实体的 slug，再用 entitiesMap 找到所有同名分段
+          const meta = entityMeta.get(e);
+          const allCableEntities = meta ? (entitiesMap.get(meta.slug) || [e]) : [e];
+
+          lastHoveredEntities = allCableEntities;
+          lastMaterials = allCableEntities.map(ent => ent.polyline.material);
+
+          // 整体高亮所有分段，太平洋两侧同时变白
+          allCableEntities.forEach(ent => {
+            try {
+              ent.polyline.material = new Cesium.Color(1, 1, 1, 1);
+              ent.polyline.width = new Cesium.ConstantProperty(3);
+            } catch (err) {}
+          });
+
           if (onHover && e.properties) {
-            onHover({ name: e.name || 'Unknown', status: e.properties.status?.getValue() || 'IN_SERVICE', lengthKm: e.properties.lengthKm?.getValue() || null, fiberPairs: e.properties.fiberPairs?.getValue() || null }, { x: m.endPosition.x, y: m.endPosition.y });
+            onHover(
+              { name: e.name || 'Unknown', status: e.properties.status?.getValue() || 'IN_SERVICE', lengthKm: e.properties.lengthKm?.getValue() || null, fiberPairs: e.properties.fiberPairs?.getValue() || null },
+              { x: m.endPosition.x, y: m.endPosition.y }
+            );
           }
           viewer.scene.canvas.style.cursor = 'pointer';
         } else {
