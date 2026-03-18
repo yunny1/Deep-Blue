@@ -25,6 +25,7 @@ import AiToggle from '@/components/layout/AiToggle';
 import LangSwitcher from '@/components/layout/LangSwitcher';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
 import AnalysisMenu from '@/components/layout/AnalysisMenu';
+import MobileUI from '@/components/mobile/MobileUI';
 
 const CesiumGlobe = dynamic(() => import('@/components/map/CesiumGlobe'), { ssr: false });
 const MapLibre2D = dynamic(() => import('@/components/map/MapLibre2D'), { ssr: false });
@@ -208,17 +209,8 @@ function HomeContent() {
         </div>
       )}
 
-      {/* 移动端底部搜索 */}
-      {isMobile && (
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          backgroundColor: 'rgba(13,27,42,0.95)', backdropFilter: 'blur(12px)',
-          borderTop: '1px solid rgba(42,157,143,0.2)',
-          padding: '8px 12px', zIndex: 50,
-        }}>
-          <SearchBox />
-        </div>
-      )}
+      {/* 移动端：底部导航栏 + 所有功能抽屉 */}
+      {isMobile && <MobileUI />}
     </div>
   );
 }
