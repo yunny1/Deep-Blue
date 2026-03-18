@@ -11,6 +11,7 @@ import {
   OPERATOR_COLOR_MAP, OPERATOR_DEFAULT,
   getYearColor,
 } from '@/components/panels/ColorControlPanel';
+import { fixAntimeridian } from '@/lib/antimeridian';
 
 interface Cable {
   id: string; name: string; slug: string; status: string;
@@ -131,7 +132,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
           const color = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
 
           try {
-            const geometry = cable.routeGeojson;
+            const geometry = fixAntimeridian(cable.routeGeojson);
             const lines = geometry.type === 'MultiLineString' ? geometry.coordinates : geometry.type === 'LineString' ? [geometry.coordinates] : [];
             const cableEntities: any[] = [];
             for (const line of lines) {

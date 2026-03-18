@@ -12,6 +12,7 @@ import {
   OPERATOR_COLOR_MAP, OPERATOR_DEFAULT,
   getYearColor,
 } from '@/components/panels/ColorControlPanel';
+import { fixAntimeridian } from '@/lib/antimeridian';
 
 export interface CableHoverInfo { name: string; status: string; lengthKm: number | null; fiberPairs: number | null; }
 interface MapLibre2DProps {
@@ -83,7 +84,7 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
           const sourceId = `cable-${cable.slug}`, layerId = `cable-layer-${cable.slug}`;
 
           try {
-            map.addSource(sourceId, { type: 'geojson', data: { type: 'Feature', properties: { name: cable.name, slug: cable.slug, status: cable.status, lengthKm: cable.lengthKm, fiberPairs: cable.fiberPairs, vendor: vendorName, owners: ownerNames.join(','), rfsYear }, geometry: cable.routeGeojson } });
+            map.addSource(sourceId, { type: 'geojson', data: { type: 'Feature', properties: { name: cable.name, slug: cable.slug, status: cable.status, lengthKm: cable.lengthKm, fiberPairs: cable.fiberPairs, vendor: vendorName, owners: ownerNames.join(','), rfsYear }, geometry: fixAntimeridian(cable.routeGeojson) } });
             map.addLayer({ id: layerId, type: 'line', source: sourceId, paint: { 'line-color': color, 'line-width': 1.5, 'line-opacity': 0.7 } });
 
             map.on('mouseenter', layerId, (e) => {
