@@ -1,16 +1,37 @@
 // src/components/panels/AiIntelPanel.tsx
 // AI情报面板 — UI打磨版：骨架屏 + 平滑展开
+// 注意：position/top/right 已移除，由 page.tsx 的右侧控制栏统一负责位置
+
 'use client';
 import { useEffect, useState } from 'react';
 import { useMapStore } from '@/stores/mapStore';
 import { useTranslation } from '@/lib/i18n';
 import { SkeletonAiPanel } from '@/components/ui/Skeleton';
 
-interface AiResult { title: string; source: string; pubDate: string; link: string; analysis: { isRelevant: boolean; relevanceScore: number; cableNames: string[]; eventType: string; severity: number; affectedCountries: string[]; summaryEn: string; summaryZh: string; estimatedDuration: string | null; serviceDisruption: boolean; confidence: number; }; }
-interface AiData { timestamp: string; cached: boolean; stats: { totalNewsScanned: number; preFiltered: number; aiAnalyzed: number; relevant: number; faults: number; disruptions: number; }; results: AiResult[]; }
+interface AiResult {
+  title: string; source: string; pubDate: string; link: string;
+  analysis: {
+    isRelevant: boolean; relevanceScore: number; cableNames: string[];
+    eventType: string; severity: number; affectedCountries: string[];
+    summaryEn: string; summaryZh: string; estimatedDuration: string | null;
+    serviceDisruption: boolean; confidence: number;
+  };
+}
+interface AiData {
+  timestamp: string; cached: boolean;
+  stats: { totalNewsScanned: number; preFiltered: number; aiAnalyzed: number; relevant: number; faults: number; disruptions: number };
+  results: AiResult[];
+}
 
-const EVENT_CONFIG: Record<string, { color: string; label: string }> = { FAULT: { color: '#EF4444', label: 'Fault' }, NATURAL_DISASTER: { color: '#F97316', label: 'Disaster' }, SABOTAGE: { color: '#EC4899', label: 'Sabotage' }, CONSTRUCTION: { color: '#3B82F6', label: 'Construction' }, REPAIR: { color: '#10B981', label: 'Repair' }, POLICY: { color: '#8B5CF6', label: 'Policy' }, GENERAL: { color: '#6B7280', label: 'General' } };
-const SEVERITY_BARS = ['#475569', '#3B82F6', '#F59E0B', '#F97316', '#EF4444'];
+const EVENT_CONFIG: Record<string, { color: string; label: string }> = {
+  FAULT: { color: '#EF4444', label: 'Fault' },
+  NATURAL_DISASTER: { color: '#F97316', label: 'Disaster' },
+  SABOTAGE: { color: '#EC4899', label: 'Sabotage' },
+  CONSTRUCTION: { color: '#3B82F6', label: 'Construction' },
+  REPAIR: { color: '#10B981', label: 'Repair' },
+  POLICY: { color: '#8B5CF6', label: 'Policy' },
+  GENERAL: { color: '#6B7280', label: 'General' },
+};
 
 export default function AiIntelPanel() {
   const [data, setData] = useState<AiData | null>(null);
@@ -21,7 +42,10 @@ export default function AiIntelPanel() {
 
   useEffect(() => {
     if (!showAiInsights || !isExpanded || data) return;
-    fetch('/api/ai/analyze').then(r => r.json()).then(d => { if (!d.error) setData(d); setLoading(false); }).catch(() => setLoading(false));
+    fetch('/api/ai/analyze')
+      .then(r => r.json())
+      .then(d => { if (!d.error) setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [showAiInsights, isExpanded]);
 
   if (!showAiInsights) return null;
@@ -30,17 +54,22 @@ export default function AiIntelPanel() {
   const relevantResults = data?.results.filter(r => r.analysis?.isRelevant) || [];
 
   return (
+    // ← 不再有 position/top/right/width，宽度由父容器控制（width: 300px 在 page.tsx 里统一设置）
     <div style={{
-      position: 'absolute', top: 136, right: 16, width: 300,
-      backgroundColor: 'rgba(10, 17, 34, 0.95)', backdropFilter: 'blur(16px)',
+      backgroundColor: 'rgba(10, 17, 34, 0.95)',
+      backdropFilter: 'blur(16px)',
       border: `1px solid ${relevantResults.some(r => r.analysis.severity >= 4) ? 'rgba(239,68,68,0.3)' : 'rgba(139, 92, 246, 0.2)'}`,
-      borderRadius: 'var(--radius-lg)', zIndex: 40, overflow: 'hidden',
+      borderRadius: 'var(--radius-lg)',
+      zIndex: 40,
+      overflow: 'hidden',
       boxShadow: 'var(--shadow-panel)',
       animation: 'fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     }}>
       {/* 标题栏 */}
       <div onClick={() => setIsExpanded(!isExpanded)} style={{
-        padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer',
+        padding: '10px 14px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        cursor: 'pointer',
         borderBottom: isExpanded ? '1px solid var(--border-subtle)' : 'none',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -60,7 +89,8 @@ export default function AiIntelPanel() {
 
       {/* 展开内容 */}
       <div style={{
-        maxHeight: isExpanded ? 500 : 0, overflow: 'hidden',
+        maxHeight: isExpanded ? 500 : 0,
+        overflow: 'hidden',
         transition: 'max-height var(--duration-slow) cubic-bezier(0.16, 1, 0.3, 1)',
       }}>
         {loading ? <SkeletonAiPanel /> : data && (
@@ -79,7 +109,8 @@ export default function AiIntelPanel() {
               const summary = locale === 'zh' ? a.summaryZh : a.summaryEn;
               return (
                 <div key={i} style={{
-                  padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.02)',
+                  padding: '10px 14px',
+                  borderBottom: '1px solid rgba(255,255,255,0.02)',
                   borderLeft: `3px solid ${ec.color}`,
                   animation: `fadeInUp 0.2s ease ${i * 0.05}s both`,
                 }}>
@@ -92,13 +123,22 @@ export default function AiIntelPanel() {
                   </div>
                   {/* 严重度条 */}
                   <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
-                    {[1, 2, 3, 4, 5].map(level => (<div key={level} style={{ flex: 1, height: 3, borderRadius: 1, backgroundColor: level <= a.severity ? SEVERITY_BARS[level - 1] : 'var(--bg-raised)', transition: 'background-color 0.3s' }} />))}
+                    {[1, 2, 3, 4, 5].map(level => (
+                      <div key={level} style={{
+                        flex: 1, height: 3, borderRadius: 1,
+                        backgroundColor: level <= a.severity
+                          ? ['#475569','#3B82F6','#F59E0B','#F97316','#EF4444'][level - 1]
+                          : 'var(--bg-raised)',
+                        transition: 'background-color 0.3s',
+                      }} />
+                    ))}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: 6 }}>{summary}</div>
                   {a.cableNames.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 6 }}>
                       {a.cableNames.map((name, j) => (
-                        <span key={j} onClick={() => { flyToCable(name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }}
+                        <span key={j}
+                          onClick={() => flyToCable(name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))}
                           style={{ fontSize: 10, padding: '2px 6px', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(42,157,143,0.1)', color: 'var(--accent-primary)', cursor: 'pointer', border: '1px solid var(--border-accent)', transition: 'all var(--duration-fast)' }}
                           onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.2)')}
                           onMouseOut={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.1)')}
@@ -110,7 +150,9 @@ export default function AiIntelPanel() {
                     <span>{a.affectedCountries.length > 0 ? `Affects: ${a.affectedCountries.join(', ')}` : item.source}</span>
                     {a.estimatedDuration && <span style={{ color: 'var(--accent-amber)' }}>~{a.estimatedDuration}</span>}
                   </div>
-                  <div style={{ fontSize: 9, color: '#2D4562', marginTop: 4 }}>{new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {item.source}</div>
+                  <div style={{ fontSize: 9, color: '#2D4562', marginTop: 4 }}>
+                    {new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {item.source}
+                  </div>
                 </div>
               );
             })}
