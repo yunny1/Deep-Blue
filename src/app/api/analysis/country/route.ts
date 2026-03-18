@@ -68,7 +68,7 @@ async function getCountryData(codes: string[]) {
   const isGroup = codes.length > 1;
 
   for (const cable of cables) {
-    const allCodes = [...new Set(cable.landingStations.map((cls: any) => cls.landingStation.countryCode))];
+    const allCodes = [...new Set(cable.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
     const localStations = cable.landingStations.filter((cls: any) => codes.includes(cls.landingStation.countryCode));
     // 国内线：所有登陆站都在查询的国家范围内
     const isDomestic = allCodes.every((c: string) => codes.includes(c));
@@ -94,7 +94,7 @@ async function getCountryData(codes: string[]) {
           longitude: cls.landingStation.longitude,
         }));
 
-      const allCodes = [...new Set(c.landingStations.map((cls: any) => cls.landingStation.countryCode))];
+      const allCodes = [...new Set(c.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
       const isDomestic = allCodes.every((cc: string) => codes.includes(cc));
       const isBranch = !isDomestic && localStations.length === 1 && c.landingStations.length > 4;
 
