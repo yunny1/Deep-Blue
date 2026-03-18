@@ -1,16 +1,16 @@
 // src/app/country/page.tsx
-// 国家海缆分析页面
-// 修复：去掉聚合视图标签、登陆站名称中文翻译、滚动问题在globals.css修复
+// 国家海缆分析页面 — 完整重设计版
+// 结构：全球统计动画 → 推荐国家标签 → 国家详细数据（中国有台湾专属选项）
 
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
 import LangSwitcher from '@/components/layout/LangSwitcher';
 
-// ── 登陆站名称中文翻译表 ──────────────────────────────────────────
-const STATION_NAME_ZH: Record<string, string> = {
+// ── 登陆站名称翻译表 ──────────────────────────────────────────────
+const STATION_ZH: Record<string, string> = {
   // 中国大陆
   'Shanghai': '上海', 'Qingdao': '青岛', 'Chongming': '崇明',
   'Nansha': '南沙', 'Shantou': '汕头', 'Fuzhou': '福州',
@@ -18,68 +18,57 @@ const STATION_NAME_ZH: Record<string, string> = {
   'Yangjiang': '阳江', 'Zhanjiang': '湛江', 'Haikou': '海口',
   'Sanya': '三亚', 'Tianjin': '天津', 'Dalian': '大连',
   'Qinhuangdao': '秦皇岛', 'Weihai': '威海', 'Chengmai': '澄迈',
-  'Chongqing': '重庆', 'Guangzhou': '广州', 'Shenzhen': '深圳',
-  'Zhuhai': '珠海', 'Beihai': '北海', 'Nanjing': '南京',
-  'Hangzhou': '杭州', 'Ningbo': '宁波', 'Nantong': '南通',
+  'Guangzhou': '广州', 'Shenzhen': '深圳', 'Zhuhai': '珠海',
+  'Beihai': '北海', 'Ningbo': '宁波', 'Nantong': '南通',
   // 中国香港
   'Hong Kong': '香港', 'Tseung Kwan O': '将军澳', 'Tai Po': '大埔',
   'Chung Hom Kok': '舂坎角', 'Lantau': '大屿山',
   // 中国台湾
   'Tamsui': '淡水', 'Fangshan': '枋山', 'Toucheng': '头城',
-  'Chiayi': '嘉义', 'Danshui': '淡水', 'Keelung': '基隆',
-  'Taipei': '台北', 'Kaohsiung': '高雄', 'Tainan': '台南',
+  'Chiayi': '嘉义', 'Keelung': '基隆', 'Kaohsiung': '高雄', 'Tainan': '台南',
   // 中国澳门
   'Macao': '澳门', 'Macau': '澳门',
   // 日本
   'Shima': '志摩', 'Okinawa': '冲绳', 'Fukuoka': '福冈',
-  'Chikura': '千倉', 'Ajigaura': '阿字ケ浦', 'Kitaibaraki': '北茨城',
-  'Maruyama': '丸山', 'Miyazaki': '宫崎', 'Shibushi': '志布志',
-  'Ninomiya': '二宫', 'Tokai': '东海', 'Makurazaki': '枕崎',
-  'Shizuoka': '静冈', 'Hamada': '浜田', 'Tokyo': '东京',
-  'Osaka': '大阪', 'Naha': '那霸', 'Tanegashima': '种子岛',
+  'Chikura': '千倉', 'Miyazaki': '宫崎', 'Shibushi': '志布志',
+  'Ninomiya': '二宫', 'Tokyo': '东京', 'Osaka': '大阪', 'Naha': '那霸',
+  'Kitaibaraki': '北茨城', 'Hamada': '浜田', 'Maruyama': '丸山',
   // 韩国
   'Busan': '釜山', 'Geoje': '巨济', 'Taean': '泰安',
   'Yangyang': '襄阳', 'Seoul': '首尔', 'Incheon': '仁川',
   // 新加坡
   'Singapore': '新加坡', 'Changi': '樟宜', 'Tuas': '大士',
   // 美国
-  'Los Angeles': '洛杉矶', 'San Luis Obispo': '圣路易斯奥比斯波',
-  'Grover Beach': '格罗弗海滩', 'Morro Bay': '莫罗湾',
-  'San Francisco': '旧金山', 'Seattle': '西雅图',
-  'Honolulu': '檀香山', 'Jacksonville': '杰克逊维尔',
-  'Miami': '迈阿密', 'New York': '纽约',
-  'Virginia Beach': '弗吉尼亚海滩', 'San Jose': '圣何塞',
-  'Portland': '波特兰', 'Astoria': '阿斯托里亚',
-  // 太平洋岛屿
-  'Guam': '关岛', 'Hawaii': '夏威夷', 'Midway': '中途岛',
-  'Pohnpei': '波纳佩', 'Majuro': '马朱罗',
+  'Los Angeles': '洛杉矶', 'San Francisco': '旧金山', 'Seattle': '西雅图',
+  'Honolulu': '檀香山', 'Miami': '迈阿密', 'New York': '纽约',
+  'Virginia Beach': '弗吉尼亚海滩', 'Morro Bay': '莫罗湾',
+  'Grover Beach': '格罗弗海滩', 'Jacksonville': '杰克逊维尔',
+  // 太平洋
+  'Guam': '关岛', 'Hawaii': '夏威夷',
   // 东南亚
   'Manila': '马尼拉', 'Bangkok': '曼谷', 'Cebu': '宿务',
-  'Mumbai': '孟买', 'Chennai': '金奈', 'Colombo': '科伦坡',
-  'Karachi': '卡拉奇', 'Kuala Lumpur': '吉隆坡',
   'Jakarta': '雅加达', 'Surabaya': '泗水', 'Batam': '巴淡岛',
-  'Medan': '棉兰', 'Makassar': '望加锡', 'Manado': '万鸦老',
-  'Ho Chi Minh City': '胡志明市', 'Hanoi': '河内', 'Da Nang': '岘港',
-  'Vung Tau': '头顿', 'Penang': '槟城', 'Kota Kinabalu': '哥打基纳巴卢',
+  'Medan': '棉兰', 'Ho Chi Minh City': '胡志明市', 'Hanoi': '河内',
+  'Da Nang': '岘港', 'Vung Tau': '头顿', 'Penang': '槟城',
+  'Kuala Lumpur': '吉隆坡', 'Kota Kinabalu': '哥打基纳巴卢',
   'Phnom Penh': '金边', 'Yangon': '仰光',
   // 南亚
-  'Dhaka': '达卡', 'Chittagong': '吉大港', 'Male': '马累',
+  'Mumbai': '孟买', 'Chennai': '金奈', 'Colombo': '科伦坡',
+  'Karachi': '卡拉奇', 'Dhaka': '达卡', 'Male': '马累',
   // 中东
-  'Dubai': '迪拜', 'Abu Dhabi': '阿布扎比', 'Oman': '阿曼',
+  'Dubai': '迪拜', 'Abu Dhabi': '阿布扎比',
   'Muscat': '马斯喀特', 'Fujairah': '富查伊拉',
   'Jeddah': '吉达', 'Kuwait City': '科威特城', 'Doha': '多哈',
   'Djibouti': '吉布提', 'Aden': '亚丁', 'Suez': '苏伊士',
   'Cairo': '开罗', 'Alexandria': '亚历山大',
   // 欧洲
-  'London': '伦敦', 'Paris': '巴黎', 'Frankfurt': '法兰克福',
-  'Amsterdam': '阿姆斯特丹', 'Marseille': '马赛',
-  'Lisbon': '里斯本', 'Madrid': '马德里', 'Barcelona': '巴塞罗那',
-  'Rome': '罗马', 'Milan': '米兰', 'Athens': '雅典',
+  'London': '伦敦', 'Paris': '巴黎', 'Amsterdam': '阿姆斯特丹',
+  'Marseille': '马赛', 'Lisbon': '里斯本', 'Madrid': '马德里',
+  'Barcelona': '巴塞罗那', 'Rome': '罗马', 'Athens': '雅典',
   'Istanbul': '伊斯坦布尔', 'Dublin': '都柏林',
   // 非洲
   'Cape Town': '开普敦', 'Lagos': '拉各斯', 'Nairobi': '内罗毕',
-  'Dar es Salaam': '达累斯萨拉姆', 'Mombasa': '蒙巴萨',
-  'Accra': '阿克拉', 'Dakar': '达喀尔',
+  'Mombasa': '蒙巴萨', 'Accra': '阿克拉', 'Dakar': '达喀尔',
   // 大洋洲
   'Sydney': '悉尼', 'Melbourne': '墨尔本', 'Perth': '珀斯',
   'Auckland': '奥克兰', 'Suva': '苏瓦',
@@ -87,33 +76,45 @@ const STATION_NAME_ZH: Record<string, string> = {
   'Sao Paulo': '圣保罗', 'Rio de Janeiro': '里约热内卢',
   'Buenos Aires': '布宜诺斯艾利斯', 'Santiago': '圣地亚哥',
   'Lima': '利马', 'Bogota': '波哥大', 'Panama City': '巴拿马城',
-  'San Juan': '圣胡安', 'Kingston': '金斯敦',
-  'Havana': '哈瓦那', 'Toronto': '多伦多', 'Vancouver': '温哥华',
-  'Mexico City': '墨西哥城', 'Cancun': '坎昆',
+  'Toronto': '多伦多', 'Vancouver': '温哥华', 'Mexico City': '墨西哥城',
 };
 
-function translateStation(name: string, zh: boolean): string {
+function stationName(name: string, zh: boolean): string {
   if (!zh) return name;
-  if (STATION_NAME_ZH[name]) return STATION_NAME_ZH[name];
-  for (const [en, zhName] of Object.entries(STATION_NAME_ZH)) {
-    if (name.startsWith(en + ',') || name.startsWith(en + ' (')) {
-      return name.replace(en, zhName);
-    }
+  if (STATION_ZH[name]) return STATION_ZH[name];
+  for (const [en, zhName] of Object.entries(STATION_ZH)) {
+    if (name.startsWith(en + ',') || name.startsWith(en + ' (')) return name.replace(en, zhName);
   }
   return name;
 }
 
-// ── 类型定义 ─────────────────────────────────────────────────────
-interface CountryOption {
-  code: string; nameEn: string; nameZh: string;
-  stationCount: number; isGroup: boolean;
+// ── 数字滚动动画 Hook ─────────────────────────────────────────────
+function useCountUp(target: number, duration = 1800, start = false) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!start || target === 0) return;
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(target * eased));
+      if (progress >= 1) clearInterval(timer);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [target, duration, start]);
+  return count;
 }
 
+// ── 类型定义 ──────────────────────────────────────────────────────
+interface CountryOption {
+  code: string; nameEn: string; nameZh: string;
+  stationCount: number; isGroup?: boolean;
+}
 interface StationInCountry {
   id: string; name: string; countryCode: string;
   regionLabel: string | null; latitude: number; longitude: number;
 }
-
 interface CableData {
   id: string; name: string; slug: string; status: string;
   lengthKm: number | null; rfsDate: string | null;
@@ -123,13 +124,11 @@ interface CableData {
   countries: string[]; totalStations: number;
   type: 'international' | 'domestic' | 'branch';
 }
-
 interface StationData {
   id: string; name: string; countryCode: string;
   regionLabel: string | null; latitude: number; longitude: number;
   cableCount: number; cables: { name: string; slug: string }[];
 }
-
 interface AnalysisData {
   country: { code: string; nameEn: string; nameZh: string };
   summary: {
@@ -162,134 +161,153 @@ const REGION_COLORS: Record<string, string> = {
   '中国澳门': '#10B981', '中国台湾': '#F59E0B',
 };
 
+// 推荐国家（首屏快速入口）
+const FEATURED_COUNTRIES = [
+  { code: 'CN', flag: '🇨🇳', labelZh: '中国', labelEn: 'China' },
+  { code: 'US', flag: '🇺🇸', labelZh: '美国', labelEn: 'United States' },
+  { code: 'JP', flag: '🇯🇵', labelZh: '日本', labelEn: 'Japan' },
+  { code: 'SG', flag: '🇸🇬', labelZh: '新加坡', labelEn: 'Singapore' },
+  { code: 'GB', flag: '🇬🇧', labelZh: '英国', labelEn: 'United Kingdom' },
+  { code: 'AU', flag: '🇦🇺', labelZh: '澳大利亚', labelEn: 'Australia' },
+  { code: 'IN', flag: '🇮🇳', labelZh: '印度', labelEn: 'India' },
+  { code: 'DE', flag: '🇩🇪', labelZh: '德国', labelEn: 'Germany' },
+];
+
 // ── CSV 导出 ──────────────────────────────────────────────────────
 function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
   const zh = locale === 'zh';
+  const isChinaGroup = data.country.code === 'CHINA' || data.country.code === 'CN_GROUP';
   const countryName = zh ? data.country.nameZh : data.country.nameEn;
-  const isChinaGroup = data.country.code === 'CHINA';
 
   const cableHeaders = zh
-    ? ['海缆名称', '类型', '状态', '长度(km)', '投产年份', '设计容量(Tbps)', '光纤对数', '建造商', '运营商', '运营商数量', '本地登陆站', ...(isChinaGroup ? ['所属地区'] : []), '覆盖国家数', '总登陆站数']
-    : ['Cable Name', 'Type', 'Status', 'Length (km)', 'RFS Year', 'Capacity (Tbps)', 'Fiber Pairs', 'Vendor', 'Owners', 'Owner Count', 'Local Stations', ...(isChinaGroup ? ['Region'] : []), 'Country Count', 'Total Stations'];
+    ? ['海缆名称', '类型', '状态', '长度(km)', '投产年份', '容量(Tbps)', '光纤对数', '建造商', '运营商', '本地登陆站', ...(isChinaGroup ? ['所属地区'] : []), '覆盖国家数']
+    : ['Cable Name', 'Type', 'Status', 'Length (km)', 'RFS Year', 'Capacity (Tbps)', 'Fiber Pairs', 'Vendor', 'Owners', 'Local Stations', ...(isChinaGroup ? ['Region'] : []), 'Country Count'];
 
   const cableRows = data.cables.map(c => [
     c.name,
-    zh ? TYPE_LABELS[c.type].zh : TYPE_LABELS[c.type].en,
-    zh ? (STATUS_LABELS[c.status]?.zh || c.status) : (STATUS_LABELS[c.status]?.en || c.status),
+    zh ? TYPE_LABELS[c.type]?.zh : TYPE_LABELS[c.type]?.en,
+    zh ? STATUS_LABELS[c.status]?.zh : STATUS_LABELS[c.status]?.en,
     c.lengthKm ?? '',
     c.rfsDate ? new Date(c.rfsDate).getFullYear() : '',
     c.designCapacityTbps ?? '',
     c.fiberPairs ?? '',
     c.vendor ?? '',
     c.owners.join(' / '),
-    c.ownerCount,
-    c.stationsInCountry.map(s => zh ? translateStation(s.name, true) : s.name).join(' / '),
+    c.stationsInCountry.map(s => stationName(s.name, zh)).join(' / '),
     ...(isChinaGroup ? [[...new Set(c.stationsInCountry.map(s => s.regionLabel).filter(Boolean))].join(' / ')] : []),
     c.countries.length,
-    c.totalStations,
   ]);
 
   const stationHeaders = zh
-    ? ['登陆站名称', ...(isChinaGroup ? ['所属地区'] : []), '国家代码', '纬度', '经度', '接入海缆数', '接入海缆列表']
-    : ['Station Name', ...(isChinaGroup ? ['Region'] : []), 'Code', 'Latitude', 'Longitude', 'Cable Count', 'Cable List'];
+    ? ['登陆站名称', ...(isChinaGroup ? ['所属地区'] : []), '国家代码', '纬度', '经度', '接入海缆数']
+    : ['Station Name', ...(isChinaGroup ? ['Region'] : []), 'Code', 'Lat', 'Lng', 'Cables'];
 
   const stationRows = data.stations.map(s => [
-    zh ? translateStation(s.name, true) : s.name,
+    stationName(s.name, zh),
     ...(isChinaGroup ? [s.regionLabel || s.countryCode] : []),
-    s.countryCode,
-    s.latitude.toFixed(4),
-    s.longitude.toFixed(4),
-    s.cableCount,
-    s.cables.map(c => c.name).join(' / '),
+    s.countryCode, s.latitude.toFixed(4), s.longitude.toFixed(4), s.cableCount,
   ]);
 
-  const breakdownRows = isChinaGroup && data.summary.breakdown ? (zh ? [
-    ['地区细分'],
-    ['中国大陆 (CN)', data.summary.breakdown.CN, '个登陆站'],
-    ['中国香港 (HK)', data.summary.breakdown.HK, '个登陆站'],
-    ['中国澳门 (MO)', data.summary.breakdown.MO, '个登陆站'],
-    ['中国台湾 (TW)', data.summary.breakdown.TW, '个登陆站'],
-    [],
-  ] : [
-    ['Regional Breakdown'],
-    ['Mainland China (CN)', data.summary.breakdown.CN, 'stations'],
-    ['Hong Kong (HK)',       data.summary.breakdown.HK, 'stations'],
-    ['Macao (MO)',           data.summary.breakdown.MO, 'stations'],
-    ['Taiwan (TW)',          data.summary.breakdown.TW, 'stations'],
-    [],
-  ]) : [];
-
-  const summaryRows = zh ? [
-    ['国家/地区', countryName],
-    ['导出时间', new Date().toLocaleString('zh-CN')],
-    ['数据来源', 'TeleGeography · Deep Blue'],
-    [],
-    ['📊 统计摘要'],
-    ['总海缆数', data.summary.totalCables],
-    ['国际海缆', data.summary.internationalCables],
-    ['国内线', data.summary.domesticCables],
-    ['支线接入', data.summary.branchCables],
-    ['总登陆站数', data.summary.totalStations],
-    [],
-    ...breakdownRows,
-    ['📡 海缆明细'],
-    cableHeaders,
-    ...cableRows,
-    [],
-    ['🏖️ 登陆站明细'],
-    stationHeaders,
-    ...stationRows,
-  ] : [
-    ['Country / Region', countryName],
-    ['Export Date', new Date().toLocaleString('en-US')],
-    ['Data Source', 'TeleGeography · Deep Blue'],
-    [],
-    ['📊 Summary'],
-    ['Total Cables', data.summary.totalCables],
-    ['International', data.summary.internationalCables],
-    ['Domestic', data.summary.domesticCables],
-    ['Branch Access', data.summary.branchCables],
-    ['Total Stations', data.summary.totalStations],
-    [],
-    ...breakdownRows,
-    ['📡 Cable Details'],
-    cableHeaders,
-    ...cableRows,
-    [],
-    ['🏖️ Landing Stations'],
-    stationHeaders,
-    ...stationRows,
+  const rows = [
+    [zh ? '国家/地区' : 'Country', countryName],
+    [zh ? '导出时间' : 'Exported', new Date().toLocaleString(zh ? 'zh-CN' : 'en-US')],
+    ['Deep Blue', 'deep-cloud.org'], [],
+    [zh ? '📊 统计' : '📊 Summary'],
+    [zh ? '总海缆' : 'Total Cables', data.summary.totalCables],
+    [zh ? '总登陆站' : 'Stations', data.summary.totalStations],
+    [zh ? '国际海缆' : 'International', data.summary.internationalCables],
+    [zh ? '国内线' : 'Domestic', data.summary.domesticCables],
+    [zh ? '支线' : 'Branch', data.summary.branchCables],
+    [], [zh ? '📡 海缆' : '📡 Cables'], cableHeaders, ...cableRows,
+    [], [zh ? '🏖️ 登陆站' : '🏖️ Stations'], stationHeaders, ...stationRows,
   ];
 
-  const csvContent = summaryRows.map(row =>
-    (row as any[]).map(cell => {
-      const str = String(cell ?? '');
-      return str.includes(',') || str.includes('"') || str.includes('\n')
-        ? `"${str.replace(/"/g, '""')}"` : str;
-    }).join(',')
-  ).join('\n');
+  const csv = rows.map(r => (r as any[]).map(c => {
+    const s = String(c ?? '');
+    return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
+  }).join(',')).join('\n');
 
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `deep-blue-${data.country.code}-${locale}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `deep-blue-${data.country.code}-${locale}-${new Date().toISOString().slice(0, 10)}.csv`,
+  });
   a.click();
-  URL.revokeObjectURL(url);
 }
 
-// ── 统计卡片 ─────────────────────────────────────────────────────
-function StatCard({ number, label, color, sub }: { number: number; label: string; color: string; sub?: string }) {
+// ── 全局统计英雄区 ────────────────────────────────────────────────
+function HeroStats({ zh, onStart }: { zh: boolean; onStart: boolean }) {
+  const cables    = useCountUp(690,  1600, onStart);
+  const countries = useCountUp(160,  1400, onStart);
+  const stations  = useCountUp(1907, 1800, onStart);
+  const lengthKm  = useCountUp(1300000, 2000, onStart); // 约130万公里
+
+  const stats = [
+    {
+      value: cables,
+      label: zh ? '全球海缆总数' : 'Submarine Cables',
+      unit: '',
+      color: '#2A9D8F',
+      icon: '🔌',
+      desc: zh ? '覆盖全球各大洲与大洋' : 'Spanning every ocean and continent',
+    },
+    {
+      value: countries,
+      label: zh ? '覆盖国家与地区' : 'Countries & Territories',
+      unit: '+',
+      color: '#3B82F6',
+      icon: '🌍',
+      desc: zh ? '海缆登陆的主权国家和地区' : 'Sovereign nations with landing stations',
+    },
+    {
+      value: stations,
+      label: zh ? '全球登陆站数' : 'Landing Stations',
+      unit: '',
+      color: '#E9C46A',
+      icon: '📡',
+      desc: zh ? '海缆接触陆地的物理节点' : 'Where cables come ashore',
+    },
+    {
+      value: Math.round(lengthKm / 10000),
+      label: zh ? '总铺设里程' : 'Total Cable Length',
+      unit: zh ? '万 km' : 'M km',
+      color: '#8B5CF6',
+      icon: '📏',
+      desc: zh ? '约为地球到月球距离的3倍' : 'About 3× Earth-Moon distance',
+    },
+  ];
+
   return (
-    <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, border: `1px solid ${color}30`, padding: '20px 24px', flex: 1, minWidth: 150 }}>
-      <div style={{ fontSize: 32, fontWeight: 800, color, lineHeight: 1 }}>{number}</div>
-      <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 6 }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: '#4B5563', marginTop: 4 }}>{sub}</div>}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 40 }}>
+      {stats.map((s, i) => (
+        <div key={i} style={{
+          backgroundColor: 'rgba(255,255,255,0.03)',
+          border: `1px solid ${s.color}25`,
+          borderRadius: 16, padding: '24px 20px',
+          position: 'relative', overflow: 'hidden',
+          transition: 'transform 0.2s, border-color 0.2s',
+        }}
+          onMouseOver={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.borderColor = `${s.color}50`; }}
+          onMouseOut={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.borderColor = `${s.color}25`; }}
+        >
+          {/* 背景光晕 */}
+          <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', backgroundColor: s.color, opacity: 0.06, filter: 'blur(20px)' }} />
+          <div style={{ fontSize: 24, marginBottom: 12 }}>{s.icon}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
+            <span style={{ fontSize: 36, fontWeight: 800, color: s.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+              {s.value.toLocaleString()}
+            </span>
+            {s.unit && <span style={{ fontSize: 14, fontWeight: 600, color: s.color }}>{s.unit}</span>}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', marginBottom: 4 }}>{s.label}</div>
+          <div style={{ fontSize: 11, color: '#4B5563', lineHeight: 1.5 }}>{s.desc}</div>
+        </div>
+      ))}
     </div>
   );
 }
 
-// ── 主内容 ───────────────────────────────────────────────────────
+// ── 主内容 ────────────────────────────────────────────────────────
 function CountryContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -297,14 +315,30 @@ function CountryContent() {
   const zh = locale === 'zh';
 
   const [countries, setCountries] = useState<CountryOption[]>([]);
-  const [selectedCode, setSelectedCode] = useState(searchParams.get('code') || 'CHINA');
+  const [selectedCode, setSelectedCode] = useState<string | null>(searchParams.get('code') || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [data, setData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'cables' | 'stations'>('cables');
   const [typeFilter, setTypeFilter] = useState<'all' | 'international' | 'domestic' | 'branch'>('all');
   const [exporting, setExporting] = useState(false);
+  const [heroStarted, setHeroStarted] = useState(false);
+  // 中国专属：是否包含台湾
+  const [includeTaiwan, setIncludeTaiwan] = useState(false);
 
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  // 触发英雄区数字动画（进入视口时开始）
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setHeroStarted(true); },
+      { threshold: 0.3 }
+    );
+    if (heroRef.current) observer.observe(heroRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // 加载国家列表
   useEffect(() => {
     fetch('/api/analysis/country', { method: 'POST' })
       .then(r => r.json())
@@ -312,15 +346,21 @@ function CountryContent() {
       .catch(() => {});
   }, []);
 
+  // 加载分析数据
   useEffect(() => {
     if (!selectedCode) return;
     setLoading(true); setData(null);
-    fetch(`/api/analysis/country?code=${selectedCode}`)
+    // 中国时根据台湾勾选状态决定请求哪个 code
+    const code = selectedCode === 'CN' ? (includeTaiwan ? 'CN_WITH_TW' : 'CN') : selectedCode;
+    fetch(`/api/analysis/country?code=${code}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
     router.replace(`/country?code=${selectedCode}`);
-  }, [selectedCode]);
+  }, [selectedCode, includeTaiwan]);
+
+  const isChinaSelected = selectedCode === 'CN';
+  const isChinaGroup = data?.country.code?.startsWith('CN') || false;
 
   const filteredCables = data?.cables.filter(c =>
     typeFilter === 'all' ? true : c.type === typeFilter
@@ -328,11 +368,9 @@ function CountryContent() {
 
   const filteredCountries = countries.filter(c =>
     c.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.nameZh.includes(searchQuery) ||
+    c.nameZh?.includes(searchQuery) ||
     c.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const isChinaGroup = data?.country.code === 'CHINA';
 
   const handleExport = (exportLocale: 'zh' | 'en') => {
     if (!data) return;
@@ -340,18 +378,34 @@ function CountryContent() {
     setTimeout(() => { exportCSV(data, exportLocale); setExporting(false); }, 100);
   };
 
+  const selectCountry = (code: string) => {
+    setSelectedCode(code);
+    setTypeFilter('all');
+    setActiveTab('cables');
+    if (code !== 'CN') setIncludeTaiwan(false);
+    // 平滑滚动到数据区
+    setTimeout(() => {
+      document.getElementById('data-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0D1B2A', color: '#EDF2F7' }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+      `}</style>
 
       {/* 导航栏 */}
-      <nav style={{ height: 56, backgroundColor: 'rgba(13,27,42,0.95)', borderBottom: '1px solid rgba(42,157,143,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: 0, zIndex: 50 }}>
+      <nav style={{ height: 56, backgroundColor: 'rgba(13,27,42,0.97)', borderBottom: '1px solid rgba(42,157,143,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(12px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/icons/deep-blue-icon.png" alt="Deep Blue" style={{ width: 28, height: 28, borderRadius: 5 }} />
             <span style={{ fontSize: 15, fontWeight: 700, color: '#EDF2F7' }}>DEEP BLUE</span>
           </a>
-          <span style={{ fontSize: 12, color: '#2A9D8F', padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(42,157,143,0.08)', border: '1px solid rgba(42,157,143,0.2)' }}>
-            {zh ? '🌏 国家海缆分析' : '🌏 Country Cable Analysis'}
+          <span style={{ fontSize: 11, color: '#2A9D8F', padding: '3px 8px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.08)', border: '1px solid rgba(42,157,143,0.2)', fontWeight: 600, letterSpacing: 0.5 }}>
+            {zh ? '国家海缆分析' : 'Country Analysis'}
           </span>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -360,252 +414,285 @@ function CountryContent() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 24px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
 
-        {/* 国家选择器 */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1.5 }}>
-            {zh ? '选择国家 / 地区' : 'Select Country / Region'}
+        {/* ── 页面标题 ── */}
+        <div style={{ marginBottom: 36, animation: 'fadeInUp 0.5s ease' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#EDF2F7', margin: '0 0 8px', lineHeight: 1.3 }}>
+            {zh ? '全球海缆国家分析' : 'Global Cable Country Analysis'}
+          </h1>
+          <p style={{ fontSize: 14, color: '#6B7280', margin: 0, lineHeight: 1.6 }}>
+            {zh
+              ? '探索全球 690 条海缆的分布格局，按国家维度查看登陆站、海缆类型与连接关系，支持中英文数据导出。'
+              : 'Explore the distribution of 690+ submarine cables. View landing stations, cable types and connectivity by country, with CSV export.'
+            }
+          </p>
+        </div>
+
+        {/* ── 全球统计英雄区 ── */}
+        <div ref={heroRef}>
+          <HeroStats zh={zh} onStart={heroStarted} />
+        </div>
+
+        {/* ── 推荐国家快速入口 ── */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+            {zh ? '快速选择' : 'Quick Select'}
           </div>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {FEATURED_COUNTRIES.map(c => (
+              <button key={c.code} onClick={() => selectCountry(c.code)} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 16px', borderRadius: 10, cursor: 'pointer',
+                border: `1px solid ${selectedCode === c.code ? 'rgba(42,157,143,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                backgroundColor: selectedCode === c.code ? 'rgba(42,157,143,0.12)' : 'rgba(255,255,255,0.03)',
+                color: selectedCode === c.code ? '#2A9D8F' : '#9CA3AF',
+                fontSize: 13, fontWeight: selectedCode === c.code ? 700 : 400,
+                transition: 'all 0.2s',
+              }}
+                onMouseOver={e => { if (selectedCode !== c.code) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; (e.currentTarget as HTMLElement).style.color = '#EDF2F7'; } }}
+                onMouseOut={e => { if (selectedCode !== c.code) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#9CA3AF'; } }}
+              >
+                <span style={{ fontSize: 18 }}>{c.flag}</span>
+                <span>{zh ? c.labelZh : c.labelEn}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-            {/* 搜索框 */}
-            <div style={{ position: 'relative', minWidth: 320 }}>
-              <input type="text"
-                placeholder={zh ? '搜索国家名称、代码，或输入"中国"...' : 'Search country name or code...'}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{ width: '100%', height: 44, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(42,157,143,0.3)', padding: '0 14px', color: '#EDF2F7', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-              />
-              {searchQuery && filteredCountries.length > 0 && (
-                <div style={{ position: 'absolute', top: 48, left: 0, right: 0, backgroundColor: 'rgba(13,27,42,0.98)', backdropFilter: 'blur(16px)', border: '1px solid rgba(42,157,143,0.2)', borderRadius: 10, maxHeight: 300, overflowY: 'auto', zIndex: 100, boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}>
-                  {filteredCountries.slice(0, 20).map(c => (
-                    <div key={c.code}
-                      onClick={() => { setSelectedCode(c.code); setSearchQuery(''); }}
-                      style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.04)', backgroundColor: selectedCode === c.code ? 'rgba(42,157,143,0.1)' : 'transparent', transition: 'background-color 0.15s' }}
-                      onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.08)')}
-                      onMouseOut={e => (e.currentTarget.style.backgroundColor = selectedCode === c.code ? 'rgba(42,157,143,0.1)' : 'transparent')}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {c.isGroup && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, backgroundColor: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>聚合</span>}
-                        <span style={{ fontSize: 13, color: '#EDF2F7', fontWeight: c.isGroup ? 700 : 500 }}>
-                          {zh ? c.nameZh : c.nameEn}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 10, color: '#4B5563' }}>{c.isGroup ? '' : c.code}</span>
-                        <span style={{ fontSize: 10, color: '#2A9D8F' }}>{c.stationCount} {zh ? '站' : 'stn'}</span>
-                      </div>
+        {/* ── 搜索所有国家 ── */}
+        <div style={{ marginBottom: 40 }}>
+          <div style={{ position: 'relative', maxWidth: 440 }}>
+            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#4B5563', pointerEvents: 'none' }}>🔍</span>
+            <input type="text"
+              placeholder={zh ? '搜索任意国家名称或代码...' : 'Search any country name or code...'}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{ width: '100%', height: 44, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '0 14px 0 40px', color: '#EDF2F7', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(42,157,143,0.4)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+            />
+            {searchQuery && filteredCountries.length > 0 && (
+              <div style={{ position: 'absolute', top: 48, left: 0, right: 0, backgroundColor: 'rgba(10,17,34,0.99)', backdropFilter: 'blur(16px)', border: '1px solid rgba(42,157,143,0.2)', borderRadius: 10, maxHeight: 280, overflowY: 'auto', zIndex: 100, boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }}>
+                {filteredCountries.slice(0, 15).map(c => (
+                  <div key={c.code}
+                    onClick={() => { selectCountry(c.code); setSearchQuery(''); }}
+                    style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background-color 0.15s' }}
+                    onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.08)')}
+                    onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <span style={{ fontSize: 13, color: '#EDF2F7' }}>{zh ? (c.nameZh || c.nameEn) : c.nameEn}</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span style={{ fontSize: 10, color: '#4B5563', fontFamily: 'monospace' }}>{c.code}</span>
+                      <span style={{ fontSize: 10, color: '#2A9D8F' }}>{c.stationCount} {zh ? '站' : 'stn'}</span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 当前选中国家 — 只显示名称，不显示聚合说明 */}
-            {data && (
-              <div style={{ padding: '10px 20px', borderRadius: 10, backgroundColor: isChinaGroup ? 'rgba(239,68,68,0.08)' : 'rgba(42,157,143,0.1)', border: `1px solid ${isChinaGroup ? 'rgba(239,68,68,0.3)' : 'rgba(42,157,143,0.3)'}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 22 }}>🌏</span>
-                <div style={{ fontSize: 15, fontWeight: 700, color: isChinaGroup ? '#EF4444' : '#2A9D8F' }}>
-                  {zh ? data.country.nameZh : data.country.nameEn}
-                </div>
-              </div>
-            )}
-
-            {/* 导出按钮 */}
-            {data && (
-              <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                <button onClick={() => handleExport('zh')} disabled={exporting}
-                  style={{ padding: '10px 18px', borderRadius: 8, border: '1px solid rgba(42,157,143,0.3)', backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  📥 {exporting ? '导出中...' : '导出中文表格'}
-                </button>
-                <button onClick={() => handleExport('en')} disabled={exporting}
-                  style={{ padding: '10px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: '#9CA3AF', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  📥 {exporting ? 'Exporting...' : 'Export English'}
-                </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* 加载 */}
-        {loading && (
-          <div style={{ textAlign: 'center', padding: 80, color: '#6B7280' }}>
-            <div style={{ width: 36, height: 36, border: '3px solid rgba(42,157,143,0.2)', borderTopColor: '#2A9D8F', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-            <div style={{ fontSize: 14 }}>{zh ? '正在分析数据...' : 'Analyzing...'}</div>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </div>
-        )}
+        {/* ── 数据区 ── */}
+        <div id="data-section">
 
-        {data && !loading && (
-          <>
-            {/* 统计卡片 */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-              <StatCard number={data.summary.totalCables}         label={zh ? '总海缆数'   : 'Total Cables'}     color="#2A9D8F" />
-              <StatCard number={data.summary.totalStations}       label={zh ? '总登陆站数' : 'Landing Stations'}  color="#E9C46A" sub={zh ? '该国境内所有登陆点' : 'All coastal landing points'} />
-              <StatCard number={data.summary.internationalCables} label={zh ? '国际海缆'   : 'International'}     color="#06D6A0" sub={zh ? '连接其他国家' : 'Cross-border'} />
-              <StatCard number={data.summary.domesticCables}      label={zh ? '国内线'     : 'Domestic'}          color="#3B82F6" sub={isChinaGroup && zh ? '仅在大中华区内' : zh ? '仅连接本国' : 'Local only'} />
-              <StatCard number={data.summary.branchCables}        label={zh ? '支线接入'   : 'Branch Access'}     color="#8B5CF6" sub={zh ? '通过支线接入主干' : 'Via branch unit'} />
-            </div>
-
-            {/* 大中华区地区细分 */}
-            {isChinaGroup && data.summary.breakdown && (
-              <div style={{ display: 'flex', gap: 10, marginBottom: 20, padding: '14px 16px', backgroundColor: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 12, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12, color: '#6B7280', alignSelf: 'center', marginRight: 8 }}>
-                  {zh ? '登陆站地区分布：' : 'Station breakdown:'}
-                </span>
-                {[
-                  { label: zh ? '大陆' : 'Mainland', code: 'CN', count: data.summary.breakdown.CN, color: '#EF4444' },
-                  { label: zh ? '香港' : 'Hong Kong', code: 'HK', count: data.summary.breakdown.HK, color: '#3B82F6' },
-                  { label: zh ? '澳门' : 'Macao',     code: 'MO', count: data.summary.breakdown.MO, color: '#10B981' },
-                  { label: zh ? '台湾' : 'Taiwan',    code: 'TW', count: data.summary.breakdown.TW, color: '#F59E0B' },
-                ].map(r => (
-                  <div key={r.code} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, backgroundColor: `${r.color}10`, border: `1px solid ${r.color}25` }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: r.color }} />
-                    <span style={{ fontSize: 12, color: r.color, fontWeight: 600 }}>{r.label}</span>
-                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>{r.count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Tab 切换 */}
-            <div style={{ display: 'flex', marginBottom: 20, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              {[
-                { key: 'cables',   labelZh: `海缆明细 (${data.cables.length})`,   labelEn: `Cables (${data.cables.length})`    },
-                { key: 'stations', labelZh: `登陆站 (${data.stations.length})`,    labelEn: `Stations (${data.stations.length})` },
-              ].map(tab => (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ padding: '10px 20px', fontSize: 13, fontWeight: 500, color: activeTab === tab.key ? '#2A9D8F' : '#6B7280', background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab.key ? '2px solid #2A9D8F' : '2px solid transparent', transition: 'all 0.2s' }}>
-                  {zh ? tab.labelZh : tab.labelEn}
-                </button>
-              ))}
-            </div>
-
-            {/* 海缆明细 */}
-            {activeTab === 'cables' && (
-              <div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-                  {(['all', 'international', 'domestic', 'branch'] as const).map(t => (
-                    <button key={t} onClick={() => setTypeFilter(t)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', border: `1px solid ${typeFilter === t ? (t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color) : 'rgba(255,255,255,0.1)'}`, backgroundColor: typeFilter === t ? `${t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color}15` : 'rgba(255,255,255,0.03)', color: typeFilter === t ? (t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color) : '#6B7280', transition: 'all 0.15s' }}>
-                      {t === 'all'
-                        ? (zh ? `全部 (${data.cables.length})` : `All (${data.cables.length})`)
-                        : zh
-                        ? `${TYPE_LABELS[t].zh} (${data.cables.filter(c => c.type === t).length})`
-                        : `${TYPE_LABELS[t].en} (${data.cables.filter(c => c.type === t).length})`
-                      }
-                    </button>
-                  ))}
+          {/* 中国专属：台湾选项框 */}
+          {isChinaSelected && (
+            <div style={{ marginBottom: 24, padding: '16px 20px', backgroundColor: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', animation: 'fadeInUp 0.3s ease' }}>
+              <span style={{ fontSize: 13, color: '#9CA3AF', flex: 1 }}>
+                {zh
+                  ? '中国的分析默认包含大陆、香港、澳门。是否同时纳入台湾地区？'
+                  : 'China analysis includes Mainland, Hong Kong, and Macao by default. Include Taiwan?'
+                }
+              </span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flexShrink: 0 }}>
+                <div onClick={() => setIncludeTaiwan(!includeTaiwan)} style={{
+                  width: 44, height: 24, borderRadius: 12,
+                  backgroundColor: includeTaiwan ? '#2A9D8F' : 'rgba(255,255,255,0.1)',
+                  position: 'relative', cursor: 'pointer', transition: 'background-color 0.2s',
+                  border: `1px solid ${includeTaiwan ? '#2A9D8F' : 'rgba(255,255,255,0.2)'}`,
+                }}>
+                  <div style={{ position: 'absolute', top: 2, left: includeTaiwan ? 22 : 2, width: 18, height: 18, borderRadius: '50%', backgroundColor: 'white', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
                 </div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: includeTaiwan ? '#2A9D8F' : '#6B7280' }}>
+                  {zh ? (includeTaiwan ? '已包含台湾' : '不含台湾') : (includeTaiwan ? 'Taiwan included' : 'Exclude Taiwan')}
+                </span>
+              </label>
+            </div>
+          )}
 
-                <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 90px 100px 1.5fr 1.2fr', padding: '10px 16px', backgroundColor: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 1 }}>
-                    <div>{zh ? '海缆名称' : 'Cable Name'}</div>
-                    <div>{zh ? '类型' : 'Type'}</div>
-                    <div>{zh ? '状态' : 'Status'}</div>
-                    <div>{zh ? '长度' : 'Length'}</div>
-                    <div>{zh ? '本地登陆站' : 'Local Stations'}</div>
-                    <div>{zh ? '运营商' : 'Operators'}</div>
-                  </div>
+          {!selectedCode && (
+            <div style={{ textAlign: 'center', padding: '60px 0', color: '#4B5563' }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>👆</div>
+              <div style={{ fontSize: 15, color: '#6B7280' }}>
+                {zh ? '选择一个国家开始分析' : 'Select a country to begin analysis'}
+              </div>
+            </div>
+          )}
 
-                  {filteredCables.map((cable, i) => (
-                    <a key={cable.id} href={`/?cable=${cable.slug}`} style={{ textDecoration: 'none' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 90px 100px 1.5fr 1.2fr', padding: '12px 16px', borderBottom: i < filteredCables.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', transition: 'background-color 0.15s', cursor: 'pointer' }}
-                        onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.05)')}
-                        onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-                      >
-                        <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{cable.name}</div>
-                        <div>
-                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, backgroundColor: `${TYPE_LABELS[cable.type].color}15`, color: TYPE_LABELS[cable.type].color, border: `1px solid ${TYPE_LABELS[cable.type].color}30` }}>
-                            {zh ? TYPE_LABELS[cable.type].zh : TYPE_LABELS[cable.type].en}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: STATUS_COLORS[cable.status] || '#6B7280', flexShrink: 0 }} />
-                          <span style={{ fontSize: 11, color: STATUS_COLORS[cable.status] || '#6B7280' }}>
-                            {zh ? STATUS_LABELS[cable.status]?.zh : STATUS_LABELS[cable.status]?.en}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 12, color: '#9CA3AF' }}>
-                          {cable.lengthKm ? `${cable.lengthKm.toLocaleString()} km` : '—'}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#9CA3AF' }}>
-                          {cable.stationsInCountry.map((s, si) => (
-                            <span key={s.id}>
-                              {si > 0 && '、'}
-                              {translateStation(s.name, zh)}
-                              {isChinaGroup && s.regionLabel && (
-                                <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 3 }}>
-                                  ({s.regionLabel?.replace('中国', '')})
-                                </span>
-                              )}
-                            </span>
-                          ))}
-                          {cable.stationsInCountry.length === 0 && '—'}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#9CA3AF' }}>
-                          {cable.owners.slice(0, 2).join(', ')}
-                          {cable.owners.length > 2 && <span style={{ color: '#4B5563' }}> +{cable.owners.length - 2}</span>}
-                        </div>
-                      </div>
-                    </a>
-                  ))}
+          {loading && (
+            <div style={{ textAlign: 'center', padding: 80, color: '#6B7280' }}>
+              <div style={{ width: 36, height: 36, border: '3px solid rgba(42,157,143,0.2)', borderTopColor: '#2A9D8F', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+              <div style={{ fontSize: 14 }}>{zh ? '正在分析数据...' : 'Analyzing...'}</div>
+            </div>
+          )}
 
-                  {filteredCables.length === 0 && (
-                    <div style={{ padding: 32, textAlign: 'center', color: '#6B7280', fontSize: 13 }}>
-                      {zh ? '无符合条件的海缆' : 'No cables match the filter'}
+          {data && !loading && (
+            <div style={{ animation: 'fadeInUp 0.4s ease' }}>
+
+              {/* 国家标题行 + 导出 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#EDF2F7', margin: '0 0 4px' }}>
+                    {zh ? data.country.nameZh : data.country.nameEn}
+                  </h2>
+                  {isChinaGroup && data.summary.breakdown && (
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {[
+                        { label: zh ? '大陆' : 'Mainland', code: 'CN', count: data.summary.breakdown.CN, color: '#EF4444' },
+                        { label: zh ? '香港' : 'HK', code: 'HK', count: data.summary.breakdown.HK, color: '#3B82F6' },
+                        { label: zh ? '澳门' : 'MO', code: 'MO', count: data.summary.breakdown.MO, color: '#10B981' },
+                        ...(includeTaiwan ? [{ label: zh ? '台湾' : 'TW', code: 'TW', count: data.summary.breakdown.TW, color: '#F59E0B' }] : []),
+                      ].map(r => (
+                        <span key={r.code} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, backgroundColor: `${r.color}15`, color: r.color, border: `1px solid ${r.color}30` }}>
+                          {r.label} {r.count}
+                        </span>
+                      ))}
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* 登陆站明细 */}
-            {activeTab === 'stations' && (
-              <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: `2fr ${isChinaGroup ? '100px ' : ''}120px 120px 60px 3fr`, padding: '10px 16px', backgroundColor: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 1 }}>
-                  <div>{zh ? '登陆站名称' : 'Station Name'}</div>
-                  {isChinaGroup && <div>{zh ? '所属地区' : 'Region'}</div>}
-                  <div>{zh ? '纬度' : 'Latitude'}</div>
-                  <div>{zh ? '经度' : 'Longitude'}</div>
-                  <div>{zh ? '海缆数' : 'Cables'}</div>
-                  <div>{zh ? '接入海缆' : 'Cable List'}</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => handleExport('zh')} disabled={exporting}
+                    style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(42,157,143,0.3)', backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    📥 {exporting ? '...' : zh ? '导出中文' : '导出中文'}
+                  </button>
+                  <button onClick={() => handleExport('en')} disabled={exporting}
+                    style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: '#9CA3AF', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    📥 {exporting ? '...' : 'Export EN'}
+                  </button>
                 </div>
-                {data.stations.map((station, i) => (
-                  <div key={station.id} style={{ display: 'grid', gridTemplateColumns: `2fr ${isChinaGroup ? '100px ' : ''}120px 120px 60px 3fr`, padding: '12px 16px', borderBottom: i < data.stations.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                    <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>
-                      {translateStation(station.name, zh)}
-                    </div>
-                    {isChinaGroup && (
-                      <div>
-                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, backgroundColor: `${REGION_COLORS[station.regionLabel || ''] || '#6B7280'}15`, color: REGION_COLORS[station.regionLabel || ''] || '#9CA3AF' }}>
-                          {station.regionLabel?.replace('中国', '') || station.countryCode}
-                        </span>
-                      </div>
-                    )}
-                    <div style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'monospace' }}>{station.latitude.toFixed(3)}°</div>
-                    <div style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'monospace' }}>{station.longitude.toFixed(3)}°</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#2A9D8F' }}>{station.cableCount}</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {station.cables.slice(0, 3).map(c => (
-                        <a key={c.slug} href={`/?cable=${c.slug}`} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', border: '1px solid rgba(42,157,143,0.2)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                          {c.name}
-                        </a>
-                      ))}
-                      {station.cables.length > 3 && <span style={{ fontSize: 10, color: '#4B5563', padding: '2px 0' }}>+{station.cables.length - 3}</span>}
-                    </div>
+              </div>
+
+              {/* 统计卡片 */}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+                {[
+                  { n: data.summary.totalCables,         label: zh ? '总海缆数'   : 'Total Cables',     color: '#2A9D8F', icon: '🔌' },
+                  { n: data.summary.totalStations,       label: zh ? '总登陆站数' : 'Landing Stations',  color: '#E9C46A', icon: '📡' },
+                  { n: data.summary.internationalCables, label: zh ? '国际海缆'   : 'International',     color: '#06D6A0', icon: '🌐' },
+                  { n: data.summary.domesticCables,      label: zh ? '国内线'     : 'Domestic',          color: '#3B82F6', icon: '🏠' },
+                  { n: data.summary.branchCables,        label: zh ? '支线接入'   : 'Branch',            color: '#8B5CF6', icon: '⑂'  },
+                ].map((s, i) => (
+                  <div key={i} style={{ flex: '1 1 140px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, border: `1px solid ${s.color}25`, padding: '16px 18px' }}>
+                    <div style={{ fontSize: 18, marginBottom: 8 }}>{s.icon}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.n}</div>
+                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
-            )}
 
-            <div style={{ marginTop: 24, padding: '12px 16px', borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', fontSize: 11, color: '#374151', lineHeight: 1.6 }}>
-              {zh
-                ? '数据来源：TeleGeography 海底电缆地图 · 支线判断基于启发式规则（本地仅1个登陆站且总站数>4）· Deep Blue'
-                : 'Data source: TeleGeography · Branch classification: 1 local station & total stations > 4 · Deep Blue'
-              }
+              {/* Tab 切换 */}
+              <div style={{ display: 'flex', marginBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                {[
+                  { key: 'cables',   zh: `海缆 (${data.cables.length})`,   en: `Cables (${data.cables.length})`    },
+                  { key: 'stations', zh: `登陆站 (${data.stations.length})`, en: `Stations (${data.stations.length})` },
+                ].map(tab => (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ padding: '10px 20px', fontSize: 13, fontWeight: 500, color: activeTab === tab.key ? '#2A9D8F' : '#6B7280', background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab.key ? '2px solid #2A9D8F' : '2px solid transparent', transition: 'all 0.2s' }}>
+                    {zh ? tab.zh : tab.en}
+                  </button>
+                ))}
+              </div>
+
+              {/* 海缆明细 */}
+              {activeTab === 'cables' && (
+                <div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                    {(['all', 'international', 'domestic', 'branch'] as const).map(t => (
+                      <button key={t} onClick={() => setTypeFilter(t)} style={{ padding: '5px 12px', borderRadius: 16, fontSize: 11, cursor: 'pointer', border: `1px solid ${typeFilter === t ? (t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color) : 'rgba(255,255,255,0.08)'}`, backgroundColor: typeFilter === t ? `${t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color}15` : 'transparent', color: typeFilter === t ? (t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color) : '#6B7280', transition: 'all 0.15s' }}>
+                        {t === 'all' ? (zh ? `全部 (${data.cables.length})` : `All (${data.cables.length})`)
+                          : zh ? `${TYPE_LABELS[t].zh} (${data.cables.filter(c => c.type === t).length})`
+                          : `${TYPE_LABELS[t].en} (${data.cables.filter(c => c.type === t).length})`}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 90px 90px 1.5fr 1fr', padding: '10px 16px', backgroundColor: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 700, color: '#4B5563', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <div>{zh ? '海缆名称' : 'Cable'}</div>
+                      <div>{zh ? '类型' : 'Type'}</div>
+                      <div>{zh ? '状态' : 'Status'}</div>
+                      <div>{zh ? '长度' : 'Length'}</div>
+                      <div>{zh ? '本地登陆站' : 'Local Stations'}</div>
+                      <div>{zh ? '运营商' : 'Operators'}</div>
+                    </div>
+                    {filteredCables.map((cable, i) => (
+                      <a key={cable.id} href={`/?cable=${cable.slug}`} style={{ textDecoration: 'none' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 90px 90px 1.5fr 1fr', padding: '11px 16px', borderBottom: i < filteredCables.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', transition: 'background-color 0.15s' }}
+                          onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.04)')}
+                          onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{cable.name}</div>
+                          <div><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, backgroundColor: `${TYPE_LABELS[cable.type]?.color}15`, color: TYPE_LABELS[cable.type]?.color }}>{zh ? TYPE_LABELS[cable.type]?.zh : TYPE_LABELS[cable.type]?.en}</span></div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: STATUS_COLORS[cable.status] || '#6B7280', flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, color: STATUS_COLORS[cable.status] || '#6B7280' }}>{zh ? STATUS_LABELS[cable.status]?.zh : STATUS_LABELS[cable.status]?.en}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: '#9CA3AF' }}>{cable.lengthKm ? `${cable.lengthKm.toLocaleString()} km` : '—'}</div>
+                          <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                            {cable.stationsInCountry.slice(0, 2).map((s, si) => (
+                              <span key={s.id}>{si > 0 && '、'}{stationName(s.name, zh)}{isChinaGroup && s.regionLabel && <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 2 }}>({s.regionLabel.replace('中国', '')})</span>}</span>
+                            ))}
+                            {cable.stationsInCountry.length > 2 && <span style={{ color: '#4B5563' }}> +{cable.stationsInCountry.length - 2}</span>}
+                            {cable.stationsInCountry.length === 0 && '—'}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                            {cable.owners.slice(0, 1).join(', ')}
+                            {cable.owners.length > 1 && <span style={{ color: '#4B5563' }}> +{cable.owners.length - 1}</span>}
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                    {filteredCables.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: '#6B7280', fontSize: 13 }}>{zh ? '无符合条件的海缆' : 'No cables match'}</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* 登陆站明细 */}
+              {activeTab === 'stations' && (
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: `2fr ${isChinaGroup ? '90px ' : ''}110px 110px 50px 3fr`, padding: '10px 16px', backgroundColor: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 700, color: '#4B5563', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <div>{zh ? '登陆站名称' : 'Station'}</div>
+                    {isChinaGroup && <div>{zh ? '地区' : 'Region'}</div>}
+                    <div>{zh ? '纬度' : 'Lat'}</div>
+                    <div>{zh ? '经度' : 'Lng'}</div>
+                    <div>{zh ? '缆数' : 'Cables'}</div>
+                    <div>{zh ? '接入海缆' : 'Cable List'}</div>
+                  </div>
+                  {data.stations.map((station, i) => (
+                    <div key={station.id} style={{ display: 'grid', gridTemplateColumns: `2fr ${isChinaGroup ? '90px ' : ''}110px 110px 50px 3fr`, padding: '11px 16px', borderBottom: i < data.stations.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                      <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{stationName(station.name, zh)}</div>
+                      {isChinaGroup && (
+                        <div><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 5px', borderRadius: 4, backgroundColor: `${REGION_COLORS[station.regionLabel || ''] || '#6B7280'}15`, color: REGION_COLORS[station.regionLabel || ''] || '#9CA3AF' }}>{station.regionLabel?.replace('中国', '') || station.countryCode}</span></div>
+                      )}
+                      <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'monospace' }}>{station.latitude.toFixed(3)}°</div>
+                      <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'monospace' }}>{station.longitude.toFixed(3)}°</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#2A9D8F' }}>{station.cableCount}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {station.cables.slice(0, 3).map(c => (
+                          <a key={c.slug} href={`/?cable=${c.slug}`} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', border: '1px solid rgba(42,157,143,0.15)', textDecoration: 'none', whiteSpace: 'nowrap' }}>{c.name}</a>
+                        ))}
+                        {station.cables.length > 3 && <span style={{ fontSize: 10, color: '#4B5563' }}>+{station.cables.length - 3}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ marginTop: 20, fontSize: 11, color: '#374151', lineHeight: 1.6 }}>
+                {zh ? '数据来源：TeleGeography · 支线判断：本地仅1站且总站>4 · Deep Blue' : 'Source: TeleGeography · Branch: 1 local station & total > 4 · Deep Blue'}
+              </div>
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
