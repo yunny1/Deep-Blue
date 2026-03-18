@@ -382,7 +382,7 @@ export default function MobileUI() {
           { key: '2d', label: '2D' },
         ].map(opt => (
           <button key={opt.key} onClick={() => setViewMode(opt.key as '3d' | '2d')} style={{
-            padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+            padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
             backgroundColor: viewMode === opt.key ? 'rgba(42,157,143,0.9)' : 'rgba(13,27,42,0.85)',
             color: viewMode === opt.key ? 'white' : '#9CA3AF',
             fontSize: 12, fontWeight: 600,
