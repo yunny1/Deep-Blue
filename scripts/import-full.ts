@@ -5,6 +5,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { Redis } from '@upstash/redis';
+import { getCountryCode, validateCountryCode } from '../src/lib/countryCodeMap';
 
 const prisma = new PrismaClient();
 
@@ -203,7 +204,7 @@ async function main() {
 
       if (detail.landing_points) {
         for (const lp of detail.landing_points) {
-          const cc = countryToCode(lp.country || '');
+          const cc = validateCountryCode(getCountryCode(lp.country || ''), lp.name || '');
           allCountries.add(cc);
           const coords = lpCoords.get(lp.id) || { lat: 0, lng: 0 };
           allLandingStations.set(lp.id, { name: lp.name || 'Unknown', country: cc, lat: coords.lat, lng: coords.lng });
