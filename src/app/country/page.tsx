@@ -39,8 +39,7 @@ const STATION_NAME_ZH: Record<string, string> = {
   'Osaka': '大阪', 'Naha': '那霸', 'Tanegashima': '种子岛',
   // 韩国
   'Busan': '釜山', 'Geoje': '巨济', 'Taean': '泰安',
-  'Yangyang': '襄阳', 'Keoje': '巨济', 'Seoul': '首尔',
-  'Incheon': '仁川', '거제': '巨济',
+  'Yangyang': '襄阳', 'Seoul': '首尔', 'Incheon': '仁川',
   // 新加坡
   'Singapore': '新加坡', 'Changi': '樟宜', 'Tuas': '大士',
   // 美国
@@ -64,14 +63,11 @@ const STATION_NAME_ZH: Record<string, string> = {
   'Vung Tau': '头顿', 'Penang': '槟城', 'Kota Kinabalu': '哥打基纳巴卢',
   'Phnom Penh': '金边', 'Yangon': '仰光',
   // 南亚
-  'Dhaka': '达卡', 'Cox\'s Bazar': '科克斯巴扎尔',
-  'Chittagong': '吉大港', 'Maldives': '马尔代夫',
-  'Male': '马累', 'Colombo': '科伦坡',
+  'Dhaka': '达卡', 'Chittagong': '吉大港', 'Male': '马累',
   // 中东
   'Dubai': '迪拜', 'Abu Dhabi': '阿布扎比', 'Oman': '阿曼',
   'Muscat': '马斯喀特', 'Fujairah': '富查伊拉',
-  'Jeddah': '吉达', 'Riyadh': '利雅得',
-  'Kuwait City': '科威特城', 'Doha': '多哈',
+  'Jeddah': '吉达', 'Kuwait City': '科威特城', 'Doha': '多哈',
   'Djibouti': '吉布提', 'Aden': '亚丁', 'Suez': '苏伊士',
   'Cairo': '开罗', 'Alexandria': '亚历山大',
   // 欧洲
@@ -99,7 +95,6 @@ const STATION_NAME_ZH: Record<string, string> = {
 function translateStation(name: string, zh: boolean): string {
   if (!zh) return name;
   if (STATION_NAME_ZH[name]) return STATION_NAME_ZH[name];
-  // 部分匹配：站名可能是 "Shanghai, China" 这种格式
   for (const [en, zhName] of Object.entries(STATION_NAME_ZH)) {
     if (name.startsWith(en + ',') || name.startsWith(en + ' (')) {
       return name.replace(en, zhName);
@@ -407,7 +402,7 @@ function CountryContent() {
               )}
             </div>
 
-            {/* 当前选中国家 — 只显示名称，不显示聚合说明标签 */}
+            {/* 当前选中国家 — 只显示名称，不显示聚合说明 */}
             {data && (
               <div style={{ padding: '10px 20px', borderRadius: 10, backgroundColor: isChinaGroup ? 'rgba(239,68,68,0.08)' : 'rgba(42,157,143,0.1)', border: `1px solid ${isChinaGroup ? 'rgba(239,68,68,0.3)' : 'rgba(42,157,143,0.3)'}`, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 22 }}>🌏</span>
@@ -446,11 +441,11 @@ function CountryContent() {
           <>
             {/* 统计卡片 */}
             <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-              <StatCard number={data.summary.totalCables}        label={zh ? '总海缆数'   : 'Total Cables'}    color="#2A9D8F" />
-              <StatCard number={data.summary.totalStations}      label={zh ? '总登陆站数' : 'Landing Stations'} color="#E9C46A" sub={zh ? '该国境内所有登陆点' : 'All coastal landing points'} />
-              <StatCard number={data.summary.internationalCables} label={zh ? '国际海缆'  : 'International'}   color="#06D6A0" sub={zh ? '连接其他国家' : 'Cross-border'} />
-              <StatCard number={data.summary.domesticCables}     label={zh ? '国内线'    : 'Domestic'}         color="#3B82F6" sub={isChinaGroup && zh ? '仅在大中华区内' : zh ? '仅连接本国' : 'Local only'} />
-              <StatCard number={data.summary.branchCables}       label={zh ? '支线接入'  : 'Branch Access'}    color="#8B5CF6" sub={zh ? '通过支线接入主干' : 'Via branch unit'} />
+              <StatCard number={data.summary.totalCables}         label={zh ? '总海缆数'   : 'Total Cables'}     color="#2A9D8F" />
+              <StatCard number={data.summary.totalStations}       label={zh ? '总登陆站数' : 'Landing Stations'}  color="#E9C46A" sub={zh ? '该国境内所有登陆点' : 'All coastal landing points'} />
+              <StatCard number={data.summary.internationalCables} label={zh ? '国际海缆'   : 'International'}     color="#06D6A0" sub={zh ? '连接其他国家' : 'Cross-border'} />
+              <StatCard number={data.summary.domesticCables}      label={zh ? '国内线'     : 'Domestic'}          color="#3B82F6" sub={isChinaGroup && zh ? '仅在大中华区内' : zh ? '仅连接本国' : 'Local only'} />
+              <StatCard number={data.summary.branchCables}        label={zh ? '支线接入'   : 'Branch Access'}     color="#8B5CF6" sub={zh ? '通过支线接入主干' : 'Via branch unit'} />
             </div>
 
             {/* 大中华区地区细分 */}
@@ -489,7 +484,6 @@ function CountryContent() {
             {/* 海缆明细 */}
             {activeTab === 'cables' && (
               <div>
-                {/* 类型筛选 */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
                   {(['all', 'international', 'domestic', 'branch'] as const).map(t => (
                     <button key={t} onClick={() => setTypeFilter(t)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', border: `1px solid ${typeFilter === t ? (t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color) : 'rgba(255,255,255,0.1)'}`, backgroundColor: typeFilter === t ? `${t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color}15` : 'rgba(255,255,255,0.03)', color: typeFilter === t ? (t === 'all' ? '#2A9D8F' : TYPE_LABELS[t]?.color) : '#6B7280', transition: 'all 0.15s' }}>
@@ -503,7 +497,6 @@ function CountryContent() {
                   ))}
                 </div>
 
-                {/* 海缆表格 */}
                 <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 90px 100px 1.5fr 1.2fr', padding: '10px 16px', backgroundColor: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 1 }}>
                     <div>{zh ? '海缆名称' : 'Cable Name'}</div>
@@ -539,7 +532,6 @@ function CountryContent() {
                           {cable.stationsInCountry.map((s, si) => (
                             <span key={s.id}>
                               {si > 0 && '、'}
-                              {/* 中文模式下翻译登陆站名称 */}
                               {translateStation(s.name, zh)}
                               {isChinaGroup && s.regionLabel && (
                                 <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 3 }}>
@@ -580,7 +572,6 @@ function CountryContent() {
                 </div>
                 {data.stations.map((station, i) => (
                   <div key={station.id} style={{ display: 'grid', gridTemplateColumns: `2fr ${isChinaGroup ? '100px ' : ''}120px 120px 60px 3fr`, padding: '12px 16px', borderBottom: i < data.stations.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                    {/* 中文模式下翻译登陆站名称 */}
                     <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>
                       {translateStation(station.name, zh)}
                     </div>
@@ -607,7 +598,6 @@ function CountryContent() {
               </div>
             )}
 
-            {/* 数据来源 */}
             <div style={{ marginTop: 24, padding: '12px 16px', borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', fontSize: 11, color: '#374151', lineHeight: 1.6 }}>
               {zh
                 ? '数据来源：TeleGeography 海底电缆地图 · 支线判断基于启发式规则（本地仅1个登陆站且总站数>4）· Deep Blue'
