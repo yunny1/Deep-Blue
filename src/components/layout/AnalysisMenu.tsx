@@ -11,6 +11,7 @@ const TOOLS = [
   { href: '/compare', icon: '⚖️', labelEn: 'Cable Comparison', labelZh: '海缆对比', descEn: 'Side-by-side analysis', descZh: '并排对比两条海缆' },
   { href: '/simulate', icon: '⚡', labelEn: 'Outage Simulator', labelZh: '断缆模拟', descEn: 'Simulate cable failure impact', descZh: '模拟海缆断裂后的影响' },
   { href: '/topology', icon: '🌐', labelEn: 'Network Topology', labelZh: '网络拓扑', descEn: 'Abstract connectivity graph', descZh: '国家间连接关系图' },
+  { href: '/country', icon: '🌏', labelEn: 'Country Analysis', labelZh: '国家分析', descEn: 'Cables by country with export', descZh: '按国家查看海缆并导出表格' },
 ];
 
 export default function AnalysisMenu() {
