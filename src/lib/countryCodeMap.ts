@@ -1,13 +1,13 @@
 // src/lib/countryCodeMap.ts
 // 全量国家/地区名称 → ISO 3166-1 alpha-2 代码映射表
 // 覆盖：标准英文名、常见别名、海外领地、历史名称、TeleGeography 特有写法
-// 用于数据导入时精确识别国家代码，防止错误映射
 
 export const COUNTRY_CODE_MAP: Record<string, string> = {
 
   // ── 亚太 ────────────────────────────────────────────────────────
   'China': 'CN', 'China (Mainland)': 'CN', 'Mainland China': 'CN',
   'People\'s Republic of China': 'CN', 'PRC': 'CN',
+  'China, People\'s Rep.': 'CN',
   'Hong Kong': 'HK', 'Hong Kong SAR': 'HK', 'Hong Kong, China': 'HK',
   'Hong Kong SAR, China': 'HK',
   'Macao': 'MO', 'Macau': 'MO', 'Macao SAR': 'MO', 'Macau SAR': 'MO',
@@ -16,8 +16,8 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Republic of China': 'TW', 'ROC': 'TW',
   'Japan': 'JP',
   'South Korea': 'KR', 'Korea': 'KR', 'Korea, South': 'KR',
-  'Republic of Korea': 'KR',
-  'North Korea': 'KP', 'Korea, North': 'KP',
+  'Republic of Korea': 'KR', 'Korea (South)': 'KR',
+  'North Korea': 'KP', 'Korea, North': 'KP', 'Korea (North)': 'KP',
   'Singapore': 'SG',
   'Malaysia': 'MY',
   'Indonesia': 'ID',
@@ -47,7 +47,7 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Cook Islands': 'CK',
   'Niue': 'NU',
   'Tokelau': 'TK',
-  'Wallis and Futuna': 'WF',
+  'Wallis and Futuna': 'WF', 'Wallis & Futuna': 'WF',
   'French Polynesia': 'PF', 'Tahiti': 'PF',
   'New Caledonia': 'NC',
   'Guam': 'GU',
@@ -55,10 +55,11 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Wake Island': 'UM',
   'Johnston Atoll': 'UM',
   'Midway Islands': 'UM', 'Midway': 'UM',
-  'Pitcairn Islands': 'PN',
+  'Pitcairn Islands': 'PN', 'Pitcairn Island': 'PN',
   'Norfolk Island': 'NF',
   'Christmas Island': 'CX',
-  'Cocos Islands': 'CC', 'Cocos (Keeling) Islands': 'CC',
+  'Cocos Islands': 'CC', 'Cocos (Keeling) Islands': 'CC', 'Cocos Island': 'CC',
+  'Heard Island': 'HM',
 
   // ── 南亚 ────────────────────────────────────────────────────────
   'India': 'IN',
@@ -86,7 +87,7 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Oman': 'OM', 'Sultanate of Oman': 'OM',
   'Yemen': 'YE',
   'Iraq': 'IQ',
-  'Iran': 'IR', 'Islamic Republic of Iran': 'IR',
+  'Iran': 'IR', 'Islamic Republic of Iran': 'IR', 'Iran, Islamic Rep.': 'IR',
   'Israel': 'IL',
   'Palestine': 'PS', 'Palestinian Territory': 'PS',
   'Jordan': 'JO',
@@ -98,7 +99,7 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Armenia': 'AM',
   'Azerbaijan': 'AZ',
 
-  // ── 유럽 ────────────────────────────────────────────────────────
+  // ── 欧洲 ────────────────────────────────────────────────────────
   'United Kingdom': 'GB', 'UK': 'GB', 'Great Britain': 'GB',
   'England': 'GB', 'Scotland': 'GB', 'Wales': 'GB',
   'France': 'FR',
@@ -136,7 +137,7 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Croatia': 'HR',
   'Slovenia': 'SI',
   'Serbia': 'RS',
-  'Bosnia and Herzegovina': 'BA', 'Bosnia': 'BA',
+  'Bosnia and Herzegovina': 'BA', 'Bosnia': 'BA', 'Bosnia & Herzegovina': 'BA',
   'Montenegro': 'ME',
   'North Macedonia': 'MK', 'Macedonia': 'MK',
   'Albania': 'AL',
@@ -152,8 +153,11 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Jersey': 'JE',
   'Guernsey': 'GG',
   'Svalbard': 'SJ',
+  'Azores': 'PT',
+  'Madeira': 'PT',
+  'Canary Islands': 'IC', 'Canarias': 'IC',
 
-  // ── 아프리카 ─────────────────────────────────────────────────────
+  // ── 非洲 ────────────────────────────────────────────────────────
   'Egypt': 'EG',
   'Libya': 'LY',
   'Tunisia': 'TN',
@@ -176,8 +180,8 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Equatorial Guinea': 'GQ',
   'Gabon': 'GA',
   'Congo': 'CG', 'Republic of the Congo': 'CG', 'Congo, Rep.': 'CG',
-  'Democratic Republic of Congo': 'CD', 'DR Congo': 'CD', 'Congo, Dem. Rep.': 'CD',
-  'DRC': 'CD',
+  'Democratic Republic of Congo': 'CD', 'DR Congo': 'CD',
+  'Congo, Dem. Rep.': 'CD', 'DRC': 'CD',
   'Central African Republic': 'CF',
   'Chad': 'TD',
   'Sudan': 'SD',
@@ -191,6 +195,7 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Rwanda': 'RW',
   'Burundi': 'BI',
   'Tanzania': 'TZ', 'United Republic of Tanzania': 'TZ',
+  'Tanzania, United Rep.': 'TZ',
   'Mozambique': 'MZ',
   'Malawi': 'MW',
   'Zambia': 'ZM',
@@ -202,22 +207,24 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Eswatini': 'SZ', 'Swaziland': 'SZ',
   'Angola': 'AO',
   'Sao Tome and Principe': 'ST', 'São Tomé and Príncipe': 'ST',
-  'Cape Verde': 'CV', 'Cabo Verde': 'CV',
+  'Sao Tome & Principe': 'ST',
+  'Cape Verde': 'CV', 'Cabo Verde': 'CV', 'Cape Verde Islands': 'CV',
   'Comoros': 'KM',
   'Madagascar': 'MG',
   'Mauritius': 'MU',
   'Seychelles': 'SC',
   'Reunion': 'RE', 'Réunion': 'RE',
   'Mayotte': 'YT',
-  'Saint Helena': 'SH', 'Saint Helena, Ascension and Tristan da Cunha': 'SH',
+  'Saint Helena': 'SH', 'Saint Helena Is.': 'SH',
+  'Saint Helena, Ascension and Tristan da Cunha': 'SH',
   'Ascension Island': 'AC', 'Ascension': 'AC',
   'Tristan da Cunha': 'TA',
   'Niger': 'NE',
   'Mali': 'ML',
   'Burkina Faso': 'BF',
 
-  // ── 북미/카리브 ──────────────────────────────────────────────────
-  'United States': 'US', 'USA': 'US', 'US': 'US', 'United States of America': 'US',
+  // ── 北美/加勒比 ──────────────────────────────────────────────────
+  'United States': 'US', 'USA': 'US', 'United States of America': 'US',
   'Canada': 'CA',
   'Mexico': 'MX',
   'Cuba': 'CU',
@@ -226,10 +233,12 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Dominican Republic': 'DO',
   'Puerto Rico': 'PR',
   'US Virgin Islands': 'VI', 'United States Virgin Islands': 'VI',
-  'British Virgin Islands': 'VG',
+  'Virgin Islands (US)': 'VI',
+  'British Virgin Islands': 'VG', 'Virgin Islands (British)': 'VG',
   'Anguilla': 'AI',
-  'Antigua and Barbuda': 'AG', 'Antigua': 'AG',
+  'Antigua and Barbuda': 'AG', 'Antigua': 'AG', 'Antigua & Barbuda': 'AG',
   'Saint Kitts and Nevis': 'KN', 'St. Kitts and Nevis': 'KN',
+  'St. Kitts-Nevis': 'KN',
   'Montserrat': 'MS',
   'Guadeloupe': 'GP',
   'Dominica': 'DM',
@@ -237,14 +246,13 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Saint Lucia': 'LC', 'St. Lucia': 'LC',
   'Barbados': 'BB',
   'Saint Vincent and the Grenadines': 'VC', 'St. Vincent': 'VC',
+  'St. Vincent & Grenadines': 'VC',
   'Grenada': 'GD',
-  'Trinidad and Tobago': 'TT', 'Trinidad': 'TT',
+  'Trinidad and Tobago': 'TT', 'Trinidad': 'TT', 'Trinidad & Tobago': 'TT',
   'Aruba': 'AW',
   'Curacao': 'CW', 'Curaçao': 'CW',
-  'Bonaire': 'BQ',
+  'Bonaire': 'BQ', 'Sint Eustatius': 'BQ', 'Saba': 'BQ',
   'Sint Maarten': 'SX',
-  'Sint Eustatius': 'BQ',
-  'Saba': 'BQ',
   'Turks and Caicos Islands': 'TC',
   'Cayman Islands': 'KY',
   'Bermuda': 'BM',
@@ -257,8 +265,9 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Costa Rica': 'CR',
   'Panama': 'PA',
   'Saint Pierre and Miquelon': 'PM',
+  'Netherlands Antilles': 'AN',
 
-  // ── 중미/남미 ────────────────────────────────────────────────────
+  // ── 南美 ────────────────────────────────────────────────────────
   'Colombia': 'CO',
   'Venezuela': 'VE',
   'Guyana': 'GY',
@@ -273,43 +282,11 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Argentina': 'AR',
   'Chile': 'CL',
   'Falkland Islands': 'FK',
-
-  // ── 대서양 섬 ────────────────────────────────────────────────────
-  'Canary Islands': 'IC', 'Canarias': 'IC',
-  'Azores': 'PT',
-  'Madeira': 'PT',
-  'Cape Verde Islands': 'CV',
-
-  // ── TeleGeography 특수 표기 ───────────────────────────────────────
-  // TeleGeography 데이터에서 실제로 나타나는 불규칙한 표기들
-  'Korea (South)': 'KR',
-  'Korea (North)': 'KP',
-  'China, People\'s Rep.': 'CN',
-  'Iran, Islamic Rep.': 'IR',
-  'Tanzania, United Rep.': 'TZ',
-  'Congo, Dem. Rep.': 'CD',
-  'Congo, Rep.': 'CG',
-  'Virgin Islands (US)': 'VI',
-  'Virgin Islands (British)': 'VG',
-  'St. Kitts-Nevis': 'KN',
-  'St. Vincent & Grenadines': 'VC',
-  'Trinidad & Tobago': 'TT',
-  'Antigua & Barbuda': 'AG',
-  'Bosnia & Herzegovina': 'BA',
-  'Sao Tome & Principe': 'ST',
-  'Saint Helena Is.': 'SH',
-  'Wallis & Futuna': 'WF',
-  'Netherlands Antilles': 'AN',
-  'Cocos Island': 'CC',
-  'Pitcairn Island': 'PN',
-  'Heard Island': 'HM',
 };
 
 /**
  * 根据国家名称获取 ISO 代码
- * 先精确匹配，再不区分大小写匹配，再部分匹配
- * @param name 国家名称（来自 TeleGeography 数据）
- * @returns ISO 3166-1 alpha-2 代码，找不到时返回 'XX'
+ * 四层匹配：精确 → 不区分大小写 → 去括号 → 前缀匹配
  */
 export function getCountryCode(name: string | null | undefined): string {
   if (!name) return 'XX';
@@ -318,7 +295,7 @@ export function getCountryCode(name: string | null | undefined): string {
   // 1. 精确匹配
   if (COUNTRY_CODE_MAP[trimmed]) return COUNTRY_CODE_MAP[trimmed];
 
-  // 2. 不区分大小写精确匹配
+  // 2. 不区分大小写
   const lower = trimmed.toLowerCase();
   for (const [key, code] of Object.entries(COUNTRY_CODE_MAP)) {
     if (key.toLowerCase() === lower) return code;
@@ -330,45 +307,49 @@ export function getCountryCode(name: string | null | undefined): string {
     return COUNTRY_CODE_MAP[withoutParens];
   }
 
-  // 4. 检查名称是否以已知国家名开头（处理 "France (overseas)" 这类情况）
+  // 4. 前缀匹配（处理 "France (overseas)" 这类）
   for (const [key, code] of Object.entries(COUNTRY_CODE_MAP)) {
     if (trimmed.startsWith(key + ' ') || trimmed.startsWith(key + ',')) {
       return code;
     }
   }
 
-  // 找不到时返回 'XX'，在日志里标记出来方便人工排查
   console.warn(`[countryCodeMap] Unknown country: "${trimmed}"`);
   return 'XX';
 }
 
 /**
- * 验证一个 countryCode 是否合理（防止脏数据）
- * 特别检查几个容易被误用的代码：
- *   MO = 澳门（不是 Monaco！Monaco = MC）
- *   MS = 蒙特塞拉特（不是 Mississippi！）
- *   CN = 中国大陆（不是其他中文地区）
+ * 验证 countryCode 是否与站名匹配，防止误映射
+ * 重点保护：MO（澳门）和 CN（中国大陆）不被非中华区地名占用
  */
 export function validateCountryCode(code: string, stationName: string): string {
-  // 站名明确包含这些关键词时，强制纠正
   const name = stationName.toLowerCase();
 
-  if (code === 'MO' && !name.includes('macao') && !name.includes('macau') &&
-      !name.includes('澳门') && !name.includes('taipa') && !name.includes('cotai')) {
-    // MO 应该只用于澳门，其他情况可能是误映射
-    if (name.includes('montserrat')) return 'MS';
-    if (name.includes('monaco')) return 'MC';
-    if (name.includes('moldova')) return 'MD';
-    if (name.includes('morocco')) return 'MA';
+  if (code === 'MO') {
+    const macauKeywords = ['macao', 'macau', '澳门', 'taipa', 'cotai', 'coloane'];
+    const isMacau = macauKeywords.some(k => name.includes(k));
+    if (!isMacau) {
+      if (name.includes('montserrat')) return 'MS';
+      if (name.includes('monaco'))     return 'MC';
+      if (name.includes('moldova'))    return 'MD';
+      if (name.includes('morocco'))    return 'MA';
+      if (name.includes('marshall'))   return 'MH';
+      if (name.includes('micronesia')) return 'FM';
+    }
   }
 
-  if (code === 'CN' && !name.includes('china') && !name.includes('chinese') &&
-      !name.includes('中国') && !name.includes('shanghai') && !name.includes('beijing') &&
-      !name.includes('guangzhou') && !name.includes('shenzhen') && !name.includes('qingdao') &&
-      !name.includes('xiamen') && !name.includes('tianjin') && !name.includes('dalian') &&
-      !name.includes('fuzhou') && !name.includes('ningbo') && !name.includes('wenzhou') &&
-      !name.includes('haikou') && !name.includes('sanya') && !name.includes('shantou')) {
-    if (name.includes('monaco')) return 'MC';
+  if (code === 'CN') {
+    const chinaKeywords = [
+      'china', 'chinese', '中国', 'shanghai', 'beijing', 'guangzhou',
+      'shenzhen', 'qingdao', 'xiamen', 'tianjin', 'dalian', 'fuzhou',
+      'ningbo', 'wenzhou', 'haikou', 'sanya', 'shantou', 'zhoushan',
+      'yangjiang', 'zhanjiang', 'chengmai', 'nantong', 'chongming',
+      'nansha', 'weihai', 'qinhuangdao',
+    ];
+    const isChina = chinaKeywords.some(k => name.includes(k));
+    if (!isChina) {
+      if (name.includes('monaco')) return 'MC';
+    }
   }
 
   return code;
