@@ -141,12 +141,11 @@ function FilterPanel({ zh }: { zh: boolean }) {
             backgroundColor: 'rgba(255,255,255,0.06)', color: '#EDF2F7', fontSize: 16,
             textAlign: 'center', outline: 'none' }} />
       </div>
-      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+      <<div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
         {[
-          { label: zh ? '2020以后' : '2020+',     action: () => setFilterYearRange([2020, 2030]) },
-          { label: zh ? '2010以前' : 'Pre-2010',  action: () => setFilterYearRange([1990, 2009]) },
-          { label: zh ? '全部年份' : 'All Years',
-            action: () => { setFilterYearRange([1990, 2030]); setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: false }); }
+          { label: zh ? '2020以后' : '2020+',    action: () => setFilterYearRange([2020, 2030]) },
+          { label: zh ? '2010以前' : 'Pre-2010', action: () => setFilterYearRange([1990, 2009]) },
+          { label: zh ? '全部年份' : 'All Years', action: () => { setFilterYearRange([1990, 2030]); setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: false }); } },
         ].map((btn, i) => (
           <button key={i} onClick={btn.action} style={{
             flex: 1, padding: '10px 0', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
