@@ -53,6 +53,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, rendered: 0 });
   const { flyToSlug, flyToCounter, clearFlyTo, colorMode,
+        filterStatuses, filterYearRange,
         searchHighlightSlugs, searchHoverSlug } = useMapStore();
 
   // 监听筛选条件变化，通过 show 属性控制海缆显示/隐藏
