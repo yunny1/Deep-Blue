@@ -208,6 +208,17 @@ function HomeContent() {
           by Jiang Yun
         </div>
       )}
+      <a href="/admin" style={{
+        position: 'fixed', bottom: 60, right: 16, zIndex: 100,
+        width: 32, height: 32, borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        textDecoration: 'none', fontSize: 14,
+        opacity: 0.4,
+      }} title="管理后台">
+        🔒
+      </a>
 
       {/* 移动端：底部导航栏 + 所有功能抽屉 */}
       {isMobile && <MobileUI />}
