@@ -90,12 +90,11 @@ function FilterPanel({ zh }: { zh: boolean }) {
   const { filterStatuses, setFilterStatuses, filterYearRange, setFilterYearRange } = useMapStore();
 
   const toggleStatus = (key: string) => {
-    if (filterStatuses.includes(key)) {
-      if (filterStatuses.length === 1) return;
-      setFilterStatuses(filterStatuses.filter(s => s !== key));
-    } else {
-      setFilterStatuses([...filterStatuses, key]);
-    }
+    const current = filterStatuses[key as keyof typeof filterStatuses] ?? true;
+    // 至少保留一个开启状态，不允许全部关闭
+    const activeCount = Object.values(filterStatuses).filter(Boolean).length;
+    if (current && activeCount === 1) return;
+    setFilterStatuses({ ...filterStatuses, [key]: !current });
   };
 
   return (
@@ -106,7 +105,7 @@ function FilterPanel({ zh }: { zh: boolean }) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
         {STATUS_OPTIONS.map(opt => {
-          const active = filterStatuses.includes(opt.key);
+          const active = filterStatuses[opt.key as keyof typeof filterStatuses] ?? true;
           return (
             <div key={opt.key} onClick={() => toggleStatus(opt.key)}
               style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
@@ -147,7 +146,7 @@ function FilterPanel({ zh }: { zh: boolean }) {
           { label: zh ? '2020以后' : '2020+',     action: () => setFilterYearRange([2020, 2030]) },
           { label: zh ? '2010以前' : 'Pre-2010',  action: () => setFilterYearRange([1990, 2009]) },
           { label: zh ? '全部年份' : 'All Years',
-            action: () => { setFilterYearRange([1990, 2030]); setFilterStatuses(STATUS_OPTIONS.map(o => o.key)); } },
+            action: () => { setFilterYearRange([1990, 2030]); setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: false }); }
         ].map((btn, i) => (
           <button key={i} onClick={btn.action} style={{
             flex: 1, padding: '10px 0', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
