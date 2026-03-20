@@ -137,3 +137,32 @@ model RiskScore {
   cable            Cable    @relation(fields: [cableId], references: [id])
   @@map("risk_scores")
 }
+
+model LocationDictionary {
+  id               String   @id @default(cuid())
+  rawString        String   @unique
+  standardizedCity String?
+  countryCode      String
+  latitude         Float
+  longitude        Float
+  source           String   @default("Nominatim")
+  createdAt        DateTime @default(now())
+
+  @@index([rawString])
+  @@map("location_dictionary")
+}
+
+model UnresolvedLocation {
+  id           String   @id @default(cuid())
+  rawString    String   @unique
+  originSource String?
+  cableId      String?
+  errorReason  String?
+  status       String   @default("PENDING")
+  retryCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status])
+  @@map("unresolved_locations")
+}
