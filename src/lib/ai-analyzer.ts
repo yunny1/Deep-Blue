@@ -215,16 +215,16 @@ async function triggerRegionRefresh(analysis: AiNewsAnalysis): Promise<void> {
   }
 
   // 计算所有登陆站的经纬度范围
-  const lons = allStations.map(s => s.longitude);
-  const lats = allStations.map(s => s.latitude);
+  const validLons = allStations.map(s => s.longitude).filter((n): n is number => n !== null);
+  const validLats = allStations.map(s => s.latitude).filter((n): n is number => n !== null);
 
-  // 在实际范围基础上扩大 3 度作为缓冲区
-  // （海缆路由中段可能远离登陆站，缓冲区确保覆盖）
+  if (validLons.length === 0 || validLats.length === 0) return;
+
   const bbox: [number, number, number, number] = [
-    Math.min(...lons) - 3,
-    Math.min(...lats) - 3,
-    Math.max(...lons) + 3,
-    Math.max(...lats) + 3,
+    Math.min(...validLons) - 3,
+    Math.min(...validLats) - 3,
+    Math.max(...validLons) + 3,
+    Math.max(...validLats) + 3,
   ];
 
   // 调用 revalidate 端点
