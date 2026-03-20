@@ -52,7 +52,8 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   const allEntitiesRef = useRef<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, rendered: 0 });
-  const { flyToSlug, flyToCounter, clearFlyTo, colorMode, filterStatuses, filterYearRange } = useMapStore();
+  const { flyToSlug, flyToCounter, clearFlyTo, colorMode,
+        searchHighlightSlugs, searchHoverSlug } = useMapStore();
 
   // 监听筛选条件变化，通过 show 属性控制海缆显示/隐藏
   useEffect(() => {
@@ -234,6 +235,41 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       try { entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]); entity.polyline.width = new Cesium.ConstantProperty(1.5); } catch (e) {}
     }
   }, [colorMode]);
+  // 搜索高亮：批量高亮 + 悬停单条高亮
+  useEffect(() => {
+    const Cesium = cesiumRef.current;
+    if (!Cesium || allEntitiesRef.current.length === 0) return;
+
+    for (const entity of allEntitiesRef.current) {
+      const meta = entityMetaRef.current.get(entity);
+      if (!meta || !entity.polyline) continue;
+
+      if (searchHoverSlug) {
+        // 有悬停：悬停的那条亮白，其他全部暗化
+        if (meta.slug === searchHoverSlug) {
+          entity.polyline.material = new Cesium.Color(1, 1, 1, 1);
+          entity.polyline.width = new Cesium.ConstantProperty(4);
+        } else {
+          entity.polyline.material = new Cesium.Color(1, 1, 1, DIM_ALPHA);
+          entity.polyline.width = new Cesium.ConstantProperty(0.5);
+        }
+      } else if (searchHighlightSlugs.length > 0) {
+        // 有搜索结果：命中的高亮，其他暗化
+        if (searchHighlightSlugs.includes(meta.slug)) {
+          entity.polyline.material = new Cesium.Color(1, 1, 1, 0.9);
+          entity.polyline.width = new Cesium.ConstantProperty(3);
+        } else {
+          entity.polyline.material = new Cesium.Color(1, 1, 1, DIM_ALPHA);
+          entity.polyline.width = new Cesium.ConstantProperty(0.5);
+        }
+      } else {
+        // 搜索清空：恢复正常颜色
+        const colorArr = getCableColor(colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
+        entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
+        entity.polyline.width = new Cesium.ConstantProperty(1.5);
+      }
+    }
+  }, [searchHighlightSlugs, searchHoverSlug, colorMode]);
 
   // 飞行指令
   useEffect(() => {
