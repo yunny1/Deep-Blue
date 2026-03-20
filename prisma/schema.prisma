@@ -37,8 +37,8 @@ model LandingStation {
   name        String
   city        String?
   countryCode String   @map("country_code")
-  latitude    Float
-  longitude   Float
+  latitude    Float？
+  longitude   Float？
   operator    String?
   country     Country  @relation(fields: [countryCode], references: [code])
   cables      CableLandingStation[]
