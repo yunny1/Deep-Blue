@@ -63,7 +63,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       if (entities.length === 0) continue;
       const meta = entityMetaRef.current.get(entities[0]);
       if (!meta) continue;
-      const statusMatch = filterStatuses.includes(meta.status);
+      const statusMatch = filterStatuses[meta.status as keyof typeof filterStatuses] ?? true;
       const yearMatch = !meta.rfsYear ||
         (meta.rfsYear >= filterYearRange[0] && meta.rfsYear <= filterYearRange[1]);
       const visible = statusMatch && yearMatch;
