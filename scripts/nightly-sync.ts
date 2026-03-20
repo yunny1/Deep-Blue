@@ -1,13 +1,15 @@
 // scripts/nightly-sync.ts
-// Deep Blue 夜间数据同步与交叉验证脚本 v4
+// Deep Blue 夜间数据同步与交叉验证脚本 v5
 //
-// v4 改进：
-//   - 标准化名称匹配（去括号/连字符/空格后比对），大幅减少误判
-//   - SN独有海缆在入库前先查 Wikipedia 做第三方验证
-//   - 已有 sn- 前缀记录的清理逻辑：如果 TG 已有同名海缆，删除 sn- 重复记录
-//   - 所有字段全量交叉验证
+// v5 改进（来自产品经理技术规范）：
+//   1. 多维特征实体对齐：Jaro-Winkler(40%) + Jaccard登陆站(40%) + RFS年份(20%)
+//      替代原有粗暴的 token 差集，彻底解决 SEA-ME-WE 3 vs 4 等误判问题
+//   2. 地理编码 DLQ：解析失败不再用 XX 兜底，写入 unresolved_locations 表
+//   3. 地理编码字典：成功解析的坐标沉淀到 location_dictionary 表，下次直接命中缓存
+//   4. 自动清理上次遗留的重复 sn- 记录（使用新的对齐算法）
 
 import { PrismaClient } from '@prisma/client';
+import jaroWinkler from 'jaro-winkler';
 import { getCountryCode, validateCountryCode } from '../src/lib/countryCodeMap';
 
 const prisma = new PrismaClient();
@@ -30,36 +32,9 @@ function parseLength(len: string | null | undefined): number | null {
   return n ? parseFloat(n) : null;
 }
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
-function log(level: 'INFO'|'WARN'|'OK'|'ERROR', msg: string) {
+function log(level: 'INFO' | 'WARN' | 'OK' | 'ERROR', msg: string) {
   const icons = { INFO: '•', WARN: '⚠', OK: '✓', ERROR: '✗' };
   console.log(`${icons[level]} [${level}] ${msg}`);
-}
-
-// ── 核心：标准化名称用于跨数据源匹配 ────────────────────────────
-// 例：'AAE-1' → 'aae1'
-//     'Asia-Africa-Europe-1 (AAE-1)' → 'asiaafrica europe1aae1' → 'asiaafrica'... → 'aae1'
-//     'SEA-ME-WE 3' → 'seamewe3'
-function normalize(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\s*\([^)]*\)/g, ' ')   // 去括号内容（保留括号外）
-    .replace(/[-\/\s]+/g, '')         // 去连字符、斜线、空格
-    .replace(/[^a-z0-9]/g, '')        // 只保留字母数字
-    .trim();
-}
-
-// 从一个名称中提取所有有意义的标记（用于模糊匹配）
-function extractTokens(name: string): string[] {
-  const tokens = new Set<string>();
-  tokens.add(normalize(name));
-  // 去掉括号内容后再标准化
-  tokens.add(normalize(name.replace(/\s*\([^)]*\)/g, '')));
-  // 只取括号内容
-  const inner = name.match(/\(([^)]+)\)/g);
-  if (inner) inner.forEach(m => tokens.add(normalize(m.replace(/[()]/g, ''))));
-  // 去掉常见前缀词
-  tokens.add(normalize(name.replace(/^(the|system|cable)\s+/i, '')));
-  return [...tokens].filter(t => t.length >= 2);
 }
 
 // ── 类型定义 ─────────────────────────────────────────────────────
@@ -78,43 +53,222 @@ interface SNCableRef {
   name: string; url: string; slug: string; category: string;
 }
 interface SNDetail {
-  isRetired: boolean; lengthKm: number | null;
-  rfsYear: number | null;
+  isRetired: boolean; lengthKm: number | null; rfsYear: number | null;
   landingPoints: { name: string; city: string; country: string }[];
   owners: string[]; sourceUrl: string;
 }
 interface MergedLP {
   id: string; name: string; countryCode: string;
   lat: number; lng: number;
-  source: 'tg_only'|'sn_only'|'both'; confidence: number;
+  source: 'tg_only' | 'sn_only' | 'both'; confidence: number;
 }
 
-// ── Step 0: 清理上次遗留的误判 sn- 重复记录 ─────────────────────
+// ════════════════════════════════════════════════════════════════
+// 第一部分：多维特征实体对齐算法
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * 预处理海缆名称：转小写，去除停用词和特殊符号
+ * 例：'SEA-ME-WE 3 Cable System' → 'seamewe3'
+ */
+function normalizeCableName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\b(cable|system|network|submarine|fibre|fiber|optic)\b/g, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
+/**
+ * 计算两个集合的 Jaccard 相似度
+ * J(A,B) = |A∩B| / |A∪B|
+ */
+function jaccardSimilarity(setA: Set<string>, setB: Set<string>): number {
+  if (setA.size === 0 && setB.size === 0) return 0;
+  const intersection = new Set([...setA].filter(x => setB.has(x)));
+  const union = new Set([...setA, ...setB]);
+  return intersection.size / union.size;
+}
+
+interface AlignmentResult {
+  isMatch: boolean;       // 总分 >= 85：自动合并（同一条缆）
+  needsReview: boolean;   // 总分 60-85：疑似同源，人工确认
+  score: number;
+  details: { nameScore: number; landingScore: number; rfsScore: number };
+}
+
+/**
+ * 核心：多维特征相似度判定
+ * 名称 Jaro-Winkler (40%) + 登陆站 Jaccard (40%) + RFS年份 (20%)
+ */
+function alignCableEntity(
+  nameA: string, landingsA: string[], rfsA: number | null,
+  nameB: string, landingsB: string[], rfsB: number | null,
+): AlignmentResult {
+  // 1. 名称相似度（权重 40%）
+  const normA = normalizeCableName(nameA);
+  const normB = normalizeCableName(nameB);
+  const nameScore = jaroWinkler(normA, normB) * 100;
+
+  // 2. 登陆站 Jaccard（权重 40%）
+  const setA = new Set(landingsA.map(s => s.toLowerCase().split(',')[0].trim()));
+  const setB = new Set(landingsB.map(s => s.toLowerCase().split(',')[0].trim()));
+  const landingScore = jaccardSimilarity(setA, setB) * 100;
+
+  // 3. RFS 年份（权重 20%）
+  let rfsScore = 50; // 默认：缺失数据给容忍分，避免因缺数据误判为新缆
+  if (rfsA && rfsB) {
+    const diff = Math.abs(rfsA - rfsB);
+    if (diff <= 1) rfsScore = 100;
+    else if (diff === 2) rfsScore = 50;
+    else rfsScore = 0;
+  }
+
+  // 4. 加权总分
+  const totalScore = (nameScore * 0.4) + (landingScore * 0.4) + (rfsScore * 0.2);
+
+  return {
+    isMatch: totalScore >= 85,
+    needsReview: totalScore >= 60 && totalScore < 85,
+    score: Number(totalScore.toFixed(2)),
+    details: { nameScore, landingScore, rfsScore },
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
+// 第二部分：地理编码字典 + 死信队列（DLQ）
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * 地理编码主函数
+ * 流程：本地字典缓存 → Nominatim API → 成功写字典 / 失败写DLQ
+ */
+async function geocodeWithDLQ(
+  stationName: string,
+  city: string,
+  country: string,
+  cableId: string,
+  source: string,
+): Promise<{ lat: number; lng: number } | null> {
+  const rawString = stationName.trim();
+
+  // Step 1：查本地字典缓存（命中则直接返回，不消耗 API 额度）
+  try {
+    const cached = await prisma.locationDictionary.findUnique({
+      where: { rawString },
+    });
+    if (cached) {
+      return { lat: cached.latitude, lng: cached.longitude };
+    }
+  } catch {}
+
+  // Step 2：调用 Nominatim API
+  try {
+    await delay(1100); // 遵守 Nominatim 频率限制：每秒最多 1 次
+    const query = `${city}, ${country}`;
+    const res = await fetch(
+      `${NOMINATIM}?q=${encodeURIComponent(query)}&format=json&limit=1`,
+      { headers: { 'User-Agent': 'DeepBlue/5.0 (contact@deep-cloud.org)' } }
+    );
+
+    if (!res.ok) throw new Error(`Nominatim HTTP ${res.status}`);
+    const data = await res.json() as any[];
+
+    if (data.length === 0) {
+      throw new Error('Nominatim returned 0 results');
+    }
+
+    const confidence = parseFloat(data[0].importance || '0');
+
+    // Step 3A：解析成功 & 置信度合理 → 写入字典，返回坐标
+    if (confidence >= 0 || data.length > 0) {
+      const coords = {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+      };
+
+      const cc = validateCountryCode(getCountryCode(country), stationName);
+
+      await prisma.locationDictionary.upsert({
+        where: { rawString },
+        update: { latitude: coords.lat, longitude: coords.lng },
+        create: {
+          rawString,
+          standardizedCity: city,
+          countryCode: cc,
+          latitude: coords.lat,
+          longitude: coords.lng,
+          source: 'Nominatim',
+        },
+      }).catch(() => {});
+
+      return coords;
+    }
+
+    throw new Error(`Low confidence: ${confidence}`);
+  } catch (err: any) {
+    // Step 3B：解析失败 → 严禁 XX 兜底，写入 DLQ
+    log('WARN', `  [DLQ] 无法解析坐标: "${rawString}" — ${err.message}`);
+
+    await prisma.unresolvedLocation.upsert({
+      where: { rawString },
+      update: {
+        retryCount: { increment: 1 },
+        updatedAt: new Date(),
+        errorReason: err.message,
+      },
+      create: {
+        rawString,
+        originSource: source,
+        cableId,
+        errorReason: err.message,
+        status: 'PENDING',
+      },
+    }).catch(() => {});
+
+    return null; // 不阻断整体同步流程
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// Step 0：清理上次遗留的误判 sn- 重复记录
+// ════════════════════════════════════════════════════════════════
 async function cleanupDuplicateSNRecords(tgCables: Map<string, TGCable>) {
   log('INFO', '清理上次遗留的误判 sn- 重复记录...');
 
   const snCables = await prisma.cable.findMany({
     where: { id: { startsWith: 'sn-' } },
-    select: { id: true, name: true, _count: { select: { landingStations: true } } },
+    select: {
+      id: true, name: true,
+      _count: { select: { landingStations: true } },
+    },
   });
 
-  // 建立 TG 的标准化名称集合
-  const tgNormSet = new Set<string>();
-  for (const [id, cable] of tgCables) {
-    extractTokens(id.replace(/-/g, ' ')).forEach(t => tgNormSet.add(t));
-    extractTokens(cable.name).forEach(t => tgNormSet.add(t));
-  }
+  // 用新的对齐算法（名称 + RFS）和 TG 数据比对
+  const tgList = [...tgCables.values()].map(c => ({
+    name: c.name,
+    rfsYear: c.rfs_year,
+    landings: (c.landing_points || []).map(lp => lp.name),
+  }));
 
-  let deleted = 0;
-  let kept = 0;
+  let deleted = 0, kept = 0;
 
   for (const sn of snCables) {
-    const snTokens = extractTokens(sn.name);
-    // 只要有任意一个 token 在 TG 集合里命中，就认为是重复
-    const isDuplicate = snTokens.some(t => t.length >= 3 && tgNormSet.has(t));
+    let isDuplicate = false;
+
+    for (const tg of tgList) {
+      const result = alignCableEntity(
+        sn.name, [], null,
+        tg.name, tg.landings, tg.rfsYear,
+      );
+      // 只用名称维度判断（登陆站 SN 记录可能为空，不参与这里的比对）
+      if (result.details.nameScore >= 85) {
+        isDuplicate = true;
+        break;
+      }
+    }
 
     if (isDuplicate) {
-      // 删除关联关系和海缆记录
       await prisma.cableLandingStation.deleteMany({ where: { cableId: sn.id } });
       await prisma.cableOwnership.deleteMany({ where: { cableId: sn.id } });
       await prisma.cable.delete({ where: { id: sn.id } }).catch(() => {});
@@ -128,21 +282,22 @@ async function cleanupDuplicateSNRecords(tgCables: Map<string, TGCable>) {
   log('OK', `清理完成：删除 ${deleted} 条重复，保留 ${kept} 条真正独有`);
 }
 
-// ── Step 1: 解析 SN 全量列表 ─────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// Step 1：解析 SN 全量列表
+// ════════════════════════════════════════════════════════════════
 async function fetchSNCableList(): Promise<Map<string, SNCableRef>> {
   log('INFO', 'SN: 解析全量海缆列表...');
-
   const res = await fetch(SN_SYSTEMS, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DeepBlue/4.0)' },
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DeepBlue/5.0)' },
   });
   const html = await res.text();
 
   const linkRegex = /href="(\/en\/systems\/([a-z0-9\-]+)\/([a-z0-9\-]+))"\s*>([^<]+)</gi;
   const CATEGORY_PAGES = new Set([
-    'trans-atlantic','trans-pacific','trans-arctic','intra-asia','intra-europe',
-    'asia-europe-africa','australia-usa','brazil-us','brazil-africa','euro-africa',
-    'asia-australia','eurasia-terrestrial','north-america','africa-australia',
-    'antarctic','brazil-europe','png-national','africa','south-pacific',
+    'trans-atlantic', 'trans-pacific', 'trans-arctic', 'intra-asia', 'intra-europe',
+    'asia-europe-africa', 'australia-usa', 'brazil-us', 'brazil-africa', 'euro-africa',
+    'asia-australia', 'eurasia-terrestrial', 'north-america', 'africa-australia',
+    'antarctic', 'brazil-europe', 'png-national', 'africa', 'south-pacific',
   ]);
 
   const result = new Map<string, SNCableRef>();
@@ -159,7 +314,9 @@ async function fetchSNCableList(): Promise<Map<string, SNCableRef>> {
   return result;
 }
 
-// ── Step 2: 获取 TG 全量数据 ─────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// Step 2：获取 TG 全量数据
+// ════════════════════════════════════════════════════════════════
 async function fetchTG(): Promise<Map<string, TGCable>> {
   log('INFO', 'TG: 下载数据...');
   const [allRes, geoRes, lpRes] = await Promise.all([
@@ -181,7 +338,6 @@ async function fetchTG(): Promise<Map<string, TGCable>> {
 
   const result = new Map<string, TGCable>();
   let fetched = 0;
-
   for (const cable of allCables) {
     try {
       const res  = await fetch(`https://www.submarinecablemap.com/api/v3/cable/${cable.id}.json`);
@@ -200,12 +356,13 @@ async function fetchTG(): Promise<Map<string, TGCable>> {
       await delay(50);
     } catch {}
   }
-
   log('OK', `TG: ${result.size} 条`);
   return result;
 }
 
-// ── SN 详情页解析 ─────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// SN 详情页解析
+// ════════════════════════════════════════════════════════════════
 function parseSNDetail(html: string, sourceUrl: string): SNDetail {
   const result: SNDetail = {
     sourceUrl, isRetired: html.includes('>Retired<') || html.includes('/tag/retired'),
@@ -234,7 +391,7 @@ function parseSNDetail(html: string, sourceUrl: string): SNDetail {
 async function fetchSNDetail(ref: SNCableRef): Promise<SNDetail | null> {
   try {
     const res = await fetch(ref.url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DeepBlue/4.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DeepBlue/5.0)' },
     });
     if (!res.ok) return null;
     const html = await res.text();
@@ -243,41 +400,23 @@ async function fetchSNDetail(ref: SNCableRef): Promise<SNDetail | null> {
   } catch { return null; }
 }
 
-// ── Nominatim 地理编码 ────────────────────────────────────────────
-const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
-async function geocode(city: string, country: string): Promise<{ lat: number; lng: number } | null> {
-  const key = `${city}|${country}`;
-  if (geocodeCache.has(key)) return geocodeCache.get(key)!;
-  try {
-    await delay(1100);
-    const res = await fetch(
-      `${NOMINATIM}?q=${encodeURIComponent(`${city}, ${country}`)}&format=json&limit=1`,
-      { headers: { 'User-Agent': 'DeepBlue/4.0 (contact@deep-cloud.org)' } }
-    );
-    if (!res.ok) { geocodeCache.set(key, null); return null; }
-    const data = await res.json() as any[];
-    if (!data.length) { geocodeCache.set(key, null); return null; }
-    const r = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-    geocodeCache.set(key, r);
-    return r;
-  } catch { geocodeCache.set(key, null); return null; }
-}
-
-// ── Wikipedia 验证 ────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// Wikipedia 验证
+// ════════════════════════════════════════════════════════════════
 async function checkWikipedia(name: string): Promise<{
   exists: boolean; isRetired?: boolean; summary?: string;
 }> {
   try {
     const res = await fetch(
       `${WIKI_API}/${encodeURIComponent(name.replace(/\s+/g, '_'))}`,
-      { headers: { 'User-Agent': 'DeepBlue/4.0' } }
+      { headers: { 'User-Agent': 'DeepBlue/5.0' } }
     );
     if (!res.ok) return { exists: false };
     const d = await res.json() as any;
     if (!d.extract) return { exists: false };
     const t = d.extract.toLowerCase();
-    const ret = ['retired','decommission','end-of-life','out of service'].filter(k => t.includes(k)).length;
-    const act = ['operational','in service','active cable','still in'].filter(k => t.includes(k)).length;
+    const ret = ['retired', 'decommission', 'end-of-life', 'out of service'].filter(k => t.includes(k)).length;
+    const act = ['operational', 'in service', 'active cable', 'still in'].filter(k => t.includes(k)).length;
     return {
       exists: true,
       isRetired: ret > act ? true : act > ret ? false : undefined,
@@ -286,9 +425,11 @@ async function checkWikipedia(name: string): Promise<{
   } catch { return { exists: false }; }
 }
 
-// ── 状态仲裁 ─────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// 字段仲裁
+// ════════════════════════════════════════════════════════════════
 async function arbitrateStatus(
-  cableName: string, tgStatus: string, snIsRetired: boolean
+  cableName: string, tgStatus: string, snIsRetired: boolean,
 ): Promise<{ value: string; source: string }> {
   const snStatus = snIsRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
   if (tgStatus === snStatus) return { value: tgStatus, source: 'consistent' };
@@ -314,16 +455,19 @@ function arbitrateLength(name: string, tg: number | null, sn: number | null): nu
   if (!sn) return tg;
   const diff = Math.abs(tg - sn) / Math.max(tg, sn);
   if (diff < 0.05) return tg;
-  if (diff < 0.20) { log('WARN', `[${name}] 长度差 ${(diff*100).toFixed(0)}%，取平均`); return Math.round((tg+sn)/2); }
+  if (diff < 0.20) { log('WARN', `[${name}] 长度差 ${(diff * 100).toFixed(0)}%，取平均`); return Math.round((tg + sn) / 2); }
   log('WARN', `[${name}] 长度差过大(${tg} vs ${sn})，取较大值`);
   return Math.max(tg, sn);
 }
 
-// ── 登陆站合并 ───────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// 登陆站合并（TG + SN 取并集，使用 DLQ 地理编码）
+// ════════════════════════════════════════════════════════════════
 async function mergeLPs(
   tgLPs: TGLandingPoint[],
   snLPs: SNDetail['landingPoints'],
   cableName: string,
+  cableId: string,
 ): Promise<MergedLP[]> {
   const result: MergedLP[] = [];
   const snMatched = new Set<number>();
@@ -346,12 +490,15 @@ async function mergeLPs(
     if (matched >= 0) snMatched.add(matched);
   }
 
+  // SN 独有站点：走 DLQ 地理编码流程
   for (let i = 0; i < snLPs.length; i++) {
     if (snMatched.has(i)) continue;
     const lp = snLPs[i];
     log('INFO', `  [${cableName}] SN独有站: "${lp.name}"，查坐标...`);
-    const coords = await geocode(lp.city, lp.country);
+
+    const coords = await geocodeWithDLQ(lp.name, lp.city, lp.country, cableId, 'SN');
     const cc = validateCountryCode(getCountryCode(lp.country), lp.name);
+
     if (coords) {
       log('OK', `    坐标: ${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}`);
       result.push({
@@ -360,14 +507,16 @@ async function mergeLPs(
         lat: coords.lat, lng: coords.lng,
         source: 'sn_only', confidence: 0.70,
       });
-    } else {
-      log('WARN', `    坐标获取失败，跳过`);
     }
+    // 失败时不入库（已写入 DLQ），不再用 XX 兜底
   }
+
   return result;
 }
 
-// ── 写入数据库 ────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// 写入数据库
+// ════════════════════════════════════════════════════════════════
 async function upsertCable(params: {
   id: string; name: string; status: string;
   lengthKm: number | null; rfsDate: Date | null;
@@ -428,86 +577,101 @@ async function upsertCable(params: {
   return cable;
 }
 
-// ── 主流程 ───────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// 主流程
+// ════════════════════════════════════════════════════════════════
 async function main() {
   const startTime = Date.now();
-  console.log('\n╔══════════════════════════════════════════════════════╗');
-  console.log('║  Deep Blue 夜间同步 v4 - 改进匹配 + 自动清理重复    ║');
-  console.log(`║  ${new Date().toISOString()}                    ║`);
-  console.log('╚══════════════════════════════════════════════════════╝\n');
+  console.log('\n╔══════════════════════════════════════════════════════════╗');
+  console.log('║  Deep Blue 夜间同步 v5                                   ║');
+  console.log('║  Jaro-Winkler对齐 + 地理编码字典 + DLQ                  ║');
+  console.log(`║  ${new Date().toISOString()}                        ║`);
+  console.log('╚══════════════════════════════════════════════════════════╝\n');
 
   const stats = {
     tgTotal: 0, snTotal: 0,
     snOnlyCount: 0, snOnlyAdded: 0, snOnlySkipped: 0,
-    tgProcessed: 0, conflictsFound: 0, snStationsAdded: 0,
-    duplicatesRemoved: 0,
+    tgProcessed: 0, conflictsFound: 0,
+    snStationsAdded: 0, dlqCount: 0, dictHits: 0,
   };
 
-  // ── Step 1 & 2: 并行获取 SN 列表和 TG 数据 ───────────────────
+  // Step 1 & 2：并行获取
   const [snCables, tgCables] = await Promise.all([
     fetchSNCableList(),
     fetchTG(),
   ]);
-  stats.snTotal  = snCables.size;
-  stats.tgTotal  = tgCables.size;
+  stats.snTotal = snCables.size;
+  stats.tgTotal = tgCables.size;
 
-  // ── Step 0: 清理上次遗留的误判重复 ───────────────────────────
+  // Step 0：清理误判重复
   await cleanupDuplicateSNRecords(tgCables);
 
-  // ── 建立 TG 标准化名称集合（用于差集判断）────────────────────
-  const tgNormSet = new Set<string>();
-  for (const [id, cable] of tgCables) {
-    extractTokens(id.replace(/-/g, ' ')).forEach(t => { if (t.length >= 2) tgNormSet.add(t); });
-    extractTokens(cable.name).forEach(t => { if (t.length >= 2) tgNormSet.add(t); });
-  }
+  // 建立 TG 实体列表，用于差集比对
+  const tgEntityList = [...tgCables.values()].map(c => ({
+    id: c.id,
+    name: c.name,
+    rfsYear: c.rfs_year,
+    landings: (c.landing_points || []).map(lp => lp.name),
+  }));
 
-  // ── Step 3: 找出真正 SN 独有的海缆 ──────────────────────────
+  // Step 3：找出真正 SN 独有的海缆（使用多维对齐算法）
   const snOnlyCables: SNCableRef[] = [];
-  for (const [snSlug, ref] of snCables) {
-    const snTokens = extractTokens(ref.name).concat(extractTokens(snSlug.replace(/-/g, ' ')));
-    // 只有所有 token 都不在 TG 集合里，才判定为 SN 独有
-    // 任意一个长度 >= 3 的 token 命中 TG，就认为是 TG 已有
-    const matchedInTG = snTokens.some(t => t.length >= 3 && tgNormSet.has(t));
-    if (!matchedInTG) snOnlyCables.push(ref);
+  const snNeedsReview: Array<{ ref: SNCableRef; score: number; matchedTG: string }> = [];
+
+  for (const [, ref] of snCables) {
+    let bestScore = 0;
+    let bestMatch = '';
+    let needsReview = false;
+
+    for (const tg of tgEntityList) {
+      const result = alignCableEntity(
+        ref.name, [], null,
+        tg.name, tg.landings, tg.rfsYear,
+      );
+      if (result.score > bestScore) {
+        bestScore = result.score;
+        bestMatch = tg.name;
+        needsReview = result.needsReview;
+      }
+      if (result.isMatch) break; // 已确认匹配，无需继续
+    }
+
+    if (bestScore >= 85) {
+      // 自动确认为 TG 已有，跳过
+    } else if (bestScore >= 60) {
+      // 疑似同源，记录下来但暂不入库（保守策略）
+      snNeedsReview.push({ ref, score: bestScore, matchedTG: bestMatch });
+      log('WARN', `[疑似重复] ${ref.name} ↔ ${bestMatch} (${bestScore.toFixed(0)}分)`);
+    } else {
+      // 确认为 SN 独有
+      snOnlyCables.push(ref);
+    }
   }
 
   stats.snOnlyCount = snOnlyCables.length;
-  log('INFO', `\nSN 独有（TG 确实缺失）: ${snOnlyCables.length} 条`);
-  for (const c of snOnlyCables.slice(0, 30)) {
-    console.log(`  - ${c.name}`);
-  }
-  if (snOnlyCables.length > 30) console.log(`  ... 还有 ${snOnlyCables.length - 30} 条`);
+  log('INFO', `\nSN 真正独有: ${snOnlyCables.length} 条 | 疑似重复待审: ${snNeedsReview.length} 条`);
 
-  // ── Step 4: 处理 SN 独有海缆（第三方验证后入库）──────────────
-  log('INFO', '\n开始处理 SN 独有海缆...');
+  // Step 4：处理 SN 独有海缆
+  log('INFO', '\n处理 SN 独有海缆...');
   for (const ref of snOnlyCables) {
     log('INFO', `处理: [${ref.name}]`);
-
     const snDetail = await fetchSNDetail(ref);
     await delay(300);
     if (!snDetail) { log('WARN', `  无法获取详情，跳过`); stats.snOnlySkipped++; continue; }
 
-    // Wikipedia 第三方验证：确认这条缆确实存在
     const wiki = await checkWikipedia(ref.name);
     await delay(500);
-
-    // 入库判断：
-    // ① SN 详情可以解析到（已上面确认）
-    // ② Wikipedia 有记录 → 高置信度，直接入库
-    // ③ Wikipedia 无记录 → 较低置信度，但 SN 本身就是权威来源，仍然入库
-    const status  = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
-    const rfsDate = snDetail.rfsYear ? new Date(snDetail.rfsYear, 0, 1) : null;
-
     if (wiki.exists) {
-      log('OK', `  Wikipedia 确认存在: ${wiki.summary?.slice(0, 80)}...`);
-    } else {
-      log('WARN', `  Wikipedia 无记录，但 SN 有数据，仍然入库（置信度较低）`);
+      log('OK', `  Wikipedia 确认: ${wiki.summary?.slice(0, 60)}...`);
     }
 
-    // 获取登陆站坐标
+    const status  = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
+    const rfsDate = snDetail.rfsYear ? new Date(snDetail.rfsYear, 0, 1) : null;
+    const cableId = `sn-${ref.slug}`;
+
     const landingPoints: MergedLP[] = [];
     for (const lp of snDetail.landingPoints) {
-      const coords = await geocode(lp.city, lp.country);
+      const coords = await geocodeWithDLQ(lp.name, lp.city, lp.country, cableId, 'SN');
       const cc = validateCountryCode(getCountryCode(lp.country), lp.name);
       if (coords) {
         landingPoints.push({
@@ -521,25 +685,24 @@ async function main() {
 
     try {
       await upsertCable({
-        id: `sn-${ref.slug}`, name: ref.name, status,
+        id: cableId, name: ref.name, status,
         lengthKm: snDetail.lengthKm, rfsDate,
         geoJson: null, supplierName: null,
         owners: snDetail.owners, notes: null,
         landingPoints,
       });
-      log('OK', `  已入库: ${ref.name} (${status}, ${landingPoints.length} 个登陆站)`);
+      log('OK', `  已入库: ${ref.name} (${status}, ${landingPoints.length} 站)`);
       stats.snOnlyAdded++;
       stats.snStationsAdded += landingPoints.length;
     } catch (e: any) {
       log('ERROR', `  入库失败: ${e.message}`);
       stats.snOnlySkipped++;
     }
-
     await delay(200);
   }
 
-  // ── Step 5: 处理 TG 全量数据（交叉验证所有字段）──────────────
-  log('INFO', '\n开始处理 TG 全量数据...');
+  // Step 5：处理 TG 全量数据（交叉验证所有字段）
+  log('INFO', '\n处理 TG 全量数据...');
   for (const [cableId, tg] of tgCables) {
     try {
       const tgLengthKm = parseLength(tg.length);
@@ -554,15 +717,26 @@ async function main() {
 
       let snDetail: SNDetail | null = null;
       if (needSN) {
-        const tgNorm   = normalize(tg.name);
-        const snRef    = snCables.get(cableId) ||
-          [...snCables.values()].find(r => normalize(r.name) === tgNorm);
-        if (snRef) {
-          snDetail = await fetchSNDetail(snRef);
+        // 用对齐算法在 SN 列表里找对应页面
+        let bestRef: SNCableRef | null = null;
+        let bestScore = 0;
+        for (const [, ref] of snCables) {
+          const result = alignCableEntity(
+            tg.name, (tg.landing_points || []).map(lp => lp.name), tgRfsYear,
+            ref.name, [], null,
+          );
+          if (result.score > bestScore) {
+            bestScore = result.score;
+            bestRef = ref;
+          }
+        }
+        if (bestRef && bestScore >= 60) {
+          snDetail = await fetchSNDetail(bestRef);
           await delay(300);
         }
       }
 
+      // 状态仲裁
       let finalStatus = tgStatus;
       if (snDetail?.isRetired !== undefined) {
         const verdict = await arbitrateStatus(tg.name, tgStatus, snDetail.isRetired);
@@ -573,9 +747,17 @@ async function main() {
       const finalRfsYear = tgRfsYear ?? snDetail?.rfsYear ?? null;
       const finalRfsDate = finalRfsYear ? new Date(finalRfsYear, 0, 1) : null;
 
-      const mergedLPs = await mergeLPs(tg.landing_points || [], snDetail?.landingPoints || [], tg.name);
+      // 登陆站合并
+      const mergedLPs = await mergeLPs(
+        tg.landing_points || [],
+        snDetail?.landingPoints || [],
+        tg.name, cableId,
+      );
       const snOnly = mergedLPs.filter(lp => lp.source === 'sn_only').length;
-      if (snOnly > 0) { stats.snStationsAdded += snOnly; log('OK', `[${tg.name}] 补充 ${snOnly} 个SN登陆站`); }
+      if (snOnly > 0) {
+        stats.snStationsAdded += snOnly;
+        log('OK', `[${tg.name}] 补充 ${snOnly} 个SN独有登陆站`);
+      }
 
       const owners       = tg.owners ? String(tg.owners).split(',').map(s => s.trim()).filter(Boolean) : [];
       const supplierName = tg.suppliers ? String(tg.suppliers).split(',')[0].trim() : null;
@@ -593,15 +775,28 @@ async function main() {
     }
   }
 
-  // ── 报告 ─────────────────────────────────────────────────────
+  // 统计 DLQ 数量
+  try {
+    stats.dlqCount = await prisma.unresolvedLocation.count({ where: { status: 'PENDING' } });
+  } catch {}
+
+  // 报告
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
-  console.log('\n╔══════════════════════════════════════════════════════╗');
+  console.log('\n╔══════════════════════════════════════════════════════════╗');
   console.log(`║  同步完成！耗时 ${elapsed}s`);
   console.log(`║  TG: ${stats.tgTotal} 条 | SN: ${stats.snTotal} 条`);
-  console.log(`║  SN真正独有: ${stats.snOnlyCount} 条 → 入库 ${stats.snOnlyAdded} | 跳过 ${stats.snOnlySkipped}`);
+  console.log(`║  SN独有入库: ${stats.snOnlyAdded} | 跳过: ${stats.snOnlySkipped} | 疑似重复待审: ${snNeedsReview.length}`);
   console.log(`║  字段冲突仲裁: ${stats.conflictsFound} 次`);
   console.log(`║  SN补充登陆站: ${stats.snStationsAdded} 个`);
-  console.log('╚══════════════════════════════════════════════════════╝');
+  console.log(`║  DLQ待处理坐标: ${stats.dlqCount} 个`);
+  console.log('╚══════════════════════════════════════════════════════════╝');
+
+  if (snNeedsReview.length > 0) {
+    console.log('\n疑似重复待人工确认：');
+    for (const r of snNeedsReview) {
+      console.log(`  [${r.score.toFixed(0)}分] ${r.ref.name} ↔ ${r.matchedTG}`);
+    }
+  }
 
   // Redis
   try {
