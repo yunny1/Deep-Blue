@@ -32,24 +32,33 @@ const EVENT_CONFIG: Record<string, { color: string; label: string }> = {
 
 export default function AiIntelPanel() {
   const [data, setData] = useState<AiData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { showAiInsights, flyToCable } = useMapStore();
   const { t, locale } = useTranslation();
 
   useEffect(() => {
+    // 未展开或 AI 关闭：不请求
     if (!showAiInsights || !isExpanded) return;
-    if (data?.results && data.results.length > 0) return; // 有数据才跳过
+    // 已有有效数据（results 非空）：不重复请求
+    if (data?.results && data.results.length > 0) return;
+    // 正在请求中：不重复
+    if (loading) return;
+
+    setLoading(true);
     fetch('/api/ai/analyze')
       .then(r => r.json())
-      .then(d => { if (!d.error) setData(d); setLoading(false); })
+      .then(d => {
+        if (!d.error) setData(d);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [showAiInsights, isExpanded]);
 
   if (!showAiInsights) return null;
-  if (!loading && !data) return null;
 
   const relevantResults = data?.results?.filter(r => r.analysis?.isRelevant) || [];
+  const hasData = (data?.results?.length ?? 0) > 0;
 
   return (
     <div style={{
@@ -62,6 +71,7 @@ export default function AiIntelPanel() {
       boxShadow: 'var(--shadow-panel)',
       animation: 'fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     }}>
+      {/* 标题栏 */}
       <div onClick={() => setIsExpanded(!isExpanded)} style={{
         padding: '10px 14px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -83,25 +93,38 @@ export default function AiIntelPanel() {
         </div>
       </div>
 
+      {/* 展开内容 */}
       <div style={{
         maxHeight: isExpanded ? 500 : 0,
         overflow: 'hidden',
         transition: 'max-height var(--duration-slow) cubic-bezier(0.16, 1, 0.3, 1)',
       }}>
-        {loading ? <SkeletonAiPanel /> : data && (
+        {loading ? (
+          <SkeletonAiPanel />
+        ) : !hasData ? (
+          <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 }}>
+            暂无分析数据<br/>
+            <span style={{ fontSize: 10, color: '#4B5563' }}>AI 每小时预计算一次，稍后刷新</span>
+          </div>
+        ) : (
           <div style={{ overflowY: 'auto', maxHeight: 500 }}>
+            {/* 统计行 */}
             <div style={{ padding: '8px 14px', display: 'flex', gap: 12, justifyContent: 'center', borderBottom: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)' }}>
-              <span>{data.stats?.totalNewsScanned ?? 0} {t('ai.scanned')}</span>
-              <span>{data.stats?.aiAnalyzed ?? 0} {t('ai.analyzed')}</span>
-              <span style={{ color: relevantResults.length > 0 ? '#8B5CF6' : 'var(--text-muted)' }}>{relevantResults.length} {t('ai.relevant')}</span>
+              <span>{data?.stats?.totalNewsScanned ?? 0} {t('ai.scanned')}</span>
+              <span>{data?.stats?.aiAnalyzed ?? 0} {t('ai.analyzed')}</span>
+              <span style={{ color: relevantResults.length > 0 ? '#8B5CF6' : 'var(--text-muted)' }}>
+                {relevantResults.length} {t('ai.relevant')}
+              </span>
             </div>
 
+            {/* 无相关结果 */}
             {relevantResults.length === 0 && (
-              <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                暂无海缆相关事件，AI将在下次预计算后更新
+              <div style={{ padding: '16px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+                当前无海缆相关事件
               </div>
             )}
 
+            {/* 结果列表 */}
             {relevantResults.map((item, i) => {
               const a = item.analysis;
               const ec = EVENT_CONFIG[a.eventType] || EVENT_CONFIG.GENERAL;
@@ -116,7 +139,9 @@ export default function AiIntelPanel() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                       <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: `${ec.color}15`, color: ec.color }}>{ec.label}</span>
-                      {a.serviceDisruption && <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>DISRUPTION</span>}
+                      {a.serviceDisruption && (
+                        <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>DISRUPTION</span>
+                      )}
                     </div>
                     <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{a.confidence}% conf</span>
                   </div>
@@ -155,13 +180,16 @@ export default function AiIntelPanel() {
               );
             })}
 
-            {(data.results?.length ?? 0) > relevantResults.length && (
+            {/* 非相关结果计数 */}
+            {(data?.results?.length ?? 0) > relevantResults.length && (
               <div style={{ padding: '8px 14px', fontSize: 10, color: 'var(--text-muted)', textAlign: 'center' }}>
-                {t('ai.otherArticles', { count: (data.results?.length ?? 0) - relevantResults.length })}
+                {t('ai.otherArticles', { count: (data?.results?.length ?? 0) - relevantResults.length })}
               </div>
             )}
+
+            {/* 底部信息 */}
             <div style={{ padding: '8px 14px', fontSize: 9, color: '#2D4562', borderTop: '1px solid var(--border-subtle)', lineHeight: 1.5 }}>
-              {t('ai.poweredBy')} · {data.cached ? t('ai.cached') : t('ai.fresh')} · {new Date(data.timestamp).toLocaleTimeString()}
+              {t('ai.poweredBy')} · {data?.cached ? t('ai.cached') : t('ai.fresh')} · {data?.timestamp ? new Date(data.timestamp).toLocaleTimeString() : ''}
             </div>
           </div>
         )}
