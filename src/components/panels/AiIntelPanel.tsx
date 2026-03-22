@@ -1,7 +1,4 @@
 // src/components/panels/AiIntelPanel.tsx
-// AI情报面板 — UI打磨版：骨架屏 + 平滑展开
-// 注意：position/top/right 已移除，由 page.tsx 的右侧控制栏统一负责位置
-
 'use client';
 import { useEffect, useState } from 'react';
 import { useMapStore } from '@/stores/mapStore';
@@ -49,12 +46,11 @@ export default function AiIntelPanel() {
   }, [showAiInsights, isExpanded]);
 
   if (!showAiInsights) return null;
-  if (!loading && (!data || data.results.length === 0)) return null;
+  if (!loading && (!data || (data.results?.length ?? 0) === 0)) return null;
 
-  const relevantResults = data?.results.filter(r => r.analysis?.isRelevant) || [];
+  const relevantResults = data?.results?.filter(r => r.analysis?.isRelevant) || [];
 
   return (
-    // ← 不再有 position/top/right/width，宽度由父容器控制（width: 300px 在 page.tsx 里统一设置）
     <div style={{
       backgroundColor: 'rgba(10, 17, 34, 0.95)',
       backdropFilter: 'blur(16px)',
@@ -65,7 +61,6 @@ export default function AiIntelPanel() {
       boxShadow: 'var(--shadow-panel)',
       animation: 'fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     }}>
-      {/* 标题栏 */}
       <div onClick={() => setIsExpanded(!isExpanded)} style={{
         padding: '10px 14px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -87,7 +82,6 @@ export default function AiIntelPanel() {
         </div>
       </div>
 
-      {/* 展开内容 */}
       <div style={{
         maxHeight: isExpanded ? 500 : 0,
         overflow: 'hidden',
@@ -95,14 +89,12 @@ export default function AiIntelPanel() {
       }}>
         {loading ? <SkeletonAiPanel /> : data && (
           <div style={{ overflowY: 'auto', maxHeight: 500 }}>
-            {/* 统计行 */}
             <div style={{ padding: '8px 14px', display: 'flex', gap: 12, justifyContent: 'center', borderBottom: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)' }}>
               <span>{data.stats.totalNewsScanned} {t('ai.scanned')}</span>
               <span>{data.stats.aiAnalyzed} {t('ai.analyzed')}</span>
               <span style={{ color: relevantResults.length > 0 ? '#8B5CF6' : 'var(--text-muted)' }}>{relevantResults.length} {t('ai.relevant')}</span>
             </div>
 
-            {/* 结果列表 */}
             {relevantResults.map((item, i) => {
               const a = item.analysis;
               const ec = EVENT_CONFIG[a.eventType] || EVENT_CONFIG.GENERAL;
@@ -121,7 +113,6 @@ export default function AiIntelPanel() {
                     </div>
                     <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{a.confidence}% conf</span>
                   </div>
-                  {/* 严重度条 */}
                   <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
                     {[1, 2, 3, 4, 5].map(level => (
                       <div key={level} style={{
@@ -157,9 +148,9 @@ export default function AiIntelPanel() {
               );
             })}
 
-            {data.results.length > relevantResults.length && (
+            {(data.results?.length ?? 0) > relevantResults.length && (
               <div style={{ padding: '8px 14px', fontSize: 10, color: 'var(--text-muted)', textAlign: 'center' }}>
-                {t('ai.otherArticles', { count: data.results.length - relevantResults.length })}
+                {t('ai.otherArticles', { count: (data.results?.length ?? 0) - relevantResults.length })}
               </div>
             )}
             <div style={{ padding: '8px 14px', fontSize: 9, color: '#2D4562', borderTop: '1px solid var(--border-subtle)', lineHeight: 1.5 }}>
