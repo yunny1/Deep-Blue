@@ -1,12 +1,10 @@
 'use client';
 // src/components/panels/FilterPanel.tsx
-// v3：着色模式联动筛选 + 跨维度叠加 + 动画计数
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useMapStore } from '@/stores/mapStore';
 import { useTranslation } from '@/lib/i18n';
 
-// ── 数字滚动动画 hook ─────────────────────────────────────────────
 function useAnimatedNumber(target: number, duration = 600): number {
   const [value, setValue] = useState(target);
   const prevTarget = useRef(target);
@@ -29,14 +27,9 @@ function useAnimatedNumber(target: number, duration = 600): number {
 
 function AnimatedCount({ count, color }: { count: number; color: string }) {
   const animated = useAnimatedNumber(count);
-  return (
-    <span style={{ fontSize: 11, fontWeight: 700, color, minWidth: 28, textAlign: 'right' }}>
-      {animated.toLocaleString()}
-    </span>
-  );
+  return <span style={{ fontSize: 11, fontWeight: 700, color, minWidth: 28, textAlign: 'right' }}>{animated.toLocaleString()}</span>;
 }
 
-// ── 颜色常量 ─────────────────────────────────────────────────────
 const VENDOR_COLORS: Record<string, string> = {
   'ASN': '#3B82F6', 'SubCom': '#EF4444', 'NEC': '#F59E0B',
   'HMN Tech': '#10B981', 'Prysmian': '#8B5CF6', 'Ericsson': '#EC4899',
@@ -62,7 +55,38 @@ function CountBar({ count, maxCount, color }: { count: number; maxCount: number;
   );
 }
 
-// ── 主组件 ───────────────────────────────────────────────────────
+// 年份范围组件（年代模式 + 叠加筛选复用）
+function YearRangeFilter({ zh, filterYearRange, setFilterYearRange }: { zh: boolean; filterYearRange: [number, number]; setFilterYearRange: (r: [number, number]) => void }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+        <input type="number" value={filterYearRange[0]}
+          onChange={e => setFilterYearRange([parseInt(e.target.value) || 1990, filterYearRange[1]])}
+          style={{ width: 58, height: 26, borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: '#D1D5DB', fontSize: 11, textAlign: 'center', outline: 'none' }}
+        />
+        <span style={{ color: '#4B5563', fontSize: 11 }}>—</span>
+        <input type="number" value={filterYearRange[1]}
+          onChange={e => setFilterYearRange([filterYearRange[0], parseInt(e.target.value) || 2030])}
+          style={{ width: 58, height: 26, borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: '#D1D5DB', fontSize: 11, textAlign: 'center', outline: 'none' }}
+        />
+      </div>
+      <div style={{ display: 'flex', gap: 5 }}>
+        {[
+          { label: '2020+',                   action: () => setFilterYearRange([2020, 2030]) },
+          { label: zh ? '<2010' : 'Pre-2010', action: () => setFilterYearRange([1990, 2009]) },
+          { label: zh ? '全部' : 'All',        action: () => setFilterYearRange([1990, 2030]) },
+        ].map((btn, i) => (
+          <button key={i} onClick={btn.action} style={{
+            flex: 1, padding: '5px 0', borderRadius: 5,
+            border: '1px solid rgba(255,255,255,0.08)',
+            backgroundColor: 'rgba(255,255,255,0.03)', color: '#9CA3AF', fontSize: 10, cursor: 'pointer',
+          }}>{btn.label}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function FilterPanel() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [crossExpanded, setCrossExpanded] = useState(false);
@@ -79,15 +103,13 @@ export default function FilterPanel() {
   const { t, locale } = useTranslation();
   const zh = locale === 'zh';
 
-  // 状态标签（双语）
   const STATUS_LABELS: Record<string, string> = {
-    IN_SERVICE:         zh ? '在役'  : 'In Service',
-    UNDER_CONSTRUCTION: zh ? '在建'  : 'Under Construction',
+    IN_SERVICE:         zh ? '在役'   : 'In Service',
+    UNDER_CONSTRUCTION: zh ? '在建'   : 'Under Construction',
     PLANNED:            zh ? '规划中' : 'Planned',
     DECOMMISSIONED:     zh ? '已退役' : 'Decommissioned',
   };
 
-  // 着色模式选项（双语）
   const COLOR_MODE_OPTIONS = [
     { key: 'status',   label: zh ? '状态'   : 'Status'   },
     { key: 'vendor',   label: zh ? '建造商' : 'Builder'  },
@@ -177,6 +199,28 @@ export default function FilterPanel() {
     }
   };
 
+  const isAllSelected = (): boolean => {
+    if (colorMode === 'status')   return Object.values(filterStatuses).every(Boolean);
+    if (colorMode === 'vendor')   return filterVendors.length === 0;
+    if (colorMode === 'operator') return filterOperators.length === 0;
+    return true;
+  };
+
+  const toggleSelectAll = () => {
+    if (colorMode === 'status') {
+      if (isAllSelected()) {
+        // 取消全选时至少保留一个，保留在役
+        setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: false, PLANNED: false, DECOMMISSIONED: false });
+      } else {
+        setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: true });
+      }
+    } else if (colorMode === 'vendor') {
+      isAllSelected() ? setFilterVendors(primaryItems.map(i => i.key)) : setFilterVendors([]);
+    } else if (colorMode === 'operator') {
+      isAllSelected() ? setFilterOperators(primaryItems.map(i => i.key)) : setFilterOperators([]);
+    }
+  };
+
   const activeFilterCount = [
     Object.values(filterStatuses).filter(v => !v).length > 0 ? 1 : 0,
     filterVendors.length > 0 ? 1 : 0,
@@ -188,11 +232,12 @@ export default function FilterPanel() {
     ? (zh ? '运行状态' : 'Status')
     : colorMode === 'vendor'
     ? (zh ? '建造商' : 'Builder')
-    : (zh ? '运营商' : 'Operator');
+    : colorMode === 'operator'
+    ? (zh ? '运营商' : 'Operator')
+    : (zh ? '投产年份' : 'RFS Year');
 
   return (
     <>
-      {/* 滚动条样式 */}
       <style>{`
         .filter-scroll::-webkit-scrollbar { width: 3px; }
         .filter-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -239,7 +284,17 @@ export default function FilterPanel() {
               ))}
             </div>
 
-            {/* 主维度筛选 */}
+            {/* 年代模式：直接显示年份范围 */}
+            {colorMode === 'year' && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: 1 }}>
+                  {zh ? '投产年份' : 'RFS Year'}
+                </div>
+                <YearRangeFilter zh={zh} filterYearRange={filterYearRange} setFilterYearRange={setFilterYearRange} />
+              </div>
+            )}
+
+            {/* 主维度筛选（状态/建造商/运营商）*/}
             {colorMode !== 'year' && (
               <>
                 <div style={{ fontSize: 10, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -251,25 +306,14 @@ export default function FilterPanel() {
                       </span>
                     )}
                   </span>
-                  <span onClick={() => {
-                    if (colorMode === 'status') {
-                      const allActive = Object.values(filterStatuses).every(Boolean);
-                      if (allActive) {
-                        setFilterStatuses({ IN_SERVICE: false, UNDER_CONSTRUCTION: false, PLANNED: false, DECOMMISSIONED: false });
-                      } else {
-                        setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: true });
-                      }
-                    } else if (colorMode === 'vendor') {
-                      filterVendors.length > 0 ? setFilterVendors([]) : setFilterVendors(primaryItems.map(i => i.key));
-                    } else if (colorMode === 'operator') {
-                      filterOperators.length > 0 ? setFilterOperators([]) : setFilterOperators(primaryItems.map(i => i.key));
-                    }
-                  }} style={{ fontSize: 9, color: '#4B5563', cursor: 'pointer', padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)', textTransform: 'none' as const, letterSpacing: 0, fontWeight: 400 }}>
-                    {(() => {
-                      if (colorMode === 'status') return Object.values(filterStatuses).every(Boolean) ? (zh ? '取消全选' : 'Deselect all') : (zh ? '全选' : 'Select all');
-                      if (colorMode === 'vendor') return filterVendors.length > 0 ? (zh ? '全选' : 'Select all') : (zh ? '取消全选' : 'Deselect all');
-                      return filterOperators.length > 0 ? (zh ? '全选' : 'Select all') : (zh ? '取消全选' : 'Deselect all');
-                    })()}
+                  <span onClick={toggleSelectAll} style={{
+                    fontSize: 9, color: '#4B5563', cursor: 'pointer',
+                    padding: '2px 6px', borderRadius: 4,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    backgroundColor: 'rgba(255,255,255,0.03)',
+                    textTransform: 'none' as const, letterSpacing: 0, fontWeight: 400,
+                  }}>
+                    {isAllSelected() ? (zh ? '取消全选' : 'Deselect all') : (zh ? '全选' : 'Select all')}
                   </span>
                 </div>
 
@@ -317,9 +361,7 @@ export default function FilterPanel() {
                 {/* 跨维度：状态 */}
                 {colorMode !== 'status' && (
                   <div>
-                    <div style={{ fontSize: 10, color: '#6B7280', marginBottom: 6, fontWeight: 600 }}>
-                      {zh ? '状态' : 'Status'}
-                    </div>
+                    <div style={{ fontSize: 10, color: '#6B7280', marginBottom: 6, fontWeight: 600 }}>{zh ? '状态' : 'Status'}</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
                       {Object.entries(STATUS_LABELS).map(([key, label]) => {
                         const active = filterStatuses[key as keyof typeof filterStatuses] ?? true;
@@ -390,38 +432,13 @@ export default function FilterPanel() {
                   </div>
                 )}
 
-                {/* 跨维度：年份范围 */}
-                <div>
-                  <div style={{ fontSize: 10, color: '#6B7280', marginBottom: 6, fontWeight: 600 }}>
-                    {zh ? '投产年份' : 'RFS Year'}
+                {/* 跨维度：年份（非年代模式时显示）*/}
+                {colorMode !== 'year' && (
+                  <div>
+                    <div style={{ fontSize: 10, color: '#6B7280', marginBottom: 6, fontWeight: 600 }}>{zh ? '投产年份' : 'RFS Year'}</div>
+                    <YearRangeFilter zh={zh} filterYearRange={filterYearRange} setFilterYearRange={setFilterYearRange} />
                   </div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
-                    <input type="number" value={filterYearRange[0]}
-                      onChange={e => setFilterYearRange([parseInt(e.target.value) || 1990, filterYearRange[1]])}
-                      style={{ width: 58, height: 26, borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: '#D1D5DB', fontSize: 11, textAlign: 'center', outline: 'none' }}
-                    />
-                    <span style={{ color: '#4B5563', fontSize: 11 }}>—</span>
-                    <input type="number" value={filterYearRange[1]}
-                      onChange={e => setFilterYearRange([filterYearRange[0], parseInt(e.target.value) || 2030])}
-                      style={{ width: 58, height: 26, borderRadius: 5, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: '#D1D5DB', fontSize: 11, textAlign: 'center', outline: 'none' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: 5 }}>
-                    {[
-                      { label: '2020+',                     action: () => setFilterYearRange([2020, 2030]) },
-                      { label: zh ? '<2010' : 'Pre-2010',   action: () => setFilterYearRange([1990, 2009]) },
-                      { label: zh ? '全部' : 'All',          action: () => { setFilterYearRange([1990, 2030]); setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: false }); setFilterVendors([]); setFilterOperators([]); } },
-                    ].map((btn, i) => (
-                      <button key={i} onClick={btn.action} style={{
-                        flex: 1, padding: '5px 0', borderRadius: 5,
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: 'rgba(255,255,255,0.03)', color: '#9CA3AF', fontSize: 10, cursor: 'pointer',
-                      }}>
-                        {btn.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>
