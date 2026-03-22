@@ -23,12 +23,18 @@ async function redisGet(key: string): Promise<any | null> {
   try {
     const res = await fetch(`${REDIS_URL}/get/${encodeURIComponent(key)}`, {
       headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
-      next: { revalidate: 300 }, // Next.js 层缓存 5 分钟
+      next: { revalidate: 300 },
     });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.result) return null;
-    return JSON.parse(data.result);
+
+    const parsed = JSON.parse(data.result);
+    // 兼容旧格式 {value: "...", ex: N}
+    if (parsed.value && typeof parsed.value === 'string' && !parsed.cables) {
+      return JSON.parse(parsed.value);
+    }
+    return parsed;
   } catch { return null; }
 }
 
