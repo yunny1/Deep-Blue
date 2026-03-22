@@ -162,6 +162,7 @@ model UnresolvedLocation {
   retryCount   Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  aiSuggestedPayload Json?    @map("ai_suggested_payload")
 
   @@index([status])
   @@map("unresolved_locations")
