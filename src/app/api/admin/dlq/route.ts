@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   // 更新 DLQ 状态为已解决
   await prisma.unresolvedLocation.update({
     where: { id },
-    data: { status: 'RESOLVED', updatedAt: new Date() },
+    data: { status: 'RESOLVED', resolvedAt: new Date() },
   });
 
   // 同时更新数据库里所有使用这个站名但坐标为 (0,0) 的登陆站
