@@ -140,21 +140,24 @@ model RiskScore {
 }
 
 model LocationDictionary {
-  id        String   @id @default(cuid())
-  query     String   @unique
-  latitude  Float
-  longitude Float
-  source    String   @default("nominatim")
-  createdAt DateTime @default(now()) @map("created_at")
+  id               String   @id @default(cuid())
+  rawString        String   @unique @map("raw_string")
+  latitude         Float
+  longitude        Float
+  countryCode      String?  @map("country_code")
+  standardizedCity String?  @map("standardized_city")
+  source           String   @default("nominatim")
+  createdAt        DateTime @default(now()) @map("created_at")
   @@map("location_dictionary")
 }
 
 model UnresolvedLocation {
-  id                String   @id @default(cuid())
-  stationName       String   @map("station_name")
-  countryCode       String   @map("country_code")
-  status            String   @default("PENDING")
-  aiSuggestedPayload Json?   @map("ai_suggested_payload")
+  id                String    @id @default(cuid())
+  rawString         String    @map("raw_string")
+  stationId         String?   @map("station_id")
+  countryCode       String?   @map("country_code")
+  status            String    @default("PENDING")
+  aiSuggestedPayload Json?    @map("ai_suggested_payload")
   resolvedAt        DateTime? @map("resolved_at")
   createdAt         DateTime  @default(now()) @map("created_at")
   @@map("unresolved_locations")
