@@ -21,8 +21,11 @@ async function getFromRedis(): Promise<any | null> {
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.result) return null;
-    return JSON.parse(data.result);
-  } catch { return null; }
+    // ai-precompute 存的是 { value: "...", ex: N } 格式
+    const raw = typeof data.result === 'object' ? data.result.value : data.result;
+    if (!raw) return null;
+    return JSON.parse(raw);
+    } catch { return null; }
 }
 
 export async function GET(request: NextRequest) {
