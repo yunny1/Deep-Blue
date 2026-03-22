@@ -26,17 +26,20 @@ const STATUS_COLORS: Record<string, [number, number, number, number]> = {
 };
 const DIM_ALPHA = 0.08;
 
-export interface CableHoverInfo { name: string; status: string; lengthKm: number | null; fiberPairs: number | null; }
+// 地震风险等级颜色（与 UI 整体配色一致）
+const QUAKE_RISK_COLORS: Record<string, [number, number, number, number]> = {
+  HIGH:   [0.94, 0.27, 0.27, 0.9],  // #EF4444
+  MEDIUM: [0.98, 0.45, 0.09, 0.85], // #F97316
+  LOW:    [0.91, 0.77, 0.42, 0.75], // #E9C46A
+};
 
+export interface CableHoverInfo { name: string; status: string; lengthKm: number | null; fiberPairs: number | null; }
 interface CesiumGlobeProps {
   onHover?: (cable: CableHoverInfo | null, position: { x: number; y: number }) => void;
   onClick?: (cableSlug: string | null) => void;
 }
 
-function getCableColor(
-  mode: string, status: string,
-  vendorName: string | null, ownerNames: string[], rfsYear: number | null
-): [number, number, number, number] {
+function getCableColor(mode: string, status: string, vendorName: string | null, ownerNames: string[], rfsYear: number | null): [number, number, number, number] {
   switch (mode) {
     case 'vendor':   return vendorName && VENDOR_COLOR_MAP[vendorName] ? VENDOR_COLOR_MAP[vendorName] : VENDOR_DEFAULT;
     case 'operator': for (const n of ownerNames) { if (OPERATOR_COLOR_MAP[n]) return OPERATOR_COLOR_MAP[n]; } return OPERATOR_DEFAULT;
@@ -46,12 +49,16 @@ function getCableColor(
 }
 
 export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
-  const containerRef    = useRef<HTMLDivElement>(null);
-  const viewerRef       = useRef<any>(null);
-  const cesiumRef       = useRef<any>(null);
-  const entityMetaRef   = useRef<Map<any, { slug: string; status: string; vendor: string | null; owners: string[]; rfsYear: number | null }>>(new Map());
-  const entitiesMapRef  = useRef<Map<string, any[]>>(new Map());
-  const allEntitiesRef  = useRef<any[]>([]);
+  const containerRef   = useRef<HTMLDivElement>(null);
+  const viewerRef      = useRef<any>(null);
+  const cesiumRef      = useRef<any>(null);
+  const entityMetaRef  = useRef<Map<any, { slug: string; status: string; vendor: string | null; owners: string[]; rfsYear: number | null }>>(new Map());
+  const entitiesMapRef = useRef<Map<string, any[]>>(new Map());
+  const allEntitiesRef = useRef<any[]>([]);
+  // 地震扩散圆实体引用（用于清除）
+  const quakeRippleRef = useRef<any[]>([]);
+  const quakeAnimRef   = useRef<any>(null);
+
   const [loading, setLoading] = useState(true);
   const [stats, setStats]     = useState({ total: 0, rendered: 0 });
 
@@ -61,9 +68,10 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
     filterStatuses, filterYearRange,
     filterVendors, filterOperators,
     searchHighlightSlugs, searchHoverSlug,
+    earthquakeHighlight,
   } = useMapStore();
 
-  // ── 初始化 Cesium ─────────────────────────────────────────────
+  // ── 初始化 ────────────────────────────────────────────────────
   useEffect(() => {
     async function initCesium() {
       const Cesium = await import('cesium');
@@ -101,7 +109,6 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000) });
       viewerRef.current = viewer;
 
-      // 加载海缆
       try {
         const response = await fetch('/api/cables?geo=true&details=true');
         const data = await response.json();
@@ -137,8 +144,8 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
                     width: 1.5, material: color, clampToGround: false,
                   },
                   properties: new Cesium.PropertyBag({
-                    cableId: cable.id, cableSlug: cable.slug,
-                    status: cable.status, lengthKm: cable.lengthKm, fiberPairs: cable.fiberPairs,
+                    cableId: cable.id, cableSlug: cable.slug, status: cable.status,
+                    lengthKm: cable.lengthKm, fiberPairs: cable.fiberPairs,
                   }),
                 });
                 cableEntities.push(entity);
@@ -214,22 +221,18 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
     }
   }, [colorMode]);
 
-  // ── 筛选条件变化：显示/隐藏 ──────────────────────────────────
+  // ── 筛选条件变化 ─────────────────────────────────────────────
   useEffect(() => {
     const Cesium = cesiumRef.current;
     if (!Cesium || allEntitiesRef.current.length === 0) return;
-
     for (const entity of allEntitiesRef.current) {
       const meta = entityMetaRef.current.get(entity);
       if (!meta || !entity.polyline) continue;
-
-      const statusMatch  = filterStatuses[meta.status as keyof typeof filterStatuses] ?? true;
-      const rfsYear      = meta.rfsYear;
-      const yearMatch    = !rfsYear || (rfsYear >= filterYearRange[0] && rfsYear <= filterYearRange[1]);
-      const vendorMatch  = filterVendors.length === 0 || filterVendors.includes(meta.vendor || '__other__');
+      const statusMatch   = filterStatuses[meta.status as keyof typeof filterStatuses] ?? true;
+      const yearMatch     = !meta.rfsYear || (meta.rfsYear >= filterYearRange[0] && meta.rfsYear <= filterYearRange[1]);
+      const vendorMatch   = filterVendors.length === 0   || filterVendors.includes(meta.vendor || '__other__');
       const operatorMatch = filterOperators.length === 0 || meta.owners.some(o => filterOperators.includes(o));
-      const visible      = statusMatch && yearMatch && vendorMatch && operatorMatch;
-
+      const visible       = statusMatch && yearMatch && vendorMatch && operatorMatch;
       try {
         if (visible) {
           const colorArr = getCableColor(colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
@@ -247,11 +250,9 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   useEffect(() => {
     const Cesium = cesiumRef.current;
     if (!Cesium || allEntitiesRef.current.length === 0) return;
-
     for (const entity of allEntitiesRef.current) {
       const meta = entityMetaRef.current.get(entity);
       if (!meta || !entity.polyline) continue;
-
       if (searchHoverSlug) {
         if (meta.slug === searchHoverSlug) {
           entity.polyline.material = new Cesium.Color(1, 1, 1, 1);
@@ -275,6 +276,127 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       }
     }
   }, [searchHighlightSlugs, searchHoverSlug, colorMode]);
+
+  // ── 地震高亮：扩散圆 + 海缆染色 ─────────────────────────────
+  useEffect(() => {
+    const Cesium = cesiumRef.current;
+    const viewer = viewerRef.current;
+    if (!Cesium || !viewer) return;
+
+    // 清除旧的扩散圆
+    clearTimeout(quakeAnimRef.current);
+    for (const e of quakeRippleRef.current) {
+      try { viewer.entities.remove(e); } catch {}
+    }
+    quakeRippleRef.current = [];
+
+    if (!earthquakeHighlight) {
+      // 恢复海缆原色
+      for (const entity of allEntitiesRef.current) {
+        const meta = entityMetaRef.current.get(entity);
+        if (!meta || !entity.polyline) continue;
+        const colorArr = getCableColor(colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
+        try { entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]); entity.polyline.width = new Cesium.ConstantProperty(1.5); } catch (e) {}
+      }
+      return;
+    }
+
+    const { lat, lng, magnitude, affectedCables } = earthquakeHighlight;
+
+    // 飞到震中
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(lng, lat, 3000000 + magnitude * 500000),
+      duration: 2.0,
+      easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+    });
+
+    // 震中标记点
+    const epicenter = viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(lng, lat),
+      point: {
+        pixelSize: 10,
+        color: Cesium.Color.fromCssColorString('#EF4444'),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+      },
+    });
+    quakeRippleRef.current.push(epicenter);
+
+    // 扩散圆动画：3个圆依次扩散，模拟地震波
+    // 半径基于震级：M5 → 200km，M6 → 400km，M7 → 700km
+    const maxRadiusMeters = Math.pow(10, magnitude - 3) * 1000;
+
+    let frame = 0;
+    const totalFrames = 120; // 约4秒（30fps）
+    const rippleEntities: any[] = [];
+
+    // 创建3个扩散圆
+    for (let ring = 0; ring < 3; ring++) {
+      const delay = ring * 0.33; // 错开1/3周期
+      const ripple = viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(lng, lat),
+        ellipse: {
+          semiMajorAxis: new Cesium.CallbackProperty(() => {
+            const t = ((frame / totalFrames + delay) % 1);
+            return maxRadiusMeters * t;
+          }, false),
+          semiMinorAxis: new Cesium.CallbackProperty(() => {
+            const t = ((frame / totalFrames + delay) % 1);
+            return maxRadiusMeters * t;
+          }, false),
+          material: new Cesium.ColorMaterialProperty(
+            new Cesium.CallbackProperty(() => {
+              const t = ((frame / totalFrames + delay) % 1);
+              const alpha = (1 - t) * 0.4; // 越扩越透明
+              return Cesium.Color.fromCssColorString('#EF4444').withAlpha(alpha);
+            }, false)
+          ),
+          outline: true,
+          outlineColor: new Cesium.CallbackProperty(() => {
+            const t = ((frame / totalFrames + delay) % 1);
+            const alpha = (1 - t) * 0.8;
+            return Cesium.Color.fromCssColorString('#EF4444').withAlpha(alpha);
+          }, false),
+          outlineWidth: 2,
+          height: 0,
+        },
+      });
+      rippleEntities.push(ripple);
+      quakeRippleRef.current.push(ripple);
+    }
+
+    // 动画循环
+    const animate = () => {
+      frame = (frame + 1) % totalFrames;
+      quakeAnimRef.current = setTimeout(animate, 33); // ~30fps
+    };
+    quakeAnimRef.current = setTimeout(animate, 33);
+
+    // 海缆染色：受影响的按风险等级染色，不受影响的暗化
+    const affectedSlugs = new Set(affectedCables.map(c => c.cableSlug));
+    const slugToRisk = new Map(affectedCables.map(c => [c.cableSlug, c.riskLevel]));
+
+    for (const entity of allEntitiesRef.current) {
+      const meta = entityMetaRef.current.get(entity);
+      if (!meta || !entity.polyline) continue;
+      try {
+        if (affectedSlugs.has(meta.slug)) {
+          const risk     = slugToRisk.get(meta.slug) || 'LOW';
+          const riskColor = QUAKE_RISK_COLORS[risk];
+          entity.polyline.material = new Cesium.Color(riskColor[0], riskColor[1], riskColor[2], riskColor[3]);
+          entity.polyline.width    = new Cesium.ConstantProperty(risk === 'HIGH' ? 4 : risk === 'MEDIUM' ? 3 : 2);
+        } else {
+          entity.polyline.material = new Cesium.Color(1, 1, 1, DIM_ALPHA);
+          entity.polyline.width    = new Cesium.ConstantProperty(0.5);
+        }
+      } catch (e) {}
+    }
+
+    return () => {
+      clearTimeout(quakeAnimRef.current);
+    };
+  }, [earthquakeHighlight]);
 
   // ── 飞行指令 ─────────────────────────────────────────────────
   useEffect(() => {
@@ -334,11 +456,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {loading && (
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(3, 4, 8, 0.9)', flexDirection: 'column', gap: 16,
-        }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(3,4,8,0.9)', flexDirection: 'column', gap: 16 }}>
           <div style={{ width: 40, height: 40, border: '3px solid rgba(42,157,143,0.2)', borderTopColor: '#2A9D8F', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           <div style={{ fontSize: 13, color: '#2A9D8F', letterSpacing: 2 }}>Loading global submarine cable network...</div>

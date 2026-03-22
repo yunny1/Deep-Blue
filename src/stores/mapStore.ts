@@ -1,6 +1,5 @@
 // src/stores/mapStore.ts
-// 全局状态管理（Zustand）v3
-// 新增：跨维度筛选 filterVendors / filterOperators
+// v4：新增 earthquakeHighlight 状态
 
 import { create } from 'zustand';
 
@@ -9,6 +8,14 @@ interface FilterStatuses {
   UNDER_CONSTRUCTION: boolean;
   PLANNED: boolean;
   DECOMMISSIONED: boolean;
+}
+
+export interface EarthquakeHighlight {
+  lat: number;
+  lng: number;
+  magnitude: number;
+  place: string;
+  affectedCables: Array<{ cableSlug: string; cableName: string; distanceKm: number; riskLevel: 'HIGH' | 'MEDIUM' | 'LOW' }>;
 }
 
 interface MapState {
@@ -32,29 +39,28 @@ interface MapState {
   flyToCable: (slug: string) => void;
   clearFlyTo: () => void;
 
-  // 状态筛选（对象格式）
   filterStatuses: FilterStatuses;
   setFilterStatuses: (statuses: FilterStatuses) => void;
 
-  // 年份范围
   filterYearRange: [number, number];
   setFilterYearRange: (range: [number, number]) => void;
 
-  // 建造商筛选（空数组 = 全部显示）
   filterVendors: string[];
   setFilterVendors: (vendors: string[]) => void;
 
-  // 运营商筛选（空数组 = 全部显示）
   filterOperators: string[];
   setFilterOperators: (operators: string[]) => void;
 
-  // 搜索高亮
   searchHighlightSlugs: string[];
   setSearchHighlights: (slugs: string[]) => void;
   clearSearchHighlights: () => void;
 
   searchHoverSlug: string | null;
   setSearchHover: (slug: string | null) => void;
+
+  // 地震高亮：震中扩散圆 + 受影响海缆染色
+  earthquakeHighlight: EarthquakeHighlight | null;
+  setEarthquakeHighlight: (highlight: EarthquakeHighlight | null) => void;
 }
 
 export const useMapStore = create<MapState>((set) => ({
@@ -81,15 +87,11 @@ export const useMapStore = create<MapState>((set) => ({
     selectedCableId: slug,
     searchHighlightSlugs: [],
     searchHoverSlug: null,
+    earthquakeHighlight: null, // 飞向海缆时清除地震高亮
   })),
   clearFlyTo: () => set({ flyToSlug: null }),
 
-  filterStatuses: {
-    IN_SERVICE: true,
-    UNDER_CONSTRUCTION: true,
-    PLANNED: true,
-    DECOMMISSIONED: false,
-  },
+  filterStatuses: { IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: false },
   setFilterStatuses: (statuses) => set({ filterStatuses: statuses }),
 
   filterYearRange: [1990, 2030],
@@ -107,4 +109,12 @@ export const useMapStore = create<MapState>((set) => ({
 
   searchHoverSlug: null,
   setSearchHover: (slug) => set({ searchHoverSlug: slug }),
+
+  earthquakeHighlight: null,
+  setEarthquakeHighlight: (highlight) => set({
+    earthquakeHighlight: highlight,
+    // 设置地震高亮时清除其他高亮
+    searchHighlightSlugs: [],
+    searchHoverSlug: null,
+  }),
 }));
