@@ -38,7 +38,8 @@ export default function AiIntelPanel() {
   const { t, locale } = useTranslation();
 
   useEffect(() => {
-    if (!showAiInsights || !isExpanded || data) return;
+    if (!showAiInsights || !isExpanded) return;
+    if (data?.results && data.results.length > 0) return; // 有数据才跳过
     fetch('/api/ai/analyze')
       .then(r => r.json())
       .then(d => { if (!d.error) setData(d); setLoading(false); })
