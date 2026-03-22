@@ -170,16 +170,38 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       let lastHovered: any = null, lastMaterial: any = null;
 
       handler.setInputAction((m: any) => {
-        if (lastHovered && lastMaterial) {
-          try { lastHovered.polyline.material = lastMaterial; lastHovered.polyline.width = new Cesium.ConstantProperty(1.5); } catch (e) {}
+                // 恢复上次悬停的所有实体
+        if (lastHovered) {
+          const lastSlug = entityMetaRef.current.get(lastHovered)?.slug;
+          if (lastSlug) {
+            const siblings = entitiesMapRef.current.get(lastSlug) || [];
+            for (const sibling of siblings) {
+              const meta = entityMetaRef.current.get(sibling);
+              if (!meta) continue;
+              try {
+                const colorArr = getCableColor(useMapStore.getState().colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
+                sibling.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
+                sibling.polyline.width = new Cesium.ConstantProperty(1.5);
+              } catch (e) {}
+            }
+          }
           lastHovered = null; lastMaterial = null;
         }
         const picked = viewer.scene.pick(m.endPosition);
         if (Cesium.defined(picked) && picked.id?.polyline) {
           const e = picked.id;
-          lastMaterial = e.polyline.material; lastHovered = e;
-          e.polyline.material = new Cesium.Color(1, 1, 1, 1);
-          e.polyline.width = new Cesium.ConstantProperty(3);
+          lastHovered = e; lastMaterial = e.polyline.material;
+          // 高亮该海缆的所有实体
+          const slug = entityMetaRef.current.get(e)?.slug;
+          if (slug) {
+            const siblings = entitiesMapRef.current.get(slug) || [];
+            for (const sibling of siblings) {
+              try {
+                sibling.polyline.material = new Cesium.Color(1, 1, 1, 1);
+                sibling.polyline.width = new Cesium.ConstantProperty(3);
+              } catch (err) {}
+            }
+          }
           if (onHover && e.properties) {
             onHover({
               name: e.name || 'Unknown',
