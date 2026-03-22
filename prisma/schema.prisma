@@ -35,6 +35,7 @@ model Cable {
 model LandingStation {
   id          String   @id @default(cuid())
   name        String
+  nameZh      String?  @map("name_zh")   // ← 新增：中文名称
   city        String?
   countryCode String   @map("country_code")
   latitude    Float?
@@ -125,45 +126,36 @@ model CountryEvent {
 }
 
 model RiskScore {
-  id               String   @id @default(cuid())
-  cableId          String   @map("cable_id")
-  scoreOverall     Float    @map("score_overall")
-  scoreGeopolitical Float   @map("score_geopolitical")
-  scoreNatural     Float    @map("score_natural")
-  scoreOperational Float    @map("score_operational")
-  scoreAge         Float    @map("score_age")
-  confidencePct    Float?   @map("confidence_pct")
-  calculatedAt     DateTime @default(now()) @map("calculated_at")
-  cable            Cable    @relation(fields: [cableId], references: [id])
+  id                String   @id @default(cuid())
+  cableId           String   @map("cable_id")
+  scoreOverall      Float    @map("score_overall")
+  scoreGeopolitical Float    @map("score_geopolitical")
+  scoreNatural      Float    @map("score_natural")
+  scoreOperational  Float    @map("score_operational")
+  scoreAge          Float    @map("score_age")
+  confidencePct     Float?   @map("confidence_pct")
+  calculatedAt      DateTime @default(now()) @map("calculated_at")
+  cable             Cable    @relation(fields: [cableId], references: [id])
   @@map("risk_scores")
 }
 
 model LocationDictionary {
-  id               String   @id @default(cuid())
-  rawString        String   @unique
-  standardizedCity String?
-  countryCode      String
-  latitude         Float
-  longitude        Float
-  source           String   @default("Nominatim")
-  createdAt        DateTime @default(now())
-
-  @@index([rawString])
+  id        String   @id @default(cuid())
+  query     String   @unique
+  latitude  Float
+  longitude Float
+  source    String   @default("nominatim")
+  createdAt DateTime @default(now()) @map("created_at")
   @@map("location_dictionary")
 }
 
 model UnresolvedLocation {
-  id           String   @id @default(cuid())
-  rawString    String   @unique
-  originSource String?
-  cableId      String?
-  errorReason  String?
-  status       String   @default("PENDING")
-  retryCount   Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  aiSuggestedPayload Json?    @map("ai_suggested_payload")
-
-  @@index([status])
+  id                String   @id @default(cuid())
+  stationName       String   @map("station_name")
+  countryCode       String   @map("country_code")
+  status            String   @default("PENDING")
+  aiSuggestedPayload Json?   @map("ai_suggested_payload")
+  resolvedAt        DateTime? @map("resolved_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
   @@map("unresolved_locations")
 }
