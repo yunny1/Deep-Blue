@@ -46,7 +46,7 @@ export default function AiIntelPanel() {
   }, [showAiInsights, isExpanded]);
 
   if (!showAiInsights) return null;
-  if (!loading && (!data || (data.results?.length ?? 0) === 0)) return null;
+  if (!loading && !data) return null;
 
   const relevantResults = data?.results?.filter(r => r.analysis?.isRelevant) || [];
 
