@@ -69,9 +69,7 @@ export async function GET(request: NextRequest) {
   try {
     const cables = await prisma.cable.findMany({
       where: {
-        // 只返回有路由数据的海缆（PENDING_REVIEW 暂不对外显示）
-        NOT: { status: 'PENDING_REVIEW' },
-        ...(includeGeo ? { routeGeojson: { not: null } } : {}),
+        status: { not: 'PENDING_REVIEW' },
       },
       select: {
         id: true,
