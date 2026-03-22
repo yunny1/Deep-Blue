@@ -198,7 +198,7 @@ export default function FilterPanel() {
   ];
 
   return (
-    <div style={{ backgroundColor: 'rgba(13,27,42,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(42,157,143,0.2)', borderRadius: 12, width: 240, maxHeight: '420', overflowY: 'auto', overflowX: 'hidden', transition: 'all 0.3s ease' }}>
+    <div style={{ backgroundColor: 'rgba(13,27,42,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(42,157,143,0.2)', borderRadius: 12, width: 240, overflow: 'hidden', transition: 'all 0.3s ease' }}>
 
       {/* 标题栏 */}
       <div onClick={() => setIsExpanded(!isExpanded)} style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: isExpanded ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
@@ -250,7 +250,7 @@ export default function FilterPanel() {
               {loadingOptions && !options ? (
                 <div style={{ padding: '12px 0', textAlign: 'center', color: '#4B5563', fontSize: 11 }}>加载中...</div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14, maxHeight: 200, overflowY: 'auto' }}>
                   {primaryItems.map(item => {
                     const active = isPrimaryActive(item.key);
                     return (
