@@ -242,13 +242,35 @@ export default function FilterPanel() {
             {/* 主维度筛选 */}
             {colorMode !== 'year' && (
               <>
-                <div style={{ fontSize: 10, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: 1 }}>
-                  {primaryDimensionLabel}
-                  {options?.total != null && (
-                    <span style={{ marginLeft: 6, color: '#4B5563', fontWeight: 400 }}>
-                      {zh ? `共 ${options.total} 条` : `${options.total} cables`}
-                    </span>
-                  )}
+                <div style={{ fontSize: 10, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>
+                    {primaryDimensionLabel}
+                    {options?.total != null && (
+                      <span style={{ marginLeft: 6, color: '#4B5563', fontWeight: 400 }}>
+                        {zh ? `共 ${options.total} 条` : `${options.total} cables`}
+                      </span>
+                    )}
+                  </span>
+                  <span onClick={() => {
+                    if (colorMode === 'status') {
+                      const allActive = Object.values(filterStatuses).every(Boolean);
+                      if (allActive) {
+                        setFilterStatuses({ IN_SERVICE: false, UNDER_CONSTRUCTION: false, PLANNED: false, DECOMMISSIONED: false });
+                      } else {
+                        setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: true });
+                      }
+                    } else if (colorMode === 'vendor') {
+                      filterVendors.length > 0 ? setFilterVendors([]) : setFilterVendors(primaryItems.map(i => i.key));
+                    } else if (colorMode === 'operator') {
+                      filterOperators.length > 0 ? setFilterOperators([]) : setFilterOperators(primaryItems.map(i => i.key));
+                    }
+                  }} style={{ fontSize: 9, color: '#4B5563', cursor: 'pointer', padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)', textTransform: 'none' as const, letterSpacing: 0, fontWeight: 400 }}>
+                    {(() => {
+                      if (colorMode === 'status') return Object.values(filterStatuses).every(Boolean) ? (zh ? '取消全选' : 'Deselect all') : (zh ? '全选' : 'Select all');
+                      if (colorMode === 'vendor') return filterVendors.length > 0 ? (zh ? '全选' : 'Select all') : (zh ? '取消全选' : 'Deselect all');
+                      return filterOperators.length > 0 ? (zh ? '全选' : 'Select all') : (zh ? '取消全选' : 'Deselect all');
+                    })()}
+                  </span>
                 </div>
 
                 {loadingOptions && !options ? (
