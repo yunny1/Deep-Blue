@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest) {
 
   await prisma.unresolvedLocation.updateMany({
     where: { id: { in: ids } },
-    data: { status: 'IGNORED', updatedAt: new Date() },
+    data: { status: 'IGNORED' },
   });
 
   return NextResponse.json({ success: true, count: ids.length });
