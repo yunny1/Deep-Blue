@@ -14,7 +14,7 @@ async function getFromRedis(): Promise<any | null> {
   try {
     const res = await fetch(`${url}/get/${CACHE_KEY}`, {
       headers: { Authorization: `Bearer ${token}` },
-      next: { revalidate: 60 },
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     const data = await res.json();
