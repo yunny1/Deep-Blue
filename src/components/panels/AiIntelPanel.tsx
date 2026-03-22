@@ -17,7 +17,7 @@ interface AiResult {
 interface AiData {
   timestamp: string; cached: boolean;
   stats?: { totalNewsScanned: number; preFiltered: number; aiAnalyzed: number; relevant: number; faults: number; disruptions: number };
-  results: AiResult[];
+  results?: AiResult[];
 }
 
 const EVENT_CONFIG: Record<string, { color: string; label: string }> = {
@@ -92,8 +92,14 @@ export default function AiIntelPanel() {
             <div style={{ padding: '8px 14px', display: 'flex', gap: 12, justifyContent: 'center', borderBottom: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)' }}>
               <span>{data.stats?.totalNewsScanned ?? 0} {t('ai.scanned')}</span>
               <span>{data.stats?.aiAnalyzed ?? 0} {t('ai.analyzed')}</span>
-              <span ...>{relevantResults.length} {t('ai.relevant')}</span>
+              <span style={{ color: relevantResults.length > 0 ? '#8B5CF6' : 'var(--text-muted)' }}>{relevantResults.length} {t('ai.relevant')}</span>
             </div>
+
+            {relevantResults.length === 0 && (
+              <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+                暂无海缆相关事件，AI将在下次预计算后更新
+              </div>
+            )}
 
             {relevantResults.map((item, i) => {
               const a = item.analysis;
