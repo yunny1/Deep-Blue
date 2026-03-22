@@ -480,9 +480,9 @@ function parseSNDetail(html: string, sourceUrl: string): SNDetail {
   if (lenMatch) result.lengthKm = parseInt(lenMatch[1].replace(/,/g, ''));
   const rfsMatch = html.match(/(\d{4})\s+(?:November|December|January|February|March|April|May|June|July|August|September|October)/i);
   if (rfsMatch) result.rfsYear = parseInt(rfsMatch[1]);
-  const section = html.match(/lands at the following[^<]*(?:<\/[^>]+>)*\s*<ul[^>]*>([\s\S]*?)<\/ul>/i)?.[1] || '';
-  for (const li of section.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || []) {
-    const text = li.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const section = html.match(/lands at the following[^<]*(?:<\/[^>]+>)*\s*<[ou]l[^>]*>([\s\S]*?)<\/[ou]l>/i)?.[1] || '';
+for (const li of section.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || []) {
+    const text = li.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').replace(/^\d+\.\s*/, '').trim();
     if (text.length < 3 || text.length > 300) continue;
     const parts = text.split(',').map(p => p.trim()).filter(Boolean);
     if (parts.length >= 2) {
