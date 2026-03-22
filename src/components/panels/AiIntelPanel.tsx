@@ -32,18 +32,16 @@ const EVENT_CONFIG: Record<string, { color: string; label: string }> = {
 
 export default function AiIntelPanel() {
   const [data, setData] = useState<AiData | null>(null);
-  const [loading, setLoading] = useState(false);
+  // loading 默认 true：确保首次展开时先显示骨架屏，不会闪出"暂无数据"
+  const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const { showAiInsights, flyToCable } = useMapStore();
   const { t, locale } = useTranslation();
 
   useEffect(() => {
-    // 未展开或 AI 关闭：不请求
     if (!showAiInsights || !isExpanded) return;
-    // 已有有效数据（results 非空）：不重复请求
-    if (data?.results && data.results.length > 0) return;
-    // 正在请求中：不重复
-    if (loading) return;
+    // 已有有效数据则不重复请求
+    if ((data?.results?.length ?? 0) > 0) return;
 
     setLoading(true);
     fetch('/api/ai/analyze')
@@ -59,6 +57,100 @@ export default function AiIntelPanel() {
 
   const relevantResults = data?.results?.filter(r => r.analysis?.isRelevant) || [];
   const hasData = (data?.results?.length ?? 0) > 0;
+
+  // 展开内容：loading 时始终显示骨架屏，加载完再决定显示数据还是空状态
+  const renderContent = () => {
+    if (loading) return <SkeletonAiPanel />;
+    if (!hasData) return (
+      <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.8 }}>
+        暂无分析数据
+        <br />
+        <span style={{ fontSize: 10, color: '#4B5563' }}>AI 每小时预计算一次，稍后刷新</span>
+      </div>
+    );
+    return (
+      <div style={{ overflowY: 'auto', maxHeight: 500 }}>
+        {/* 统计行 */}
+        <div style={{ padding: '8px 14px', display: 'flex', gap: 12, justifyContent: 'center', borderBottom: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)' }}>
+          <span>{data?.stats?.totalNewsScanned ?? 0} {t('ai.scanned')}</span>
+          <span>{data?.stats?.aiAnalyzed ?? 0} {t('ai.analyzed')}</span>
+          <span style={{ color: relevantResults.length > 0 ? '#8B5CF6' : 'var(--text-muted)' }}>
+            {relevantResults.length} {t('ai.relevant')}
+          </span>
+        </div>
+
+        {relevantResults.length === 0 && (
+          <div style={{ padding: '16px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+            当前无海缆相关事件
+          </div>
+        )}
+
+        {relevantResults.map((item, i) => {
+          const a = item.analysis;
+          const ec = EVENT_CONFIG[a.eventType] || EVENT_CONFIG.GENERAL;
+          const summary = locale === 'zh' ? a.summaryZh : a.summaryEn;
+          return (
+            <div key={i} style={{
+              padding: '10px 14px',
+              borderBottom: '1px solid rgba(255,255,255,0.02)',
+              borderLeft: `3px solid ${ec.color}`,
+              animation: `fadeInUp 0.2s ease ${i * 0.05}s both`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: `${ec.color}15`, color: ec.color }}>{ec.label}</span>
+                  {a.serviceDisruption && (
+                    <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>DISRUPTION</span>
+                  )}
+                </div>
+                <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{a.confidence}% conf</span>
+              </div>
+              <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
+                {[1, 2, 3, 4, 5].map(level => (
+                  <div key={level} style={{
+                    flex: 1, height: 3, borderRadius: 1,
+                    backgroundColor: level <= a.severity
+                      ? ['#475569','#3B82F6','#F59E0B','#F97316','#EF4444'][level - 1]
+                      : 'var(--bg-raised)',
+                    transition: 'background-color 0.3s',
+                  }} />
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: 6 }}>{summary}</div>
+              {a.cableNames.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 6 }}>
+                  {a.cableNames.map((name, j) => (
+                    <span key={j}
+                      onClick={() => flyToCable(name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))}
+                      style={{ fontSize: 10, padding: '2px 6px', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(42,157,143,0.1)', color: 'var(--accent-primary)', cursor: 'pointer', border: '1px solid var(--border-accent)', transition: 'all var(--duration-fast)' }}
+                      onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.2)')}
+                      onMouseOut={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.1)')}
+                    >{name}</span>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
+                <span>{a.affectedCountries.length > 0 ? `Affects: ${a.affectedCountries.join(', ')}` : item.source}</span>
+                {a.estimatedDuration && <span style={{ color: 'var(--accent-amber)' }}>~{a.estimatedDuration}</span>}
+              </div>
+              <div style={{ fontSize: 9, color: '#2D4562', marginTop: 4 }}>
+                {new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {item.source}
+              </div>
+            </div>
+          );
+        })}
+
+        {(data?.results?.length ?? 0) > relevantResults.length && (
+          <div style={{ padding: '8px 14px', fontSize: 10, color: 'var(--text-muted)', textAlign: 'center' }}>
+            {t('ai.otherArticles', { count: (data?.results?.length ?? 0) - relevantResults.length })}
+          </div>
+        )}
+        <div style={{ padding: '8px 14px', fontSize: 9, color: '#2D4562', borderTop: '1px solid var(--border-subtle)', lineHeight: 1.5 }}>
+          {t('ai.poweredBy')} · {data?.cached ? t('ai.cached') : t('ai.fresh')} · {data?.timestamp ? new Date(data.timestamp).toLocaleTimeString() : ''}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div style={{
@@ -93,106 +185,13 @@ export default function AiIntelPanel() {
         </div>
       </div>
 
-      {/* 展开内容 */}
+      {/* 展开内容：高度动画 + 内容渲染分离 */}
       <div style={{
         maxHeight: isExpanded ? 500 : 0,
         overflow: 'hidden',
         transition: 'max-height var(--duration-slow) cubic-bezier(0.16, 1, 0.3, 1)',
       }}>
-        {loading ? (
-          <SkeletonAiPanel />
-        ) : !hasData ? (
-          <div style={{ padding: '20px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 }}>
-            暂无分析数据<br/>
-            <span style={{ fontSize: 10, color: '#4B5563' }}>AI 每小时预计算一次，稍后刷新</span>
-          </div>
-        ) : (
-          <div style={{ overflowY: 'auto', maxHeight: 500 }}>
-            {/* 统计行 */}
-            <div style={{ padding: '8px 14px', display: 'flex', gap: 12, justifyContent: 'center', borderBottom: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)' }}>
-              <span>{data?.stats?.totalNewsScanned ?? 0} {t('ai.scanned')}</span>
-              <span>{data?.stats?.aiAnalyzed ?? 0} {t('ai.analyzed')}</span>
-              <span style={{ color: relevantResults.length > 0 ? '#8B5CF6' : 'var(--text-muted)' }}>
-                {relevantResults.length} {t('ai.relevant')}
-              </span>
-            </div>
-
-            {/* 无相关结果 */}
-            {relevantResults.length === 0 && (
-              <div style={{ padding: '16px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                当前无海缆相关事件
-              </div>
-            )}
-
-            {/* 结果列表 */}
-            {relevantResults.map((item, i) => {
-              const a = item.analysis;
-              const ec = EVENT_CONFIG[a.eventType] || EVENT_CONFIG.GENERAL;
-              const summary = locale === 'zh' ? a.summaryZh : a.summaryEn;
-              return (
-                <div key={i} style={{
-                  padding: '10px 14px',
-                  borderBottom: '1px solid rgba(255,255,255,0.02)',
-                  borderLeft: `3px solid ${ec.color}`,
-                  animation: `fadeInUp 0.2s ease ${i * 0.05}s both`,
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: `${ec.color}15`, color: ec.color }}>{ec.label}</span>
-                      {a.serviceDisruption && (
-                        <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>DISRUPTION</span>
-                      )}
-                    </div>
-                    <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{a.confidence}% conf</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
-                    {[1, 2, 3, 4, 5].map(level => (
-                      <div key={level} style={{
-                        flex: 1, height: 3, borderRadius: 1,
-                        backgroundColor: level <= a.severity
-                          ? ['#475569','#3B82F6','#F59E0B','#F97316','#EF4444'][level - 1]
-                          : 'var(--bg-raised)',
-                        transition: 'background-color 0.3s',
-                      }} />
-                    ))}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: 6 }}>{summary}</div>
-                  {a.cableNames.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 6 }}>
-                      {a.cableNames.map((name, j) => (
-                        <span key={j}
-                          onClick={() => flyToCable(name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))}
-                          style={{ fontSize: 10, padding: '2px 6px', borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(42,157,143,0.1)', color: 'var(--accent-primary)', cursor: 'pointer', border: '1px solid var(--border-accent)', transition: 'all var(--duration-fast)' }}
-                          onMouseOver={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.2)')}
-                          onMouseOut={e => (e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.1)')}
-                        >{name}</span>
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
-                    <span>{a.affectedCountries.length > 0 ? `Affects: ${a.affectedCountries.join(', ')}` : item.source}</span>
-                    {a.estimatedDuration && <span style={{ color: 'var(--accent-amber)' }}>~{a.estimatedDuration}</span>}
-                  </div>
-                  <div style={{ fontSize: 9, color: '#2D4562', marginTop: 4 }}>
-                    {new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {item.source}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* 非相关结果计数 */}
-            {(data?.results?.length ?? 0) > relevantResults.length && (
-              <div style={{ padding: '8px 14px', fontSize: 10, color: 'var(--text-muted)', textAlign: 'center' }}>
-                {t('ai.otherArticles', { count: (data?.results?.length ?? 0) - relevantResults.length })}
-              </div>
-            )}
-
-            {/* 底部信息 */}
-            <div style={{ padding: '8px 14px', fontSize: 9, color: '#2D4562', borderTop: '1px solid var(--border-subtle)', lineHeight: 1.5 }}>
-              {t('ai.poweredBy')} · {data?.cached ? t('ai.cached') : t('ai.fresh')} · {data?.timestamp ? new Date(data.timestamp).toLocaleTimeString() : ''}
-            </div>
-          </div>
-        )}
+        {renderContent()}
       </div>
     </div>
   );
