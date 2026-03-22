@@ -198,7 +198,7 @@ export default function FilterPanel() {
   ];
 
   return (
-    <div style={{ backgroundColor: 'rgba(13,27,42,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(42,157,143,0.2)', borderRadius: 12, width: 240, overflow: 'hidden', transition: 'all 0.3s ease' }}>
+    <div style={{ backgroundColor: 'rgba(13,27,42,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(42,157,143,0.2)', borderRadius: 12, width: 240, maxHeight: '70vh', overflowY: 'auto', overflowX: 'hidden', transition: 'all 0.3s ease' }}>
 
       {/* 标题栏 */}
       <div onClick={() => setIsExpanded(!isExpanded)} style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: isExpanded ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
