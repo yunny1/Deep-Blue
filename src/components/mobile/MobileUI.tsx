@@ -141,7 +141,7 @@ function FilterPanel({ zh }: { zh: boolean }) {
             backgroundColor: 'rgba(255,255,255,0.06)', color: '#EDF2F7', fontSize: 16,
             textAlign: 'center', outline: 'none' }} />
       </div>
-      <<div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
         {[
           { label: zh ? '2020以后' : '2020+',    action: () => setFilterYearRange([2020, 2030]) },
           { label: zh ? '2010以前' : 'Pre-2010', action: () => setFilterYearRange([1990, 2009]) },
