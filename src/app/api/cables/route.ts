@@ -72,19 +72,13 @@ export async function GET(request: NextRequest) {
         status: { not: 'PENDING_REVIEW' },
       },
       select: {
-        id: true,
-        name: true,
-        slug: true,
-        status: true,
-        rfsDate: true,
-        lengthKm: true,
-        designCapacityTbps: true,
-        fiberPairs: true,
-        routeGeojson: includeGeo,
-        vendor: includeDetails ? { select: { name: true } } : false,
-        owners: includeDetails
-          ? { select: { company: { select: { name: true } } } }
-          : false,
+        id: true, name: true, slug: true, status: true,
+        rfsDate: true, lengthKm: true, designCapacityTbps: true, fiberPairs: true,
+        ...(includeGeo ? { routeGeojson: true } : {}),
+        ...(includeDetails ? {
+          vendor: { select: { name: true } },
+          owners: { select: { company: { select: { name: true } } } },
+        } : {}),
       },
       orderBy: [
         // 在役的排前面，加载时优先渲染
