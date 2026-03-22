@@ -16,7 +16,7 @@ interface AiResult {
 }
 interface AiData {
   timestamp: string; cached: boolean;
-  stats: { totalNewsScanned: number; preFiltered: number; aiAnalyzed: number; relevant: number; faults: number; disruptions: number };
+  stats?: { totalNewsScanned: number; preFiltered: number; aiAnalyzed: number; relevant: number; faults: number; disruptions: number };
   results: AiResult[];
 }
 
@@ -90,9 +90,9 @@ export default function AiIntelPanel() {
         {loading ? <SkeletonAiPanel /> : data && (
           <div style={{ overflowY: 'auto', maxHeight: 500 }}>
             <div style={{ padding: '8px 14px', display: 'flex', gap: 12, justifyContent: 'center', borderBottom: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)' }}>
-              <span>{data.stats.totalNewsScanned} {t('ai.scanned')}</span>
-              <span>{data.stats.aiAnalyzed} {t('ai.analyzed')}</span>
-              <span style={{ color: relevantResults.length > 0 ? '#8B5CF6' : 'var(--text-muted)' }}>{relevantResults.length} {t('ai.relevant')}</span>
+              <span>{data.stats?.totalNewsScanned ?? 0} {t('ai.scanned')}</span>
+              <span>{data.stats?.aiAnalyzed ?? 0} {t('ai.analyzed')}</span>
+              <span ...>{relevantResults.length} {t('ai.relevant')}</span>
             </div>
 
             {relevantResults.map((item, i) => {
