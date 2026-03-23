@@ -8,6 +8,7 @@ import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
 import LangSwitcher from '@/components/layout/LangSwitcher';
+import CountryCodeBadge from '@/components/ui/CountryCodeBadge';
 
 // ── 登陆站名称翻译表 ──────────────────────────────────────────────
 const STATION_ZH: Record<string, string> = {
@@ -79,13 +80,73 @@ const STATION_ZH: Record<string, string> = {
   'Toronto': '多伦多', 'Vancouver': '温哥华', 'Mexico City': '墨西哥城',
 };
 
-function stationName(name: string, zh: boolean): string {
+function stationName(station: { name: string; nameZh?: string | null } | string, zh: boolean): string {
+  const name   = typeof station === 'string' ? station : station.name;
+  const nameZh = typeof station === 'string' ? null    : station.nameZh;
   if (!zh) return name;
+  if (nameZh) return nameZh;
   if (STATION_ZH[name]) return STATION_ZH[name];
   for (const [en, zhName] of Object.entries(STATION_ZH)) {
     if (name.startsWith(en + ',') || name.startsWith(en + ' (')) return name.replace(en, zhName);
   }
   return name;
+}
+
+
+// ── 溢出内容 Popup ────────────────────────────────────────────────
+function OverflowPopup({ items, renderItem, maxShow, zh }: {
+  items: any[];
+  renderItem: (item: any, i: number) => React.ReactNode;
+  maxShow: number;
+  zh: boolean;
+}) {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches;
+  const hidden = items.slice(maxShow);
+
+  useEffect(() => {
+    if (!visible || !isMobile) return;
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setVisible(false); };
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [visible, isMobile]);
+
+  if (hidden.length === 0) return <>{items.map(renderItem)}</>;
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setPos({ x: r.left, y: r.bottom + 4 }); setVisible(true);
+  };
+  const handleClick = (e: React.MouseEvent) => {
+    if (!isMobile) return;
+    e.stopPropagation();
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setPos({ x: r.left, y: r.bottom + 4 }); setVisible(v => !v);
+  };
+
+  return (
+    <div ref={ref} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' as const }}>
+      {items.slice(0, maxShow).map(renderItem)}
+      <span onMouseEnter={handleMouseEnter} onMouseLeave={() => { if (!isMobile) setVisible(false); }} onClick={handleClick}
+        style={{ fontSize: 10, color: '#2A9D8F', cursor: 'pointer', padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.1)', border: '1px solid rgba(42,157,143,0.2)' }}>
+        +{hidden.length}
+      </span>
+      {visible && (
+        <div style={{ position: 'fixed' as const, left: pos.x, top: pos.y, zIndex: 9999, minWidth: 160, maxWidth: 300,
+          backgroundColor: 'rgba(8,16,32,0.97)', backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(42,157,143,0.25)', borderRadius: 10, padding: '8px 10px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+          <div style={{ fontSize: 9, color: '#4B5563', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 1 }}>
+            {zh ? '全部内容' : 'All items'}
+          </div>
+          {items.map(renderItem)}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── 数字滚动动画 Hook ─────────────────────────────────────────────
@@ -112,7 +173,7 @@ interface CountryOption {
   stationCount: number; isGroup?: boolean;
 }
 interface StationInCountry {
-  id: string; name: string; countryCode: string;
+  id: string; name: string; nameZh?: string | null; countryCode: string;
   regionLabel: string | null; latitude: number; longitude: number;
 }
 interface CableData {
@@ -125,7 +186,7 @@ interface CableData {
   type: 'international' | 'domestic' | 'branch';
 }
 interface StationData {
-  id: string; name: string; countryCode: string;
+  id: string; name: string; nameZh?: string | null; countryCode: string;
   regionLabel: string | null; latitude: number; longitude: number;
   cableCount: number; cables: { name: string; slug: string }[];
 }
@@ -193,7 +254,7 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
     c.fiberPairs ?? '',
     c.vendor ?? '',
     c.owners.join(' / '),
-    c.stationsInCountry.map(s => stationName(s.name, zh)).join(' / '),
+    c.stationsInCountry.map(s => stationName(s, zh)).join(' / '),
     ...(isChinaGroup ? [[...new Set(c.stationsInCountry.map(s => s.regionLabel).filter(Boolean))].join(' / ')] : []),
     c.countries.length,
   ]);
@@ -203,7 +264,7 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
     : ['Station Name', ...(isChinaGroup ? ['Region'] : []), 'Code', 'Lat', 'Lng', 'Cables'];
 
   const stationRows = data.stations.map(s => [
-    stationName(s.name, zh),
+    stationName(s, zh),
     ...(isChinaGroup ? [s.regionLabel || s.countryCode] : []),
     s.countryCode, s.latitude.toFixed(4), s.longitude.toFixed(4), s.cableCount,
   ]);
@@ -629,21 +690,37 @@ function CountryContent() {
                 </div>
               </div>
 
-              {/* 统计卡片 */}
-              <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-                {[
-                  { n: data.summary.totalCables,         label: zh ? '总海缆数'   : 'Total Cables',     color: '#2A9D8F', icon: '🔌' },
-                  { n: data.summary.totalStations,       label: zh ? '总登陆站数' : 'Landing Stations',  color: '#E9C46A', icon: '📡' },
-                  { n: data.summary.internationalCables, label: zh ? '国际海缆'   : 'International',     color: '#06D6A0', icon: '🌐' },
-                  { n: data.summary.domesticCables,      label: zh ? '国内线'     : 'Domestic',          color: '#3B82F6', icon: '🏠' },
-                  { n: data.summary.branchCables,        label: zh ? '支线接入'   : 'Branch',            color: '#8B5CF6', icon: '⑂'  },
-                ].map((s, i) => (
-                  <div key={i} style={{ flex: '1 1 140px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, border: `1px solid ${s.color}25`, padding: '16px 18px' }}>
-                    <div style={{ fontSize: 18, marginBottom: 8 }}>{s.icon}</div>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.n}</div>
-                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>{s.label}</div>
+              {/* 统计卡片 — 层级结构 */}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' as const }}>
+                <div style={{ flex: '1 1 140px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(233,196,106,0.25)', padding: '16px 18px' }}>
+                  <div style={{ fontSize: 18, marginBottom: 8 }}>📡</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: '#E9C46A', lineHeight: 1 }}>{data.summary.totalStations}</div>
+                  <div style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>{zh ? '总登陆站数' : 'Landing Stations'}</div>
+                </div>
+                <div style={{ flex: '2 1 300px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(42,157,143,0.25)', padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 18 }}>🔌</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: '#2A9D8F' }}>{data.summary.totalCables}</span>
+                    <span style={{ fontSize: 12, color: '#6B7280' }}>{zh ? '条海缆' : 'cables total'}</span>
                   </div>
-                ))}
+                  {[
+                    { n: data.summary.internationalCables, label: zh ? '国际海缆' : 'International', color: '#06D6A0' },
+                    { n: data.summary.domesticCables,      label: zh ? '国内线'   : 'Domestic',      color: '#3B82F6' },
+                    { n: data.summary.branchCables,        label: zh ? '支线接入' : 'Branch',        color: '#8B5CF6' },
+                  ].map((s, i) => {
+                    const pct = data.summary.totalCables > 0 ? (s.n / data.summary.totalCables) * 100 : 0;
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 9, color: '#4B5563', width: 4 }}>├</span>
+                        <div style={{ flex: 1, height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', backgroundColor: s.color, borderRadius: 2, transition: 'width 0.8s cubic-bezier(0.16,1,0.3,1)' }} />
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: s.color, minWidth: 24, textAlign: 'right' as const }}>{s.n}</span>
+                        <span style={{ fontSize: 10, color: '#6B7280', minWidth: 60 }}>{s.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Tab 切换 */}
@@ -694,15 +771,25 @@ function CountryContent() {
                           </div>
                           <div style={{ fontSize: 12, color: '#9CA3AF' }}>{cable.lengthKm ? `${cable.lengthKm.toLocaleString()} km` : '—'}</div>
                           <div style={{ fontSize: 11, color: '#9CA3AF' }}>
-                            {cable.stationsInCountry.slice(0, 2).map((s, si) => (
-                              <span key={s.id}>{si > 0 && '、'}{stationName(s.name, zh)}{isChinaGroup && s.regionLabel && <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 2 }}>({s.regionLabel.replace('中国', '')})</span>}</span>
-                            ))}
-                            {cable.stationsInCountry.length > 2 && <span style={{ color: '#4B5563' }}> +{cable.stationsInCountry.length - 2}</span>}
-                            {cable.stationsInCountry.length === 0 && '—'}
+                            {cable.stationsInCountry.length === 0 ? '—' : (
+                              <OverflowPopup items={cable.stationsInCountry} maxShow={2} zh={zh}
+                                renderItem={(s: any, si: number) => (
+                                  <span key={s.id} style={{ marginRight: 2 }}>
+                                    {si > 0 && '、'}{stationName(s, zh)}
+                                    {isChinaGroup && s.regionLabel && <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 2 }}>({s.regionLabel.replace('中国', '')})</span>}
+                                  </span>
+                                )}
+                              />
+                            )}
                           </div>
                           <div style={{ fontSize: 11, color: '#9CA3AF' }}>
-                            {cable.owners.slice(0, 1).join(', ')}
-                            {cable.owners.length > 1 && <span style={{ color: '#4B5563' }}> +{cable.owners.length - 1}</span>}
+                            {cable.owners.length === 0 ? '—' : (
+                              <OverflowPopup items={cable.owners} maxShow={1} zh={zh}
+                                renderItem={(owner: string, i: number) => (
+                                  <span key={i} style={{ marginRight: 2 }}>{i > 0 && ', '}{owner}</span>
+                                )}
+                              />
+                            )}
                           </div>
                         </div>
                       </a>
@@ -725,7 +812,7 @@ function CountryContent() {
                   </div>
                   {data.stations.map((station, i) => (
                     <div key={station.id} style={{ display: 'grid', gridTemplateColumns: `2fr ${isChinaGroup ? '90px ' : ''}110px 110px 50px 3fr`, padding: '11px 16px', borderBottom: i < data.stations.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                      <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{stationName(station.name, zh)}</div>
+                      <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{stationName(station, zh)}</div>
                       {isChinaGroup && (
                         <div><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 5px', borderRadius: 4, backgroundColor: `${REGION_COLORS[station.regionLabel || ''] || '#6B7280'}15`, color: REGION_COLORS[station.regionLabel || ''] || '#9CA3AF' }}>{station.regionLabel?.replace('中国', '') || station.countryCode}</span></div>
                       )}
@@ -733,10 +820,11 @@ function CountryContent() {
                       <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'monospace' }}>{station.longitude.toFixed(3)}°</div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#2A9D8F' }}>{station.cableCount}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {station.cables.slice(0, 3).map(c => (
-                          <a key={c.slug} href={`/?cable=${c.slug}`} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', border: '1px solid rgba(42,157,143,0.15)', textDecoration: 'none', whiteSpace: 'nowrap' }}>{c.name}</a>
-                        ))}
-                        {station.cables.length > 3 && <span style={{ fontSize: 10, color: '#4B5563' }}>+{station.cables.length - 3}</span>}
+                        <OverflowPopup items={station.cables} maxShow={3} zh={zh}
+                          renderItem={(c: any) => (
+                            <a key={c.slug} href={`/?cable=${c.slug}`} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', border: '1px solid rgba(42,157,143,0.15)', textDecoration: 'none', whiteSpace: 'nowrap' as const }}>{c.name}</a>
+                          )}
+                        />
                       </div>
                     </div>
                   ))}
