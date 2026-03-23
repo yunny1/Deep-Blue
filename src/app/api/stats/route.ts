@@ -1,12 +1,11 @@
 // src/app/api/stats/route.ts
-// 统计数据 API — Redis 缓存1小时，包含海缆类型分类
+// 统计数据 API — Redis 缓存1小时，包含精确海缆分类
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
 const CACHE_KEY = 'stats:global';
 const CACHE_TTL = 60 * 60;
 
-// 强制国内线覆盖：slug → 所属国家代码组（以逗号分隔）
 const DOMESTIC_OVERRIDES: Record<string, string[]> = {
   'taiwan-strait-express-1': ['CN', 'TW', 'HK', 'MO'],
 };
@@ -23,7 +22,7 @@ async function getFromRedis(): Promise<any | null> {
     const d = await res.json();
     if (!d.result) return null;
     const raw = JSON.parse(d.result);
-    // writeToRedis 存的是 [jsonString, "EX", ttl] 数组格式
+    // 兼容 [jsonString, "EX", ttl] 数组格式
     const actual = Array.isArray(raw) ? raw[0] : raw;
     return typeof actual === 'string' ? JSON.parse(actual) : actual;
   } catch { return null; }
@@ -46,28 +45,26 @@ async function writeToRedis(data: any): Promise<void> {
 export async function GET() {
   try {
     const cached = await getFromRedis();
-    if (cached) {
+    if (cached?.cables?.activeInternational !== undefined) {
       return NextResponse.json(cached, {
         headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600', 'X-Cache': 'HIT' },
       });
     }
 
     // 基础计数
-    const [totalCables, inService, underConstruction, planned, totalStations, totalCountries] = await Promise.all([
+    const [totalCables, inService, underConstruction, planned, decommissioned, totalStations, totalCountries] = await Promise.all([
       prisma.cable.count({ where: { status: { not: 'PENDING_REVIEW' } } }),
       prisma.cable.count({ where: { status: 'IN_SERVICE' } }),
       prisma.cable.count({ where: { status: 'UNDER_CONSTRUCTION' } }),
       prisma.cable.count({ where: { status: 'PLANNED' } }),
+      prisma.cable.count({ where: { status: 'DECOMMISSIONED' } }),
       prisma.landingStation.count(),
       prisma.country.count({ where: { landingStations: { some: {} } } }),
     ]);
 
-    // 退役数量
-    const decommissioned = await prisma.cable.count({ where: { status: 'DECOMMISSIONED' } });
-
-    // 海缆类型分类（只统计在役+规划中，退役/在建单独列出）
-    const cables = await prisma.cable.findMany({
-      where: { status: { in: ['IN_SERVICE', 'PLANNED'] } },
+    // 在役海缆分类（activeInternational / activeDomestic）
+    const inServiceCables = await prisma.cable.findMany({
+      where: { status: 'IN_SERVICE' },
       select: {
         slug: true,
         landingStations: {
@@ -76,23 +73,17 @@ export async function GET() {
       },
     });
 
-    let international = 0, domestic = 0, branch = 0;
-    for (const cable of cables) {
+    let activeInternational = 0, activeDomestic = 0;
+    for (const cable of inServiceCables) {
       const allCodes = [...new Set(cable.landingStations.map(ls => ls.landingStation.countryCode))];
 
       const override = DOMESTIC_OVERRIDES[cable.slug];
       if (override) {
-        const isDomestic = allCodes.every(c => override.includes(c));
-        if (isDomestic) { domestic++; continue; }
+        if (allCodes.every(c => override.includes(c))) { activeDomestic++; continue; }
       }
 
-      const uniqueCountries = new Set(allCodes);
-      if (uniqueCountries.size <= 1) { domestic++; continue; }
-
-      const isBranch = cable.landingStations.length === 1 && cables.length > 4;
-      if (isBranch) { branch++; continue; }
-
-      international++;
+      if (new Set(allCodes).size <= 1) { activeDomestic++; continue; }
+      activeInternational++;
     }
 
     // 总铺设里程
@@ -105,9 +96,8 @@ export async function GET() {
     const data = {
       cables: {
         total: totalCables,
-        inService, underConstruction, planned,
-        decommissioned,
-        international, domestic, branch,
+        inService, underConstruction, planned, decommissioned,
+        activeInternational, activeDomestic,
       },
       landingStations: totalStations,
       countries: totalCountries,
