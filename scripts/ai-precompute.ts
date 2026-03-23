@@ -1,11 +1,11 @@
 // scripts/ai-precompute.ts
-// AI 新闻预计算脚本 — 每小时在腾讯云上运行
-// 使用 @upstash/redis 包写入，格式与 nightly-sync.ts 一致
+// AI 新闻预计算脚本 — 使用 Qwen（通义千问）
 
 import { analyzeNewsWithAI, preFilterRelevance } from '../src/lib/ai-analyzer';
+import { Redis } from '@upstash/redis';
 
 const CACHE_KEY = 'ai:analysis:latest';
-const CACHE_TTL = 2 * 60 * 60; // 2小时
+const CACHE_TTL = 2 * 60 * 60;
 
 const RSS_SOURCES = [
   { name: 'SubTel Forum',       url: 'https://subtelforum.com/feed/' },
@@ -40,12 +40,11 @@ function parseRSS(xml: string, sourceName: string): any[] {
 async function main() {
   console.log(`\n[AI Precompute] 开始 ${new Date().toISOString()}`);
 
-  if (!process.env.MINIMAX_API_KEY) {
-    console.error('[AI Precompute] 未配置 MINIMAX_API_KEY，退出');
+  if (!process.env.QWEN_API_KEY) {
+    console.error('[AI Precompute] 未配置 QWEN_API_KEY，退出');
     process.exit(1);
   }
 
-  // 1. 拉取 RSS
   const allItems: any[] = [];
   for (const source of RSS_SOURCES) {
     try {
@@ -62,11 +61,9 @@ async function main() {
 
   allItems.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
-  // 2. 预筛选
   const preFiltered = allItems.filter(item => preFilterRelevance(item.title, item.description));
   console.log(`  预筛选: ${allItems.length} → ${preFiltered.length} 条`);
 
-  // 3. AI 分析（最多 8 条）
   const toAnalyze = preFiltered.slice(0, 8);
   const results: any[] = [];
 
@@ -77,7 +74,7 @@ async function main() {
         results.push({ title: item.title, source: item.source, pubDate: item.pubDate, link: item.link, analysis });
         console.log(`  ✓ [${analysis.eventType}] S${analysis.severity} ${item.title.slice(0, 50)}`);
       }
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 1000));
     } catch (e: any) {
       console.warn(`  分析失败: ${e.message}`);
     }
@@ -85,11 +82,10 @@ async function main() {
 
   results.sort((a, b) => (b.analysis?.severity || 0) - (a.analysis?.severity || 0));
 
-  // 4. 写入 Redis（使用 @upstash/redis 包，格式正确）
   const relevant = results.filter(r => r.analysis?.isRelevant);
   const payload = {
-    timestamp:        new Date().toISOString(),
-    cached:           true,
+    timestamp: new Date().toISOString(),
+    cached: true,
     stats: {
       totalNewsScanned: allItems.length,
       preFiltered:      preFiltered.length,
@@ -104,12 +100,10 @@ async function main() {
   };
 
   try {
-    const { Redis } = await import('@upstash/redis');
     const redis = new Redis({
       url:   process.env.UPSTASH_REDIS_REST_URL!,
       token: process.env.UPSTASH_REDIS_REST_TOKEN!,
     });
-    // 直接存 JSON 字符串，get 时 data.result 就是可直接 JSON.parse 的字符串
     await redis.set(CACHE_KEY, JSON.stringify(payload), { ex: CACHE_TTL });
     console.log(`  Redis 写入: ✓ 成功`);
   } catch (e: any) {

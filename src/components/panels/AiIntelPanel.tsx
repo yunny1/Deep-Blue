@@ -173,7 +173,7 @@ export default function AiIntelPanel() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#8B5CF6', animation: 'pulse 2s infinite', boxShadow: '0 0 6px #8B5CF6' }} />
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{t('ai.intelTitle')}</span>
-          <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#8B5CF6' }}>MiniMax</span>
+          <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 3, backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#8B5CF6' }}>Qwen</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {loading ? (

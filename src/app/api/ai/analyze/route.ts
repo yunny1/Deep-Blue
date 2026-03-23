@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  if (!process.env.MINIMAX_API_KEY) {
-    return NextResponse.json({ error: 'MINIMAX_API_KEY not configured' }, { status: 503 });
+  if (!process.env.QWEN_API_KEY) {
+    return NextResponse.json({ error: 'QWEN_API_KEY not configured' }, { status: 503 });
   }
 
   return NextResponse.json(
