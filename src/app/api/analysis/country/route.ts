@@ -1,14 +1,7 @@
 // src/app/api/analysis/country/route.ts
-// 国家海缆分析 API
-// 支持特殊 code：
-//   CN         → 中国大陆 + 香港 + 澳门（默认）
-//   CN_WITH_TW → 中国大陆 + 香港 + 澳门 + 台湾
-//   其他 code  → 单个国家查询
-
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
-// 国家中文名称
 const COUNTRY_ZH: Record<string, string> = {
   CN: '中国大陆', TW: '中国台湾', HK: '中国香港', MO: '中国澳门',
   US: '美国', GB: '英国', JP: '日本', SG: '新加坡', KR: '韩国',
@@ -28,12 +21,10 @@ const COUNTRY_ZH: Record<string, string> = {
   TN: '突尼斯', PR: '波多黎各', JM: '牙买加', PA: '巴拿马',
 };
 
-// 大中华区地区标签
 const REGION_LABEL: Record<string, string> = {
   CN: '中国大陆', HK: '中国香港', MO: '中国澳门', TW: '中国台湾',
 };
 
-// 获取单个国家/地区分析数据
 async function getCountryData(codes: string[]) {
   const stations = await prisma.landingStation.findMany({
     where: { countryCode: { in: codes } },
@@ -70,11 +61,8 @@ async function getCountryData(codes: string[]) {
   for (const cable of cables) {
     const allCodes: string[] = [...new Set<string>(cable.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
     const localStations = cable.landingStations.filter((cls: any) => codes.includes(cls.landingStation.countryCode));
-    // 国内线：所有登陆站都在查询的国家范围内
     const isDomestic = allCodes.every((c: string) => codes.includes(c));
-    // 支线：本地只有1个登陆站，且总登陆站数超过4
     const isBranch = !isDomestic && localStations.length === 1 && cable.landingStations.length > 4;
-
     if (isDomestic) domestic.push(cable);
     else if (isBranch) branch.push(cable);
     else international.push(cable);
@@ -88,6 +76,7 @@ async function getCountryData(codes: string[]) {
         .map((cls: any) => ({
           id: cls.landingStation.id,
           name: cls.landingStation.name,
+          nameZh: cls.landingStation.nameZh || null,  // ← 新增
           countryCode: cls.landingStation.countryCode,
           regionLabel: isGroup ? (REGION_LABEL[cls.landingStation.countryCode] || null) : null,
           latitude: cls.landingStation.latitude,
@@ -112,9 +101,13 @@ async function getCountryData(codes: string[]) {
       };
     }),
     stationsFormatted: stations.map(s => ({
-      id: s.id, name: s.name, countryCode: s.countryCode,
+      id: s.id,
+      name: s.name,
+      nameZh: (s as any).nameZh || null,  // ← 新增
+      countryCode: s.countryCode,
       regionLabel: isGroup ? (REGION_LABEL[s.countryCode] || null) : null,
-      latitude: s.latitude, longitude: s.longitude,
+      latitude: s.latitude,
+      longitude: s.longitude,
       cableCount: s.cables.length,
       cables: s.cables.map((cls: any) => ({ name: cls.cable.name, slug: cls.cable.slug })),
     })),
@@ -135,7 +128,6 @@ export async function GET(request: NextRequest) {
   if (!code) return NextResponse.json({ error: 'Code required' }, { status: 400 });
 
   try {
-    // 特殊 code 处理
     let queryCodes: string[];
     let displayNameZh: string;
     let displayNameEn: string;
@@ -144,14 +136,12 @@ export async function GET(request: NextRequest) {
     let breakdown: Record<string, number> | null = null;
 
     if (code === 'CN') {
-      // 默认中国：大陆 + 香港 + 澳门
       queryCodes = ['CN', 'HK', 'MO'];
       displayNameZh = '中国（大陆+港+澳）';
       displayNameEn = 'China (Mainland + HK + MO)';
       responseCode = 'CN';
       isGroup = true;
     } else if (code === 'CN_WITH_TW') {
-      // 含台湾
       queryCodes = ['CN', 'HK', 'MO', 'TW'];
       displayNameZh = '中国（大陆+港+澳+台）';
       displayNameEn = 'China (Mainland + HK + MO + TW)';
@@ -167,7 +157,6 @@ export async function GET(request: NextRequest) {
 
     const { stations, cables, stationsFormatted, summary } = await getCountryData(queryCodes);
 
-    // 大中华区细分统计
     if (isGroup) {
       breakdown = {};
       for (const qc of queryCodes) {
@@ -188,7 +177,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: 获取所有国家列表
 export async function POST() {
   try {
     const countries = await prisma.country.findMany({

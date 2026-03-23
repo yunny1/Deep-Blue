@@ -79,13 +79,14 @@ const STATION_ZH: Record<string, string> = {
   'Toronto': '多伦多', 'Vancouver': '温哥华', 'Mexico City': '墨西哥城',
 };
 
-function stationName(name: string, zh: boolean): string {
-  if (!zh) return name;
-  if (STATION_ZH[name]) return STATION_ZH[name];
+function stationName(station: { name: string; nameZh?: string | null }, zh: boolean): string {
+  if (!zh) return station.name;
+  if (station.nameZh) return station.nameZh;  // 优先数据库中文名
+  if (STATION_ZH[station.name]) return STATION_ZH[station.name];
   for (const [en, zhName] of Object.entries(STATION_ZH)) {
-    if (name.startsWith(en + ',') || name.startsWith(en + ' (')) return name.replace(en, zhName);
+    if (station.name.startsWith(en + ',') || station.name.startsWith(en + ' (')) return station.name.replace(en, zhName);
   }
-  return name;
+  return station.name;
 }
 
 // ── 数字滚动动画 Hook ─────────────────────────────────────────────
@@ -112,7 +113,7 @@ interface CountryOption {
   stationCount: number; isGroup?: boolean;
 }
 interface StationInCountry {
-  id: string; name: string; countryCode: string;
+  id: string; name: string; nameZh?: string | null; countryCode: string;
   regionLabel: string | null; latitude: number; longitude: number;
 }
 interface CableData {
@@ -125,7 +126,7 @@ interface CableData {
   type: 'international' | 'domestic' | 'branch';
 }
 interface StationData {
-  id: string; name: string; countryCode: string;
+  id: string; name: string; nameZh?: string | null; countryCode: string;
   regionLabel: string | null; latitude: number; longitude: number;
   cableCount: number; cables: { name: string; slug: string }[];
 }
@@ -193,7 +194,7 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
     c.fiberPairs ?? '',
     c.vendor ?? '',
     c.owners.join(' / '),
-    c.stationsInCountry.map(s => stationName(s.name, zh)).join(' / '),
+    c.stationsInCountry.map(s => stationName(s, zh)).join(' / '),
     ...(isChinaGroup ? [[...new Set(c.stationsInCountry.map(s => s.regionLabel).filter(Boolean))].join(' / ')] : []),
     c.countries.length,
   ]);
@@ -203,7 +204,7 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
     : ['Station Name', ...(isChinaGroup ? ['Region'] : []), 'Code', 'Lat', 'Lng', 'Cables'];
 
   const stationRows = data.stations.map(s => [
-    stationName(s.name, zh),
+    stationName(s, zh),
     ...(isChinaGroup ? [s.regionLabel || s.countryCode] : []),
     s.countryCode, s.latitude.toFixed(4), s.longitude.toFixed(4), s.cableCount,
   ]);
@@ -639,7 +640,7 @@ function CountryContent() {
                           <div style={{ fontSize: 12, color: '#9CA3AF' }}>{cable.lengthKm ? `${cable.lengthKm.toLocaleString()} km` : '—'}</div>
                           <div style={{ fontSize: 11, color: '#9CA3AF' }}>
                             {cable.stationsInCountry.slice(0, 2).map((s, si) => (
-                              <span key={s.id}>{si > 0 && '、'}{stationName(s.name, zh)}{isChinaGroup && s.regionLabel && <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 2 }}>({s.regionLabel.replace('中国', '')})</span>}</span>
+                              <span key={s.id}>{si > 0 && '、'}{stationName(s, zh)}{isChinaGroup && s.regionLabel && <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 2 }}>({s.regionLabel.replace('中国', '')})</span>}</span>
                             ))}
                             {cable.stationsInCountry.length > 2 && <span style={{ color: '#4B5563' }}> +{cable.stationsInCountry.length - 2}</span>}
                             {cable.stationsInCountry.length === 0 && '—'}
@@ -669,7 +670,7 @@ function CountryContent() {
                   </div>
                   {data.stations.map((station, i) => (
                     <div key={station.id} style={{ display: 'grid', gridTemplateColumns: `2fr ${isChinaGroup ? '90px ' : ''}110px 110px 50px 3fr`, padding: '11px 16px', borderBottom: i < data.stations.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                      <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{stationName(station.name, zh)}</div>
+                      <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{stationName(station, zh)}</div>
                       {isChinaGroup && (
                         <div><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 5px', borderRadius: 4, backgroundColor: `${REGION_COLORS[station.regionLabel || ''] || '#6B7280'}15`, color: REGION_COLORS[station.regionLabel || ''] || '#9CA3AF' }}>{station.regionLabel?.replace('中国', '') || station.countryCode}</span></div>
                       )}
