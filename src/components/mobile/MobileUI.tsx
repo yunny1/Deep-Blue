@@ -389,9 +389,16 @@ function EarthquakePanel({ zh }: { zh: boolean }) {
             </div>
             <div style={{ fontSize: 12, color: '#94A3B8' }}>{event.place}</div>
             {selectedId === event.earthquakeId && (
-              <div style={{ fontSize: 11, color: '#2A9D8F', marginTop: 6 }}>
-                🌐 {zh ? '已在地图显示影响范围，点击海缆名称定位' : 'Impact shown on map — tap cable to locate'}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                <span style={{ fontSize: 11, color: '#2A9D8F' }}>
+                  🌐 {zh ? '已在地图显示影响范围' : 'Impact shown on map'}
+                </span>
+                <span onClick={(e) => { e.stopPropagation(); setSelectedId(null); setEarthquakeHighlight(null); }}
+                  style={{ fontSize: 11, color: '#EF4444', cursor: 'pointer', padding: '2px 8px', borderRadius: 5, backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  {zh ? '退出' : 'Exit'}
+                </span>
               </div>
+            )}
             )}
           </div>
           {/* 受影响海缆 */}
