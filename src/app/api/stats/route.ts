@@ -22,7 +22,9 @@ async function getFromRedis(): Promise<any | null> {
     if (!res.ok) return null;
     const d = await res.json();
     if (!d.result) return null;
-    return JSON.parse(d.result);
+    const raw = JSON.parse(d.result);
+    // 兼容双重编码（旧缓存存的是 JSON.stringify(JSON.stringify(data))）
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
   } catch { return null; }
 }
 

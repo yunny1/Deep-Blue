@@ -342,8 +342,9 @@ function CountryContent() {
   // 加载全局统计
   useEffect(() => {
     fetch('/api/stats').then(r => r.json()).then(d => {
-      // 兼容 Redis 嵌套字符串格式
-      const parsed = typeof d === 'string' ? JSON.parse(d) : d;
+      let parsed = d;
+      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+      if (typeof parsed?.cables === 'undefined') return;
       setGlobalStats(parsed);
     }).catch(() => {});
   }, []);
