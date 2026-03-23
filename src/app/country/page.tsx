@@ -235,12 +235,18 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
   a.click();
 }
 
-// ── 全局统计英雄区 ────────────────────────────────────────────────
-function HeroStats({ zh, onStart }: { zh: boolean; onStart: boolean }) {
-  const cables    = useCountUp(690,  1600, onStart);
-  const countries = useCountUp(160,  1400, onStart);
-  const stations  = useCountUp(1907, 1800, onStart);
-  const lengthKm  = useCountUp(1300000, 2000, onStart); // 约130万公里
+// ── 全局统计英雄区（动态数据版）────────────────────────────────────
+interface GlobalStatsData {
+  cables: { total: number; inService: number; underConstruction: number; planned: number; international: number; domestic: number; branch: number };
+  landingStations: number;
+  countries: number;
+  totalLengthKm: number;
+}
+function HeroStats({ zh, onStart, data }: { zh: boolean; onStart: boolean; data: GlobalStatsData | null }) {
+  const cables    = useCountUp(data?.cables.total       || 0, 1600, onStart && !!data);
+  const countries = useCountUp(data?.countries          || 0, 1400, onStart && !!data);
+  const stations  = useCountUp(data?.landingStations    || 0, 1800, onStart && !!data);
+  const lengthM   = useCountUp(data ? Math.round((data.totalLengthKm || 0) / 10000) : 0, 2000, onStart && !!data);
 
   const stats = [
     {
@@ -268,7 +274,7 @@ function HeroStats({ zh, onStart }: { zh: boolean; onStart: boolean }) {
       desc: zh ? '海缆接触陆地的物理节点' : 'Where cables come ashore',
     },
     {
-      value: Math.round(lengthKm / 10000),
+      value: lengthM,
       label: zh ? '总铺设里程' : 'Total Cable Length',
       unit: zh ? '万 km' : 'M km',
       color: '#8B5CF6',
@@ -278,26 +284,26 @@ function HeroStats({ zh, onStart }: { zh: boolean; onStart: boolean }) {
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 40 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 32 }}>
       {stats.map((s, i) => (
         <div key={i} style={{
           backgroundColor: 'rgba(255,255,255,0.03)',
           border: `1px solid ${s.color}25`,
           borderRadius: 16, padding: '24px 20px',
-          position: 'relative', overflow: 'hidden',
+          position: 'relative' as const, overflow: 'hidden',
           transition: 'transform 0.2s, border-color 0.2s',
+          animation: `fadeInUp 0.4s ease ${i * 0.08}s both`,
         }}
           onMouseOver={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.borderColor = `${s.color}50`; }}
           onMouseOut={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.borderColor = `${s.color}25`; }}
         >
-          {/* 背景光晕 */}
-          <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', backgroundColor: s.color, opacity: 0.06, filter: 'blur(20px)' }} />
+          <div style={{ position: 'absolute' as const, top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', backgroundColor: s.color, opacity: 0.06, filter: 'blur(20px)' }} />
           <div style={{ fontSize: 24, marginBottom: 12 }}>{s.icon}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
             <span style={{ fontSize: 36, fontWeight: 800, color: s.color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-              {s.value.toLocaleString()}
+              {data ? s.value.toLocaleString() : '—'}
             </span>
-            {s.unit && <span style={{ fontSize: 14, fontWeight: 600, color: s.color }}>{s.unit}</span>}
+            {s.unit && data && <span style={{ fontSize: 14, fontWeight: 600, color: s.color }}>{s.unit}</span>}
           </div>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', marginBottom: 4 }}>{s.label}</div>
           <div style={{ fontSize: 11, color: '#4B5563', lineHeight: 1.5 }}>{s.desc}</div>
@@ -314,7 +320,7 @@ function CountryContent() {
   const { locale } = useTranslation();
   const zh = locale === 'zh';
 
-  const [globalStats, setGlobalStats] = useState<{cables:{total:number;international:number;domestic:number;branch:number}} | null>(null);
+  const [globalStats, setGlobalStats] = useState<GlobalStatsData | null>(null);
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [selectedCode, setSelectedCode] = useState<string | null>(searchParams.get('code') || null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -323,21 +329,10 @@ function CountryContent() {
   const [activeTab, setActiveTab] = useState<'cables' | 'stations'>('cables');
   const [typeFilter, setTypeFilter] = useState<'all' | 'international' | 'domestic' | 'branch'>('all');
   const [exporting, setExporting] = useState(false);
-  const [heroStarted, setHeroStarted] = useState(false);
   // 中国专属：是否包含台湾
   const [includeTaiwan, setIncludeTaiwan] = useState(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
-
-  // 触发英雄区数字动画（进入视口时开始）
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setHeroStarted(true); },
-      { threshold: 0.3 }
-    );
-    if (heroRef.current) observer.observe(heroRef.current);
-    return () => observer.disconnect();
-  }, []);
 
   // 加载全局统计
   useEffect(() => {
@@ -492,7 +487,7 @@ function CountryContent() {
 
         {/* ── 全球统计英雄区 ── */}
         <div ref={heroRef}>
-          <HeroStats zh={zh} onStart={heroStarted} />
+          <HeroStats zh={zh} onStart={!!globalStats} data={globalStats} />
         </div>
 
         {/* ── 推荐国家快速入口 ── */}
