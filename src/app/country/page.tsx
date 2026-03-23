@@ -499,13 +499,14 @@ function CountryContent() {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', marginBottom: 16, textTransform: 'uppercase' as const, letterSpacing: 1.5 }}>
               🌐 {zh ? '全球海缆总览' : 'Global Cable Overview'}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 16 }}>
               {[
-                { n: globalStats.cables.total,             label: zh ? '全球总计' : 'Total',            color: '#2A9D8F', pct: 100 },
-                { n: globalStats.cables.international,     label: zh ? '国际海缆' : 'International',    color: '#06D6A0', pct: Math.round(globalStats.cables.international / globalStats.cables.total * 100) },
-                { n: globalStats.cables.domestic,          label: zh ? '国内线'   : 'Domestic',         color: '#3B82F6', pct: Math.round(globalStats.cables.domestic / globalStats.cables.total * 100) },
-                { n: globalStats.cables.underConstruction, label: zh ? '在建'     : 'Under Const.',     color: '#E9C46A', pct: Math.round((globalStats.cables.underConstruction || 0) / globalStats.cables.total * 100) },
-                { n: globalStats.cables.decommissioned || 0, label: zh ? '退役'   : 'Decommissioned',  color: '#D97706', pct: Math.round((globalStats.cables.decommissioned || 0) / globalStats.cables.total * 100) },
+                { n: globalStats.cables.total,               label: zh ? '全球总计' : 'Total',           color: '#2A9D8F', pct: 100 },
+                { n: globalStats.cables.international,       label: zh ? '国际海缆' : 'International',   color: '#06D6A0', pct: Math.round(globalStats.cables.international / globalStats.cables.total * 100) },
+                { n: globalStats.cables.domestic,            label: zh ? '国内线'   : 'Domestic',        color: '#3B82F6', pct: Math.round(globalStats.cables.domestic / globalStats.cables.total * 100) },
+                { n: globalStats.cables.planned || 0,        label: zh ? '规划中'   : 'Planned',         color: '#60A5FA', pct: Math.round((globalStats.cables.planned || 0) / globalStats.cables.total * 100) },
+                { n: globalStats.cables.underConstruction || 0, label: zh ? '在建' : 'Under Const.',     color: '#E9C46A', pct: Math.round((globalStats.cables.underConstruction || 0) / globalStats.cables.total * 100) },
+                { n: globalStats.cables.decommissioned || 0, label: zh ? '退役'   : 'Decommissioned',   color: '#D97706', pct: Math.round((globalStats.cables.decommissioned || 0) / globalStats.cables.total * 100) },
               ].map((s, i) => (
                 <div key={i} style={{ position: 'relative' as const }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
@@ -523,6 +524,7 @@ function CountryContent() {
             <div style={{ height: 6, borderRadius: 4, overflow: 'hidden', display: 'flex', gap: 1 }}>
               <div style={{ flex: globalStats.cables.international,                    backgroundColor: '#06D6A0' }} />
               <div style={{ flex: globalStats.cables.domestic,                         backgroundColor: '#3B82F6' }} />
+              <div style={{ flex: globalStats.cables.planned            || 0,           backgroundColor: '#60A5FA' }} />
               <div style={{ flex: globalStats.cables.underConstruction || 0,           backgroundColor: '#E9C46A' }} />
               <div style={{ flex: globalStats.cables.decommissioned    || 0,           backgroundColor: '#D97706' }} />
             </div>
@@ -530,6 +532,7 @@ function CountryContent() {
               {[
                 { color: '#06D6A0', label: zh ? '国际海缆' : 'International' },
                 { color: '#3B82F6', label: zh ? '国内线'   : 'Domestic' },
+                { color: '#60A5FA', label: zh ? '规划中'   : 'Planned' },
                 { color: '#E9C46A', label: zh ? '在建'     : 'Under Const.' },
                 { color: '#D97706', label: zh ? '退役'     : 'Decommissioned' },
               ].map((l, i) => (
