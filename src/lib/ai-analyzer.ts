@@ -64,12 +64,15 @@ Content: ${description.slice(0, 2000)}
 
 Extract structured intelligence as JSON.`;
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30秒超时
     const response = await fetch(QWEN_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: QWEN_MODEL,
         messages: [
@@ -81,6 +84,7 @@ Extract structured intelligence as JSON.`;
       }),
     });
 
+    clearTimeout(timeout);
     if (!response.ok) {
       const errText = await response.text();
       console.error(`Qwen API error (${response.status}):`, errText);
@@ -113,8 +117,12 @@ Extract structured intelligence as JSON.`;
       console.error('JSON parse failed:', clean.slice(0, 200));
       return null;
     }
-  } catch (error) {
-    console.error('AI analysis failed:', error);
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.error('Qwen API timeout after 30s');
+    } else {
+      console.error('AI analysis failed:', error);
+    }
     return null;
   }
 }
