@@ -8,7 +8,6 @@ import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
 import LangSwitcher from '@/components/layout/LangSwitcher';
-import CountryCodeBadge from '@/components/ui/CountryCodeBadge';
 
 // ── 登陆站名称翻译表 ──────────────────────────────────────────────
 const STATION_ZH: Record<string, string> = {
@@ -80,86 +79,13 @@ const STATION_ZH: Record<string, string> = {
   'Toronto': '多伦多', 'Vancouver': '温哥华', 'Mexico City': '墨西哥城',
 };
 
-function stationName(station: { name: string; nameZh?: string | null } | string, zh: boolean): string {
-  const name   = typeof station === 'string' ? station : station.name;
-  const nameZh = typeof station === 'string' ? null    : station.nameZh;
+function stationName(name: string, zh: boolean): string {
   if (!zh) return name;
-  if (nameZh) return nameZh;
   if (STATION_ZH[name]) return STATION_ZH[name];
   for (const [en, zhName] of Object.entries(STATION_ZH)) {
     if (name.startsWith(en + ',') || name.startsWith(en + ' (')) return name.replace(en, zhName);
   }
   return name;
-}
-
-// ── 溢出内容 Popup（hover/tap 显示完整列表）────────────────────────
-function OverflowPopup({ items, renderItem, maxShow, zh }: {
-  items: any[];
-  renderItem: (item: any, i: number) => React.ReactNode;
-  maxShow: number;
-  zh: boolean;
-}) {
-  const [visible, setVisible] = useState(false);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const ref = useRef<HTMLDivElement>(null);
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches;
-
-  const visible_ = items.slice(0, maxShow);
-  const hidden   = items.slice(maxShow);
-
-  useEffect(() => {
-    if (!visible || !isMobile) return;
-    const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setVisible(false);
-    };
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, [visible, isMobile]);
-
-  if (hidden.length === 0) return <>{visible_.map(renderItem)}</>;
-
-  const handleMouseEnter = (e: React.MouseEvent) => {
-    if (isMobile) return;
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setPos({ x: r.left, y: r.bottom + 4 });
-    setVisible(true);
-  };
-  const handleClick = (e: React.MouseEvent) => {
-    if (!isMobile) return;
-    e.stopPropagation();
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setPos({ x: r.left, y: r.bottom + 4 });
-    setVisible(v => !v);
-  };
-
-  return (
-    <div ref={ref} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' as const }}>
-      {visible_.map(renderItem)}
-      <span
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => { if (!isMobile) setVisible(false); }}
-        onClick={handleClick}
-        style={{ fontSize: 10, color: '#2A9D8F', cursor: 'pointer', padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.1)', border: '1px solid rgba(42,157,143,0.2)' }}
-      >
-        +{hidden.length}
-      </span>
-      {visible && (
-        <div style={{
-          position: 'fixed', left: pos.x, top: pos.y,
-          zIndex: 9999, minWidth: 160, maxWidth: 300,
-          backgroundColor: 'rgba(8,16,32,0.97)', backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(42,157,143,0.25)', borderRadius: 10,
-          padding: '8px 10px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-          display: 'flex', flexDirection: 'column' as const, gap: 4,
-        }}>
-          <div style={{ fontSize: 9, color: '#4B5563', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 1 }}>
-            {zh ? '全部内容' : 'All items'}
-          </div>
-          {items.map(renderItem)}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ── 数字滚动动画 Hook ─────────────────────────────────────────────
@@ -388,6 +314,7 @@ function CountryContent() {
   const { locale } = useTranslation();
   const zh = locale === 'zh';
 
+  const [globalStats, setGlobalStats] = useState<{cables:{total:number;international:number;domestic:number;branch:number}} | null>(null);
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [selectedCode, setSelectedCode] = useState<string | null>(searchParams.get('code') || null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -410,6 +337,15 @@ function CountryContent() {
     );
     if (heroRef.current) observer.observe(heroRef.current);
     return () => observer.disconnect();
+  }, []);
+
+  // 加载全局统计
+  useEffect(() => {
+    fetch('/api/stats').then(r => r.json()).then(d => {
+      // 兼容 Redis 嵌套字符串格式
+      const parsed = typeof d === 'string' ? JSON.parse(d) : d;
+      setGlobalStats(parsed);
+    }).catch(() => {});
   }, []);
 
   // 加载国家列表
@@ -491,17 +427,67 @@ function CountryContent() {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
 
         {/* ── 页面标题 ── */}
-        <div style={{ marginBottom: 36, animation: 'fadeInUp 0.5s ease' }}>
+        <div style={{ marginBottom: 28, animation: 'fadeInUp 0.5s ease' }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: '#EDF2F7', margin: '0 0 8px', lineHeight: 1.3 }}>
             {zh ? '全球海缆国家分析' : 'Global Cable Country Analysis'}
           </h1>
           <p style={{ fontSize: 14, color: '#6B7280', margin: 0, lineHeight: 1.6 }}>
             {zh
-              ? '探索全球 690 条海缆的分布格局，按国家维度查看登陆站、海缆类型与连接关系，支持中英文数据导出。'
-              : 'Explore the distribution of 690+ submarine cables. View landing stations, cable types and connectivity by country, with CSV export.'
+              ? '按国家维度查看登陆站、海缆类型与连接关系，支持中英文数据导出。'
+              : 'View landing stations, cable types and connectivity by country, with CSV export.'
             }
           </p>
         </div>
+
+        {/* ── 全局海缆类型统计横幅 ── */}
+        {globalStats && (
+          <div style={{
+            marginBottom: 32,
+            backgroundColor: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(42,157,143,0.15)',
+            borderRadius: 16, padding: '20px 24px',
+            animation: 'fadeInUp 0.4s ease 0.1s both',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', marginBottom: 16, textTransform: 'uppercase' as const, letterSpacing: 1.5 }}>
+              🌐 {zh ? '全球海缆总览' : 'Global Cable Overview'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
+              {[
+                { n: globalStats.cables.total,         label: zh ? '全球总计'   : 'Total Cables',    color: '#2A9D8F', pct: 100 },
+                { n: globalStats.cables.international, label: zh ? '国际海缆'   : 'International',   color: '#06D6A0', pct: Math.round(globalStats.cables.international / globalStats.cables.total * 100) },
+                { n: globalStats.cables.domestic,      label: zh ? '国内线'     : 'Domestic',        color: '#3B82F6', pct: Math.round(globalStats.cables.domestic / globalStats.cables.total * 100) },
+              ].map((s, i) => (
+                <div key={i} style={{ position: 'relative' as const }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.n}</span>
+                    <span style={{ fontSize: 11, color: '#4B5563' }}>{s.pct}%</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 8 }}>{s.label}</div>
+                  <div style={{ height: 3, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ width: `${s.pct}%`, height: '100%', backgroundColor: s.color, borderRadius: 2, transition: 'width 1s cubic-bezier(0.16,1,0.3,1)' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* 比例合并横条 */}
+            <div style={{ height: 6, borderRadius: 4, overflow: 'hidden', display: 'flex', gap: 1 }}>
+              <div style={{ flex: globalStats.cables.international, backgroundColor: '#06D6A0', transition: 'flex 1s ease' }} />
+              <div style={{ flex: globalStats.cables.domestic,      backgroundColor: '#3B82F6', transition: 'flex 1s ease' }} />
+              {globalStats.cables.branch > 0 && <div style={{ flex: globalStats.cables.branch, backgroundColor: '#8B5CF6', transition: 'flex 1s ease' }} />}
+            </div>
+            <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+              {[
+                { color: '#06D6A0', label: zh ? '国际海缆' : 'International' },
+                { color: '#3B82F6', label: zh ? '国内线'   : 'Domestic' },
+              ].map((l, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: l.color }} />
+                  <span style={{ fontSize: 10, color: '#4B5563' }}>{l.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── 全球统计英雄区 ── */}
         <div ref={heroRef}>
@@ -647,40 +633,21 @@ function CountryContent() {
                 </div>
               </div>
 
-              {/* 统计卡片 — 层级结构：总数 + 分类 */}
-              <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' as const }}>
-                {/* 总登陆站 */}
-                <div style={{ flex: '1 1 140px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(233,196,106,0.25)', padding: '16px 18px' }}>
-                  <div style={{ fontSize: 18, marginBottom: 8 }}>📡</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: '#E9C46A', lineHeight: 1 }}>{data.summary.totalStations}</div>
-                  <div style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>{zh ? '总登陆站数' : 'Landing Stations'}</div>
-                </div>
-                {/* 总海缆 + 子分类层级 */}
-                <div style={{ flex: '2 1 300px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(42,157,143,0.25)', padding: '16px 18px' }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
-                    <span style={{ fontSize: 18 }}>🔌</span>
-                    <span style={{ fontSize: 28, fontWeight: 800, color: '#2A9D8F', lineHeight: 1 }}>{data.summary.totalCables}</span>
-                    <span style={{ fontSize: 12, color: '#6B7280' }}>{zh ? '条海缆' : 'cables total'}</span>
+              {/* 统计卡片 */}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+                {[
+                  { n: data.summary.totalCables,         label: zh ? '总海缆数'   : 'Total Cables',     color: '#2A9D8F', icon: '🔌' },
+                  { n: data.summary.totalStations,       label: zh ? '总登陆站数' : 'Landing Stations',  color: '#E9C46A', icon: '📡' },
+                  { n: data.summary.internationalCables, label: zh ? '国际海缆'   : 'International',     color: '#06D6A0', icon: '🌐' },
+                  { n: data.summary.domesticCables,      label: zh ? '国内线'     : 'Domestic',          color: '#3B82F6', icon: '🏠' },
+                  { n: data.summary.branchCables,        label: zh ? '支线接入'   : 'Branch',            color: '#8B5CF6', icon: '⑂'  },
+                ].map((s, i) => (
+                  <div key={i} style={{ flex: '1 1 140px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, border: `1px solid ${s.color}25`, padding: '16px 18px' }}>
+                    <div style={{ fontSize: 18, marginBottom: 8 }}>{s.icon}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.n}</div>
+                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>{s.label}</div>
                   </div>
-                  {/* 层级分解条 */}
-                  {[
-                    { n: data.summary.internationalCables, label: zh ? '国际海缆' : 'International', color: '#06D6A0' },
-                    { n: data.summary.domesticCables,      label: zh ? '国内线'   : 'Domestic',      color: '#3B82F6' },
-                    { n: data.summary.branchCables,        label: zh ? '支线接入' : 'Branch',        color: '#8B5CF6' },
-                  ].map((s, i) => {
-                    const pct = data.summary.totalCables > 0 ? (s.n / data.summary.totalCables) * 100 : 0;
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: 9, color: '#4B5563', width: 4, textAlign: 'center' }}>├</span>
-                        <div style={{ flex: 1, height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: '100%', backgroundColor: s.color, borderRadius: 2, transition: 'width 0.8s cubic-bezier(0.16,1,0.3,1)' }} />
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: s.color, minWidth: 24, textAlign: 'right' }}>{s.n}</span>
-                        <span style={{ fontSize: 10, color: '#6B7280', minWidth: 60 }}>{s.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                ))}
               </div>
 
               {/* Tab 切换 */}
@@ -731,36 +698,15 @@ function CountryContent() {
                           </div>
                           <div style={{ fontSize: 12, color: '#9CA3AF' }}>{cable.lengthKm ? `${cable.lengthKm.toLocaleString()} km` : '—'}</div>
                           <div style={{ fontSize: 11, color: '#9CA3AF' }}>
-                            {cable.stationsInCountry.length === 0 ? '—' : (
-                              <OverflowPopup
-                                items={cable.stationsInCountry}
-                                maxShow={2}
-                                zh={zh}
-                                renderItem={(s: any, si: number) => (
-                                  <span key={s.id} style={{ marginRight: 2 }}>
-                                    {si > 0 && '、'}
-                                    {stationName(s, zh)}
-                                    {isChinaGroup && s.regionLabel && (
-                                      <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 2 }}>
-                                        ({s.regionLabel.replace('中国', '')})
-                                      </span>
-                                    )}
-                                  </span>
-                                )}
-                              />
-                            )}
+                            {cable.stationsInCountry.slice(0, 2).map((s, si) => (
+                              <span key={s.id}>{si > 0 && '、'}{stationName(s.name, zh)}{isChinaGroup && s.regionLabel && <span style={{ fontSize: 9, color: REGION_COLORS[s.regionLabel] || '#6B7280', marginLeft: 2 }}>({s.regionLabel.replace('中国', '')})</span>}</span>
+                            ))}
+                            {cable.stationsInCountry.length > 2 && <span style={{ color: '#4B5563' }}> +{cable.stationsInCountry.length - 2}</span>}
+                            {cable.stationsInCountry.length === 0 && '—'}
                           </div>
                           <div style={{ fontSize: 11, color: '#9CA3AF' }}>
-                            {cable.owners.length === 0 ? '—' : (
-                              <OverflowPopup
-                                items={cable.owners}
-                                maxShow={1}
-                                zh={zh}
-                                renderItem={(owner: string, i: number) => (
-                                  <span key={i} style={{ marginRight: 2 }}>{i > 0 && ', '}{owner}</span>
-                                )}
-                              />
-                            )}
+                            {cable.owners.slice(0, 1).join(', ')}
+                            {cable.owners.length > 1 && <span style={{ color: '#4B5563' }}> +{cable.owners.length - 1}</span>}
                           </div>
                         </div>
                       </a>
@@ -791,14 +737,10 @@ function CountryContent() {
                       <div style={{ fontSize: 12, color: '#6B7280', fontFamily: 'monospace' }}>{station.longitude.toFixed(3)}°</div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#2A9D8F' }}>{station.cableCount}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        <OverflowPopup
-                          items={station.cables}
-                          maxShow={3}
-                          zh={zh}
-                          renderItem={(c: any) => (
-                            <a key={c.slug} href={`/?cable=${c.slug}`} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', border: '1px solid rgba(42,157,143,0.15)', textDecoration: 'none', whiteSpace: 'nowrap' as const }}>{c.name}</a>
-                          )}
-                        />
+                        {station.cables.slice(0, 3).map(c => (
+                          <a key={c.slug} href={`/?cable=${c.slug}`} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', border: '1px solid rgba(42,157,143,0.15)', textDecoration: 'none', whiteSpace: 'nowrap' }}>{c.name}</a>
+                        ))}
+                        {station.cables.length > 3 && <span style={{ fontSize: 10, color: '#4B5563' }}>+{station.cables.length - 3}</span>}
                       </div>
                     </div>
                   ))}
