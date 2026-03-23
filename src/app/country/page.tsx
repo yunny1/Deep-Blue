@@ -80,8 +80,11 @@ const STATION_ZH: Record<string, string> = {
   'Toronto': '多伦多', 'Vancouver': '温哥华', 'Mexico City': '墨西哥城',
 };
 
-function stationName(name: string, zh: boolean): string {
+function stationName(station: { name: string; nameZh?: string | null } | string, zh: boolean): string {
+  const name   = typeof station === 'string' ? station : station.name;
+  const nameZh = typeof station === 'string' ? null    : station.nameZh;
   if (!zh) return name;
+  if (nameZh) return nameZh;
   if (STATION_ZH[name]) return STATION_ZH[name];
   for (const [en, zhName] of Object.entries(STATION_ZH)) {
     if (name.startsWith(en + ',') || name.startsWith(en + ' (')) return name.replace(en, zhName);
