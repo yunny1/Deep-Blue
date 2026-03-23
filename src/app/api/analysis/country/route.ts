@@ -25,6 +25,11 @@ const REGION_LABEL: Record<string, string> = {
   CN: '中国大陆', HK: '中国香港', MO: '中国澳门', TW: '中国台湾',
 };
 
+// 强制国内线覆盖：cable slug → 视为国内线的国家代码组
+const DOMESTIC_OVERRIDES: Record<string, string[]> = {
+  'taiwan-strait-express-1': ['CN', 'TW', 'HK', 'MO'],
+};
+
 async function getCountryData(codes: string[]) {
   const stations = await prisma.landingStation.findMany({
     where: { countryCode: { in: codes } },
@@ -61,8 +66,17 @@ async function getCountryData(codes: string[]) {
   for (const cable of cables) {
     const allCodes: string[] = [...new Set<string>(cable.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
     const localStations = cable.landingStations.filter((cls: any) => codes.includes(cls.landingStation.countryCode));
+
+    // 检查强制覆盖
+    const override = DOMESTIC_OVERRIDES[cable.slug];
+    if (override) {
+      const isOverrideDomestic = allCodes.every((c: string) => override.includes(c));
+      if (isOverrideDomestic) { domestic.push(cable); continue; }
+    }
+
     const isDomestic = allCodes.every((c: string) => codes.includes(c));
     const isBranch = !isDomestic && localStations.length === 1 && cable.landingStations.length > 4;
+
     if (isDomestic) domestic.push(cable);
     else if (isBranch) branch.push(cable);
     else international.push(cable);
@@ -76,7 +90,7 @@ async function getCountryData(codes: string[]) {
         .map((cls: any) => ({
           id: cls.landingStation.id,
           name: cls.landingStation.name,
-          nameZh: cls.landingStation.nameZh || null,  // ← 新增
+          nameZh: cls.landingStation.nameZh || null,
           countryCode: cls.landingStation.countryCode,
           regionLabel: isGroup ? (REGION_LABEL[cls.landingStation.countryCode] || null) : null,
           latitude: cls.landingStation.latitude,
@@ -84,8 +98,17 @@ async function getCountryData(codes: string[]) {
         }));
 
       const allCodes: string[] = [...new Set<string>(c.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
-      const isDomestic = allCodes.every((cc: string) => codes.includes(cc));
-      const isBranch = !isDomestic && localStations.length === 1 && c.landingStations.length > 4;
+
+      // 重新判断类型（含 override）
+      const override = DOMESTIC_OVERRIDES[c.slug];
+      let type: 'international' | 'domestic' | 'branch';
+      if (override && allCodes.every((cc: string) => override.includes(cc))) {
+        type = 'domestic';
+      } else {
+        const isDomestic = allCodes.every((cc: string) => codes.includes(cc));
+        const isBranch = !isDomestic && localStations.length === 1 && c.landingStations.length > 4;
+        type = isDomestic ? 'domestic' : isBranch ? 'branch' : 'international';
+      }
 
       return {
         id: c.id, name: c.name, slug: c.slug, status: c.status,
@@ -97,17 +120,14 @@ async function getCountryData(codes: string[]) {
         stationsInCountry: localStations,
         countries: allCodes,
         totalStations: c.landingStations.length,
-        type: isDomestic ? 'domestic' : isBranch ? 'branch' : 'international',
+        type,
       };
     }),
     stationsFormatted: stations.map(s => ({
-      id: s.id,
-      name: s.name,
-      nameZh: (s as any).nameZh || null,  // ← 新增
+      id: s.id, name: s.name, nameZh: (s as any).nameZh || null,
       countryCode: s.countryCode,
       regionLabel: isGroup ? (REGION_LABEL[s.countryCode] || null) : null,
-      latitude: s.latitude,
-      longitude: s.longitude,
+      latitude: s.latitude, longitude: s.longitude,
       cableCount: s.cables.length,
       cables: s.cables.map((cls: any) => ({ name: cls.cable.name, slug: cls.cable.slug })),
     })),
@@ -124,53 +144,37 @@ async function getCountryData(codes: string[]) {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code')?.toUpperCase();
-
   if (!code) return NextResponse.json({ error: 'Code required' }, { status: 400 });
 
   try {
-    let queryCodes: string[];
-    let displayNameZh: string;
-    let displayNameEn: string;
-    let responseCode: string;
-    let isGroup = false;
-    let breakdown: Record<string, number> | null = null;
+    let queryCodes: string[], displayNameZh: string, displayNameEn: string, responseCode: string;
+    let isGroup = false, breakdown: Record<string, number> | null = null;
 
     if (code === 'CN') {
-      queryCodes = ['CN', 'HK', 'MO'];
-      displayNameZh = '中国（大陆+港+澳）';
-      displayNameEn = 'China (Mainland + HK + MO)';
-      responseCode = 'CN';
-      isGroup = true;
+      queryCodes = ['CN', 'HK', 'MO']; isGroup = true;
+      displayNameZh = '中国（大陆+港+澳）'; displayNameEn = 'China (Mainland + HK + MO)'; responseCode = 'CN';
     } else if (code === 'CN_WITH_TW') {
-      queryCodes = ['CN', 'HK', 'MO', 'TW'];
-      displayNameZh = '中国（大陆+港+澳+台）';
-      displayNameEn = 'China (Mainland + HK + MO + TW)';
-      responseCode = 'CN_WITH_TW';
-      isGroup = true;
+      queryCodes = ['CN', 'HK', 'MO', 'TW']; isGroup = true;
+      displayNameZh = '中国（大陆+港+澳+台）'; displayNameEn = 'China (Mainland + HK + MO + TW)'; responseCode = 'CN_WITH_TW';
     } else {
       queryCodes = [code];
       const country = await prisma.country.findUnique({ where: { code } });
       displayNameZh = COUNTRY_ZH[code] || country?.nameEn || code;
-      displayNameEn = country?.nameEn || code;
-      responseCode = code;
+      displayNameEn = country?.nameEn || code; responseCode = code;
     }
 
     const { stations, cables, stationsFormatted, summary } = await getCountryData(queryCodes);
 
     if (isGroup) {
       breakdown = {};
-      for (const qc of queryCodes) {
-        breakdown[qc] = stations.filter(s => s.countryCode === qc).length;
-      }
+      for (const qc of queryCodes) breakdown[qc] = stations.filter(s => s.countryCode === qc).length;
     }
 
     return NextResponse.json({
       country: { code: responseCode, nameEn: displayNameEn, nameZh: displayNameZh },
       summary: { ...summary, breakdown: breakdown ?? null },
-      cables,
-      stations: stationsFormatted,
+      cables, stations: stationsFormatted,
     });
-
   } catch (error) {
     console.error('[Country Analysis]', error);
     return NextResponse.json({ error: 'Analysis failed' }, { status: 500 });
@@ -184,17 +188,12 @@ export async function POST() {
       include: { _count: { select: { landingStations: true } } },
       orderBy: { nameEn: 'asc' },
     });
-
     return NextResponse.json({
       countries: countries.map(c => ({
-        code: c.code,
-        nameEn: c.nameEn,
+        code: c.code, nameEn: c.nameEn,
         nameZh: COUNTRY_ZH[c.code] || c.nameEn,
-        stationCount: c._count.landingStations,
-        isGroup: false,
+        stationCount: c._count.landingStations, isGroup: false,
       })),
     });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
-  }
+  } catch { return NextResponse.json({ error: 'Failed' }, { status: 500 }); }
 }
