@@ -399,11 +399,16 @@ async function upsertTier2Cable(ref: SNCableRef, snDetail: SNDetail, status: str
     return;
   }
 
-  await prisma.cable.upsert({
-    where: { id: cableId },
-    update: { name: ref.name, slug: slugify(ref.name), status, lengthKm: snDetail.lengthKm, rfsDate },
-    create: { id: cableId, name: ref.name, slug: slugify(ref.name), status, lengthKm: snDetail.lengthKm, rfsDate },
-  });
+  try {
+    await prisma.cable.upsert({
+      where: { id: cableId },
+      update: { name: ref.name, slug: slugify(ref.name), status, lengthKm: snDetail.lengthKm, rfsDate },
+      create: { id: cableId, name: ref.name, slug: slugify(ref.name), status, lengthKm: snDetail.lengthKm, rfsDate },
+    });
+  } catch (e: any) {
+    log("WARN", `Tier2 upsert 跳过 ${ref.name}: ${String(e.message).slice(0,80)}`);
+    return;
+  }
 
   for (const lp of snDetail.landingPoints) {
     const cc = validateCountryCode(getCountryCode(lp.country), lp.name);
