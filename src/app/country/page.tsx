@@ -304,20 +304,11 @@ interface GlobalStatsData {
   totalLengthKm: number;
 }
 function HeroStats({ zh, onStart, data }: { zh: boolean; onStart: boolean; data: GlobalStatsData | null }) {
-  const cables    = useCountUp(data?.cables.total       || 0, 1600, onStart && !!data);
   const countries = useCountUp(data?.countries          || 0, 1400, onStart && !!data);
   const stations  = useCountUp(data?.landingStations    || 0, 1800, onStart && !!data);
   const lengthM   = useCountUp(data ? Math.round((data.totalLengthKm || 0) / 10000) : 0, 2000, onStart && !!data);
 
   const stats = [
-    {
-      value: cables,
-      label: zh ? '全球海缆总数' : 'Submarine Cables',
-      unit: '',
-      color: '#2A9D8F',
-      icon: '🔌',
-      desc: zh ? '覆盖全球各大洲与大洋' : 'Spanning every ocean and continent',
-    },
     {
       value: countries,
       label: zh ? '覆盖国家与地区' : 'Countries & Territories',
@@ -398,10 +389,10 @@ function CountryContent() {
   // 加载全局统计
   useEffect(() => {
     fetch('/api/stats').then(r => r.json()).then(d => {
+      // 递归解析，兼容双重编码
       let parsed = d;
-      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-      if (typeof parsed?.cables === 'undefined') return;
-      setGlobalStats(parsed);
+      while (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch { break; } }
+      if (parsed?.cables?.total) setGlobalStats(parsed);
     }).catch(() => {});
   }, []);
 
