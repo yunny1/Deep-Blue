@@ -23,8 +23,9 @@ async function getFromRedis(): Promise<any | null> {
     const d = await res.json();
     if (!d.result) return null;
     const raw = JSON.parse(d.result);
-    // 兼容双重编码（旧缓存存的是 JSON.stringify(JSON.stringify(data))）
-    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+    // writeToRedis 存的是 [jsonString, "EX", ttl] 数组格式
+    const actual = Array.isArray(raw) ? raw[0] : raw;
+    return typeof actual === 'string' ? JSON.parse(actual) : actual;
   } catch { return null; }
 }
 
