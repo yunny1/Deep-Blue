@@ -298,7 +298,7 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
 
 // ── 全局统计英雄区（动态数据版）────────────────────────────────────
 interface GlobalStatsData {
-  cables: { total: number; inService: number; underConstruction: number; planned: number; international: number; domestic: number; branch: number };
+  cables: { total: number; inService: number; underConstruction: number; planned: number; decommissioned: number; international: number; domestic: number; branch: number };
   landingStations: number;
   countries: number;
   totalLengthKm: number;
@@ -499,11 +499,13 @@ function CountryContent() {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#4B5563', marginBottom: 16, textTransform: 'uppercase' as const, letterSpacing: 1.5 }}>
               🌐 {zh ? '全球海缆总览' : 'Global Cable Overview'}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 16 }}>
               {[
-                { n: globalStats.cables.total,         label: zh ? '全球总计'   : 'Total Cables',    color: '#2A9D8F', pct: 100 },
-                { n: globalStats.cables.international, label: zh ? '国际海缆'   : 'International',   color: '#06D6A0', pct: Math.round(globalStats.cables.international / globalStats.cables.total * 100) },
-                { n: globalStats.cables.domestic,      label: zh ? '国内线'     : 'Domestic',        color: '#3B82F6', pct: Math.round(globalStats.cables.domestic / globalStats.cables.total * 100) },
+                { n: globalStats.cables.total,             label: zh ? '全球总计' : 'Total',            color: '#2A9D8F', pct: 100 },
+                { n: globalStats.cables.international,     label: zh ? '国际海缆' : 'International',    color: '#06D6A0', pct: Math.round(globalStats.cables.international / globalStats.cables.total * 100) },
+                { n: globalStats.cables.domestic,          label: zh ? '国内线'   : 'Domestic',         color: '#3B82F6', pct: Math.round(globalStats.cables.domestic / globalStats.cables.total * 100) },
+                { n: globalStats.cables.underConstruction, label: zh ? '在建'     : 'Under Const.',     color: '#E9C46A', pct: Math.round((globalStats.cables.underConstruction || 0) / globalStats.cables.total * 100) },
+                { n: globalStats.cables.decommissioned || 0, label: zh ? '退役'   : 'Decommissioned',  color: '#D97706', pct: Math.round((globalStats.cables.decommissioned || 0) / globalStats.cables.total * 100) },
               ].map((s, i) => (
                 <div key={i} style={{ position: 'relative' as const }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
@@ -519,14 +521,17 @@ function CountryContent() {
             </div>
             {/* 比例合并横条 */}
             <div style={{ height: 6, borderRadius: 4, overflow: 'hidden', display: 'flex', gap: 1 }}>
-              <div style={{ flex: globalStats.cables.international, backgroundColor: '#06D6A0', transition: 'flex 1s ease' }} />
-              <div style={{ flex: globalStats.cables.domestic,      backgroundColor: '#3B82F6', transition: 'flex 1s ease' }} />
-              {globalStats.cables.branch > 0 && <div style={{ flex: globalStats.cables.branch, backgroundColor: '#8B5CF6', transition: 'flex 1s ease' }} />}
+              <div style={{ flex: globalStats.cables.international,                    backgroundColor: '#06D6A0' }} />
+              <div style={{ flex: globalStats.cables.domestic,                         backgroundColor: '#3B82F6' }} />
+              <div style={{ flex: globalStats.cables.underConstruction || 0,           backgroundColor: '#E9C46A' }} />
+              <div style={{ flex: globalStats.cables.decommissioned    || 0,           backgroundColor: '#D97706' }} />
             </div>
-            <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap' as const }}>
               {[
                 { color: '#06D6A0', label: zh ? '国际海缆' : 'International' },
                 { color: '#3B82F6', label: zh ? '国内线'   : 'Domestic' },
+                { color: '#E9C46A', label: zh ? '在建'     : 'Under Const.' },
+                { color: '#D97706', label: zh ? '退役'     : 'Decommissioned' },
               ].map((l, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: l.color }} />

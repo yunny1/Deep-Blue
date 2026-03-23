@@ -62,9 +62,12 @@ export async function GET() {
       prisma.country.count({ where: { landingStations: { some: {} } } }),
     ]);
 
-    // 海缆类型分类（国际/国内/支线）
+    // 退役数量
+    const decommissioned = await prisma.cable.count({ where: { status: 'DECOMMISSIONED' } });
+
+    // 海缆类型分类（只统计在役+规划中，退役/在建单独列出）
     const cables = await prisma.cable.findMany({
-      where: { status: { not: 'PENDING_REVIEW' } },
+      where: { status: { in: ['IN_SERVICE', 'PLANNED'] } },
       select: {
         slug: true,
         landingStations: {
@@ -77,18 +80,15 @@ export async function GET() {
     for (const cable of cables) {
       const allCodes = [...new Set(cable.landingStations.map(ls => ls.landingStation.countryCode))];
 
-      // 检查强制覆盖
       const override = DOMESTIC_OVERRIDES[cable.slug];
       if (override) {
         const isDomestic = allCodes.every(c => override.includes(c));
         if (isDomestic) { domestic++; continue; }
       }
 
-      // 国内线：所有登陆站都在同一个国家
       const uniqueCountries = new Set(allCodes);
       if (uniqueCountries.size <= 1) { domestic++; continue; }
 
-      // 支线：本地只有1个登陆站且总站超过4
       const isBranch = cable.landingStations.length === 1 && cables.length > 4;
       if (isBranch) { branch++; continue; }
 
@@ -106,6 +106,7 @@ export async function GET() {
       cables: {
         total: totalCables,
         inService, underConstruction, planned,
+        decommissioned,
         international, domestic, branch,
       },
       landingStations: totalStations,
