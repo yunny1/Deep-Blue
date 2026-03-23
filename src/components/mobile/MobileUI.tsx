@@ -399,7 +399,6 @@ function EarthquakePanel({ zh }: { zh: boolean }) {
                 </span>
               </div>
             )}
-            )}
           </div>
           {/* 受影响海缆 */}
           {selectedId === event.earthquakeId && (
