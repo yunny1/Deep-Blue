@@ -204,17 +204,20 @@ async function main() {
     console.log('\n  ✓ 没有发现重复记录\n');
   }
 
-  // ── Step 4: 执行合并 ─────────────────────────────────────────
+  // ── Step 4: 执行合并（仅跨源重复，同源重复误判率太高需人工确认）──
+  const safeActions = crossSource; // 只执行跨源合并，同源跳过
   console.log(`\n=== Step 4: ${EXECUTE ? '执行合并' : 'DRY_RUN（不修改数据库）'} ===\n`);
+  console.log(`  跨源重复（将执行）: ${safeActions.length} 对`);
+  console.log(`  同源重复（跳过，需人工确认）: ${sameSource.length} 对`);
 
-  if (actions.length === 0) {
+  if (safeActions.length === 0) {
     console.log('  无需操作');
   } else if (!EXECUTE) {
-    console.log(`  DRY_RUN: 发现 ${actions.length} 对重复`);
+    console.log(`\n  DRY_RUN: ${safeActions.length} 对跨源重复待合并`);
     console.log(`  确认无误后执行: EXECUTE=true npx tsx /home/ubuntu/deep-blue/scripts/dedup-v2.ts`);
   } else {
     let ok = 0;
-    for (const action of actions) {
+    for (const action of safeActions) {
       try {
         // 1. 转移登陆站关联
         const keepStations: any[] = await prisma.$queryRawUnsafe(
@@ -285,7 +288,7 @@ async function main() {
       }
     }
 
-    console.log(`\n  合并完成: ${ok}/${actions.length} 成功`);
+    console.log(`\n  合并完成: ${ok}/${safeActions.length} 成功`);
 
     // 清除缓存
     try {
