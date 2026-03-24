@@ -30,6 +30,18 @@ model Cable {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
   @@map("cables")
+
+// --- 去重系统字段 ---
+  dataSource          String?   @map("data_source")
+  externalId          String?   @map("external_id")
+  canonicalName       String?   @map("canonical_name")
+  canonicalBase       String?   @map("canonical_base")
+  canonicalSuffix     String?   @map("canonical_suffix")
+  reviewStatus        String?   @map("review_status")
+  possibleDuplicateOf String?   @map("possible_duplicate_of")
+  mergedInto          String?   @map("merged_into")
+  mergedAt            DateTime? @map("merged_at")
+
 }
 
 model LandingStation {
