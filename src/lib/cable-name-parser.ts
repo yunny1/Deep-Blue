@@ -87,14 +87,19 @@ export function getAliasCount(): number {
  * 判定规则：括号内容是缩写（而非描述）当且仅当：
  *   - 括号内容长度 <= 20 字符（太长的是描述不是缩写）
  *   - 括号内容比括号外的全名短（缩写应该比全名短）
- *   - 括号在名称末尾（不是中间插入的修饰语）
+ *   - 括号在名称末尾，或括号后面只有噪音词（Cable System 等）
  */
 export function extractAbbreviation(raw: string): { fullPart: string; abbrev: string } | null {
-  // 匹配末尾的括号内容：... (XYZ) 或 ... (XYZ-1)
-  const match = raw.match(/^(.+?)\s*\(([^)]{1,20})\)\s*$/);
+  // 模式1：括号在末尾 → "Africa Coast to Europe (ACE)"
+  // 模式2：括号后跟噪音词 → "Asia-America Gateway (AAG) Cable System"
+  const match = raw.match(/^(.+?)\s*\(([^)]{1,20})\)\s*(cable\s*system|system|network|cable|project)?\s*$/i);
   if (!match) return null;
 
-  const fullPart = match[1].trim();
+  // fullPart = 括号前的部分 + 括号后的噪音词（如果有）
+  let fullPart = match[1].trim();
+  if (match[3]) {
+    fullPart = fullPart + ' ' + match[3].trim();
+  }
   const abbrev = match[2].trim();
 
   // 验证：缩写应该比全名短
