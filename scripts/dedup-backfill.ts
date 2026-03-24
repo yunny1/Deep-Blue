@@ -380,18 +380,27 @@ async function executeMerges(actions: MergeAction[]): Promise<number> {
         }
       }
 
-      // 4. 用被合并方的字段补全保留方的空字段
-      await prisma.$executeRawUnsafe(`
-        UPDATE cables AS keep SET
-          rfs_year = COALESCE(keep.rfs_year, remove.rfs_year),
-          length_km = COALESCE(keep.length_km, remove.length_km),
-          description = COALESCE(keep.description, remove.description),
-          owners = COALESCE(keep.owners, remove.owners),
-          suppliers = COALESCE(keep.suppliers, remove.suppliers),
-          url = COALESCE(keep.url, remove.url)
-        FROM cables AS remove
-        WHERE keep.id = $1 AND remove.id = $2
-      `, action.keepId, action.removeId);
+      // 4. 用被合并方的字段补全保留方的空字段（用 Prisma Client 避免列名问题）
+      const keepCable = await prisma.cable.findUnique({ where: { id: action.keepId } });
+      const removeCable = await prisma.cable.findUnique({ where: { id: action.removeId } });
+
+      if (keepCable && removeCable) {
+        const updates: Record<string, any> = {};
+        // Prisma 字段名列表 — 如果你的 schema 中字段名不同，在这里调整
+        const fillableFields = [
+          'rfsYear', 'yearRfs', 'rfs',           // RFS年份（三种可能的字段名，只有存在的会生效）
+          'lengthKm', 'description', 'owners',
+          'suppliers', 'url', 'designCapacity', 'litCapacity',
+        ];
+        for (const field of fillableFields) {
+          if (field in keepCable && (keepCable as any)[field] == null && (removeCable as any)[field] != null) {
+            updates[field] = (removeCable as any)[field];
+          }
+        }
+        if (Object.keys(updates).length > 0) {
+          await prisma.cable.update({ where: { id: action.keepId }, data: updates });
+        }
+      }
 
       // 5. 软删除被合并记录
       await prisma.$executeRawUnsafe(
