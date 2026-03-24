@@ -1,24 +1,25 @@
 /**
  * cable-name-parser.ts
- * 
- * 海缆名称结构化解析引擎
- * 
- * 核心思路：海缆名称不是普通自然语言，而是 "基础名 + 版本/期数后缀" 的结构化格式。
- * 例如：
- *   "SEA-ME-WE 4"      → { base: "sea-me-we", suffix: "4" }
- *   "SeaMeWe-4"        → { base: "sea-me-we", suffix: "4" }     ← 通过别名表匹配
- *   "FEC-1"            → { base: "fec", suffix: "1" }
- *   "FEC-2"            → { base: "fec", suffix: "2" }           ← suffix不同 → 不同海缆
- *   "Cabo Verde ... Phase 2" → { base: "cabo-verde-telecom-domestic-submarine-cable", suffix: "phase-2" }
- * 
  * 路径：src/lib/cable-name-parser.ts
+ * 
+ * 海缆名称结构化解析引擎 v2
+ * 
+ * v2 核心改进：自动提取括号中的缩写并注册为别名
+ * 
+ * TG 命名惯例：全名 + 括号缩写，如 "Africa Coast to Europe (ACE)"
+ * SN 常常只用缩写：如 "ACE"
+ * 
+ * v1 的问题：先把括号内容删掉再做匹配，导致缩写和全名永远无法对应
+ * v2 的修复：在删括号之前先提取缩写，自动注册为全名的别名
+ *   "Africa Coast to Europe (ACE)" → 提取 "ACE" → 注册别名 ace → africa-coast-to-europe
+ *   之后 SN 的 "ACE" 进来 → 解析为 base="ace" → 查别名 → 得到 "africa-coast-to-europe"
+ *   canonical 匹配成功，判定为同一条缆
  */
 
 // ============================================================
-// 1. 内存别名表（启动时从DB加载，fallback到硬编码）
+// 1. 别名表
 // ============================================================
 
-// 硬编码兜底：当DB别名表不可用时使用
 const BUILTIN_ALIASES: Record<string, string> = {
   'seamewe': 'sea-me-we',
   'smw': 'sea-me-we',
@@ -39,13 +40,9 @@ const BUILTIN_ALIASES: Record<string, string> = {
   'hkamericas': 'hong-kong-americas',
 };
 
-// 运行时别名表，由 loadAliases() 从DB填充
 let runtimeAliases: Record<string, string> = { ...BUILTIN_ALIASES };
 
-/**
- * 从数据库加载别名表到内存
- * 在脚本启动时调用一次即可
- */
+/** 从数据库加载别名表到内存 */
 export async function loadAliases(prisma: any): Promise<void> {
   try {
     const rows = await prisma.$queryRaw`SELECT alias, canonical FROM cable_name_aliases`;
@@ -53,23 +50,154 @@ export async function loadAliases(prisma: any): Promise<void> {
     for (const row of rows as any[]) {
       runtimeAliases[row.alias] = row.canonical;
     }
-    console.log(`[NameParser] 已加载 ${(rows as any[]).length} 条别名（含内置 ${Object.keys(BUILTIN_ALIASES).length} 条）`);
+    console.log(`[NameParser] 已加载 ${(rows as any[]).length} 条DB别名 + ${Object.keys(BUILTIN_ALIASES).length} 条内置别名`);
   } catch (e) {
-    console.warn('[NameParser] 无法加载DB别名表，使用内置别名:', (e as Error).message);
+    console.warn('[NameParser] 别名表不可用，使用内置别名:', (e as Error).message);
     runtimeAliases = { ...BUILTIN_ALIASES };
   }
 }
 
+/** 运行时直接注册别名到内存（不写DB，由调用方决定是否持久化） */
+export function registerAliasInMemory(alias: string, canonical: string): void {
+  if (alias && canonical && alias !== canonical) {
+    runtimeAliases[alias] = canonical;
+  }
+}
+
+/** 获取当前内存中的别名数量 */
+export function getAliasCount(): number {
+  return Object.keys(runtimeAliases).length;
+}
+
 // ============================================================
-// 2. 噪音词清理
+// 2. v2 核心：括号缩写提取
 // ============================================================
 
-/** 移除海缆名称中的常见噪音词 */
+/**
+ * 从海缆名称中提取括号里的缩写
+ * 
+ * 例子：
+ *   "Africa Coast to Europe (ACE)"         → { fullPart: "Africa Coast to Europe", abbrev: "ACE" }
+ *   "Asia-America Gateway (AAG)"            → { fullPart: "Asia-America Gateway", abbrev: "AAG" }
+ *   "Jakarta-Bangka-Bintan-Batam-Singapore (B3JS)" → { fullPart: "...", abbrev: "B3JS" }
+ *   "Finland Estonia Connection 1 (FEC-1)"  → { fullPart: "Finland Estonia Connection 1", abbrev: "FEC-1" }
+ *   "PEACE Cable"                           → null（无括号缩写）
+ *   "a]" (some name with brackets)          → null
+ * 
+ * 判定规则：括号内容是缩写（而非描述）当且仅当：
+ *   - 括号内容长度 <= 20 字符（太长的是描述不是缩写）
+ *   - 括号内容比括号外的全名短（缩写应该比全名短）
+ *   - 括号在名称末尾（不是中间插入的修饰语）
+ */
+export function extractAbbreviation(raw: string): { fullPart: string; abbrev: string } | null {
+  // 匹配末尾的括号内容：... (XYZ) 或 ... (XYZ-1)
+  const match = raw.match(/^(.+?)\s*\(([^)]{1,20})\)\s*$/);
+  if (!match) return null;
+
+  const fullPart = match[1].trim();
+  const abbrev = match[2].trim();
+
+  // 验证：缩写应该比全名短
+  if (abbrev.length >= fullPart.length) return null;
+
+  // 验证：缩写不应该是纯描述词（如 "formerly known as ..."）
+  const descWords = ['formerly', 'previously', 'also', 'phase', 'segment', 'retired'];
+  if (descWords.some(w => abbrev.toLowerCase().startsWith(w))) return null;
+
+  return { fullPart, abbrev };
+}
+
+/**
+ * v2：从一个海缆名称中提取缩写并注册为别名
+ * 
+ * 返回注册的别名数量（0 或 1）
+ * 只注册到内存，不写 DB（由 buildAliasTable 统一写入）
+ */
+export function extractAndRegisterAlias(raw: string): number {
+  const extracted = extractAbbreviation(raw);
+  if (!extracted) return 0;
+
+  const { fullPart, abbrev } = extracted;
+
+  // 对全名和缩写分别做基础标准化（不查别名表，纯字符处理）
+  const fullNormalized = removeNoise(fullPart.toLowerCase())
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  // 提取缩写的 base 部分（可能带后缀如 FEC-1 → base=fec, suffix=1）
+  const abbrevLower = abbrev.toLowerCase();
+  const abbrevSuffixMatch = abbrevLower.match(/^(.+?)[-\s]*(\d+[a-z]?)$/);
+
+  let abbrevBase: string;
+  let fullBase = fullNormalized;
+
+  if (abbrevSuffixMatch) {
+    // 缩写带后缀：如 "FEC-1" → abbrevBase="fec"
+    abbrevBase = abbrevSuffixMatch[1].replace(/[-\s]/g, '').toLowerCase();
+
+    // 全名也可能带后缀：如 "Finland Estonia Connection 1" → 去掉末尾数字
+    fullBase = fullNormalized.replace(/[-\s]*\d+[a-z]?$/, '').replace(/-+$/, '');
+  } else {
+    // 缩写不带后缀：如 "ACE"
+    abbrevBase = abbrevLower.replace(/[-\s]/g, '');
+  }
+
+  // 注册别名：缩写的压缩形式 → 全名的标准化形式
+  if (abbrevBase && fullBase && abbrevBase !== fullBase) {
+    // 避免覆盖已有的更好的别名
+    if (!runtimeAliases[abbrevBase]) {
+      runtimeAliases[abbrevBase] = fullBase;
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * v2：批量扫描海缆名称数组，提取所有括号缩写并注册为别名
+ * 返回新注册的别名数量
+ */
+export function buildAliasesFromNames(names: string[]): number {
+  let count = 0;
+  for (const name of names) {
+    count += extractAndRegisterAlias(name);
+  }
+  return count;
+}
+
+/**
+ * v2：将当前内存中的别名写入数据库（持久化）
+ * 只写入 DB 中不存在的新别名，不覆盖已有的
+ */
+export async function persistAliasesToDB(prisma: any): Promise<number> {
+  let written = 0;
+  for (const [alias, canonical] of Object.entries(runtimeAliases)) {
+    // 跳过内置别名（已经在 DB 里了）
+    if (BUILTIN_ALIASES[alias]) continue;
+
+    try {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO cable_name_aliases (id, alias, canonical, note) 
+         VALUES (gen_random_uuid()::text, $1, $2, $3) ON CONFLICT (alias) DO NOTHING`,
+        alias, canonical, 'auto-extracted from parenthetical abbreviation'
+      );
+      written++;
+    } catch (_) {}
+  }
+  return written;
+}
+
+// ============================================================
+// 3. 噪音词清理
+// ============================================================
+
 function removeNoise(name: string): string {
   return name
     .replace(/submarine\s*cable\s*(system)?/gi, '')
     .replace(/\bcable\s*system\b/gi, '')
-    .replace(/\bfibre\s*optic\b/gi, 'fiber-optic')  // 统一英美拼写
+    .replace(/\bfibre\s*optic\b/gi, 'fiber-optic')
     .replace(/\bfiber\s*optic\b/gi, 'fiber-optic')
     .replace(/\bsystem\b/gi, '')
     .replace(/\bnetwork\b/gi, '')
@@ -81,46 +209,38 @@ function removeNoise(name: string): string {
 }
 
 // ============================================================
-// 3. 核心解析函数
+// 4. 核心解析（v2：先提取缩写再去括号）
 // ============================================================
 
 export interface ParsedCableName {
-  /** 原始名称 */
   raw: string;
-  /** 标准化基础名（不含编号后缀），用连字符连接 */
   base: string;
-  /** 编号/版本/期数后缀，如 "4", "phase-2", ""（无后缀） */
   suffix: string;
-  /** base + suffix 完整标准名，用于精确匹配 */
   canonical: string;
-  /** base 去除所有分隔符的压缩形式，用于别名查找 */
   compressed: string;
+  /** v2: 如果名称含括号缩写，这里存缩写的压缩形式 */
+  abbreviation: string;
 }
 
-/**
- * 将原始海缆名称解析为结构化对象
- * 
- * 关键设计决策：
- * - 先提取后缀再做别名替换，因为别名表只映射base部分
- * - suffix 匹配模式覆盖常见格式：纯数字、Phase N、Section N、Segment N
- * - 空suffix表示该海缆系列只有一条（或名称中没有编号信息）
- */
 export function parseCableName(raw: string): ParsedCableName {
+  // v2: 先提取括号中的缩写（在去括号之前）
+  const extracted = extractAbbreviation(raw);
+  let abbreviation = '';
+
+  if (extracted) {
+    abbreviation = extracted.abbrev.toLowerCase().replace(/[-\s]/g, '');
+  }
+
+  // 然后正常解析（和 v1 一样）
   let name = raw.toLowerCase().trim();
   name = removeNoise(name);
 
-  // 提取末尾后缀
-  // 匹配模式（优先级从高到低）：
-  //   "xxx phase 2", "xxx phase-2"
-  //   "xxx segment 1", "xxx section a"  
-  //   "xxx-4", "xxx 4"（纯数字）
-  //   "xxx 2a", "xxx-2b"（数字+字母变体）
   const suffixPatterns = [
     /[\s-]*(phase[\s-]*\d+[a-z]?)$/i,
     /[\s-]*(segment[\s-]*\d+[a-z]?)$/i,
     /[\s-]*(section[\s-]*[a-z0-9]+)$/i,
-    /[\s-]+(\d+[a-z]?)$/,                    // "xxx 4" 或 "xxx 2a"
-    /[-](\d+[a-z]?)$/,                       // "xxx-4" 紧贴连字符
+    /[\s-]+(\d+[a-z]?)$/,
+    /[-](\d+[a-z]?)$/,
   ];
 
   let suffix = '';
@@ -135,54 +255,43 @@ export function parseCableName(raw: string): ParsedCableName {
     }
   }
 
-  // 压缩base（去除所有非字母数字字符）用于别名查找
   const compressed = base.replace(/[^a-z0-9]/g, '');
 
-  // 查别名表替换base
+  // 查别名表（v2：现在别名表包含了自动提取的缩写映射）
   if (runtimeAliases[compressed]) {
     base = runtimeAliases[compressed];
   } else {
-    // 未命中别名 → 用连字符标准化
     base = base.replace(/\s+/g, '-').replace(/-+/g, '-');
   }
 
-  // 组合canonical name
   const canonical = suffix ? `${base}--${suffix}` : base;
 
-  return { raw, base, suffix, canonical, compressed };
+  return { raw, base, suffix, canonical, compressed, abbreviation };
 }
 
 // ============================================================
-// 4. Jaro-Winkler 相似度
+// 5. 字符串相似度算法
 // ============================================================
 
-/** Jaro-Winkler 字符串相似度（0-1），用于模糊匹配兜底 */
 export function jaroWinkler(s1: string, s2: string): number {
   const a = s1.toLowerCase().trim();
   const b = s2.toLowerCase().trim();
-
   if (a === b) return 1.0;
   if (a.length === 0 || b.length === 0) return 0.0;
 
   const matchWindow = Math.max(Math.floor(Math.max(a.length, b.length) / 2) - 1, 0);
   const aMatches = new Array(a.length).fill(false);
   const bMatches = new Array(b.length).fill(false);
-
-  let matches = 0;
-  let transpositions = 0;
+  let matches = 0, transpositions = 0;
 
   for (let i = 0; i < a.length; i++) {
     const start = Math.max(0, i - matchWindow);
     const end = Math.min(i + matchWindow + 1, b.length);
     for (let j = start; j < end; j++) {
       if (bMatches[j] || a[i] !== b[j]) continue;
-      aMatches[i] = true;
-      bMatches[j] = true;
-      matches++;
-      break;
+      aMatches[i] = true; bMatches[j] = true; matches++; break;
     }
   }
-
   if (matches === 0) return 0.0;
 
   let k = 0;
@@ -194,21 +303,13 @@ export function jaroWinkler(s1: string, s2: string): number {
   }
 
   const jaro = (matches / a.length + matches / b.length + (matches - transpositions / 2) / matches) / 3;
-
   let prefix = 0;
   for (let i = 0; i < Math.min(4, a.length, b.length); i++) {
-    if (a[i] === b[i]) prefix++;
-    else break;
+    if (a[i] === b[i]) prefix++; else break;
   }
-
   return jaro + prefix * 0.1 * (1 - jaro);
 }
 
-// ============================================================
-// 5. Jaccard 集合相似度
-// ============================================================
-
-/** Jaccard 集合相似度（0-1），用于登陆站比较 */
 export function jaccard(setA: Set<string>, setB: Set<string>): number {
   if (setA.size === 0 && setB.size === 0) return 0;
   const intersection = new Set([...setA].filter(x => setB.has(x)));
@@ -216,13 +317,8 @@ export function jaccard(setA: Set<string>, setB: Set<string>): number {
   return intersection.size / union.size;
 }
 
-// ============================================================
-// 6. RFS年份相似度
-// ============================================================
-
-/** RFS 年份距离归一化到 0-1 */
 export function yearSimilarity(y1: number | null, y2: number | null): number {
-  if (y1 == null || y2 == null) return 0.5; // 缺失 → 中性分
+  if (y1 == null || y2 == null) return 0.5;
   const diff = Math.abs(y1 - y2);
   if (diff === 0) return 1.0;
   if (diff === 1) return 0.8;
