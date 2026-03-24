@@ -684,8 +684,15 @@ async function main() {
       { ex: 30 * 24 * 3600 }
     );
     await redis.set('sync:report:latest', JSON.stringify({ ...stats, runAt: new Date().toISOString() }), { ex: 7 * 24 * 3600 });
-    await redis.del('cables:geojson:full');
-    log('OK', 'Redis: 报告已保存');
+    // 清除所有前端缓存，让下次请求从数据库重新生成
+    await Promise.all([
+      redis.del('cables:geojson:full'),   // 旧 key（兼容）
+      redis.del('cables:geo:details'),    // 海缆 GeoJSON + 详情
+      redis.del('cables:geo'),            // 海缆 GeoJSON
+      redis.del('cables:list'),           // 海缆列表
+      redis.del('stats:global'),          // 全局统计
+    ]);
+    log('OK', 'Redis: 报告已保存，缓存已清除(cables:geo:details, cables:list, stats:global)');
   } catch (e: any) {
     log('WARN', `Redis 写入失败（非致命）: ${e.message}`);
   }
