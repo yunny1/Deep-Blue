@@ -1,16 +1,21 @@
 // scripts/nightly-sync.ts
-// Deep Blue 夜间数据同步脚本 v6
+// Deep Blue 夜间数据同步脚本 v7
+//
+// v7 变更：集成去重守门模块 (SyncDedupGuard)
+//   - Tier 2 入库前通过三级匹配管道判断：合并/待审核/新建
+//   - 名称结构化解析：区分"同一条缆的不同写法"和"同系列不同编号"
+//   - 所有写入标记 dataSource（TELEGEOGRAPHY / SUBMARINE_NETWORKS）
 //
 // 核心架构（依据 PRD v2.0）：
 //   Tier 1（TG）先写入，强制覆盖，确立主数据权威
 //   Tier 2（SN）后合并，只追加不覆盖核心物理字段
 //   登陆站无条件先落库（坐标可为 NULL），彻底解耦地理编码
-//   实体对齐 Jaro-Winkler(40%) + Jaccard(40%) + RFS(20%)
-//   60-85分 → PENDING_REVIEW，<60分 → 独立入库
+//   实体对齐：结构化名称解析 + Jaro-Winkler(40%) + Jaccard(40%) + RFS(20%)
 
 import { PrismaClient } from '@prisma/client';
 import jaroWinkler from 'jaro-winkler';
 import { getCountryCode, validateCountryCode } from '../src/lib/countryCodeMap';
+import { SyncDedupGuard } from './dedup-sync-guard';
 
 const prisma = new PrismaClient();
 
@@ -58,7 +63,7 @@ interface SNDetail {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 模块二：实体对齐算法
+// 模块二：实体对齐算法（保留用于 Tier 1 内部冲突检测）
 // ════════════════════════════════════════════════════════════════
 
 function normalizeCableName(name: string): string {
@@ -76,59 +81,21 @@ function jaccardSimilarity(setA: Set<string>, setB: Set<string>): number {
   return intersection.size / union.size;
 }
 
-interface AlignmentResult {
-  decision: 'MATCH' | 'PENDING_REVIEW' | 'NEW';
-  score: number;
-  details: { nameScore: number; landingScore: number; rfsScore: number };
-}
-
-function alignCableEntity(
-  nameA: string, landingsA: string[], rfsA: number | null,
-  nameB: string, landingsB: string[], rfsB: number | null,
-): AlignmentResult {
-  const normA = normalizeCableName(nameA);
-  const normB = normalizeCableName(nameB);
-  const nameScore = jaroWinkler(normA, normB) * 100;
-
-  const setA = new Set(landingsA.map(s => s.toLowerCase().split(',')[0].trim()));
-  const setB = new Set(landingsB.map(s => s.toLowerCase().split(',')[0].trim()));
-  const landingScore = jaccardSimilarity(setA, setB) * 100;
-
-  let rfsScore = 50;
-  if (rfsA && rfsB) {
-    const diff = Math.abs(rfsA - rfsB);
-    if (diff <= 1) rfsScore = 100;
-    else if (diff === 2) rfsScore = 50;
-    else rfsScore = 0;
-  }
-
-  const totalScore = (nameScore * 0.4) + (landingScore * 0.4) + (rfsScore * 0.2);
-
-  let decision: AlignmentResult['decision'];
-  if (totalScore >= 85) decision = 'MATCH';
-  else if (totalScore >= 60) decision = 'PENDING_REVIEW';
-  else decision = 'NEW';
-
-  return { decision, score: Number(totalScore.toFixed(2)), details: { nameScore, landingScore, rfsScore } };
-}
-
 // ════════════════════════════════════════════════════════════════
 // 模块三：登陆站标准化 + 并集去重
 // ════════════════════════════════════════════════════════════════
 
-// 标准化登陆站名称：去掉括号、国家后缀、公司名等噪音，提取核心城市名
 function normalizeStationName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/\s*\([^)]*\)/g, '')       // 去括号内容
-    .replace(/,.*$/, '')                  // 去逗号后的国家/地区
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/,.*$/, '')
     .replace(/\b(cable|landing|station|beach|bay|point|port)\b/g, '')
     .replace(/[^a-z0-9\s]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-// 用 Jaro-Winkler 对登陆站数组内部去重（如 Marseille vs Marseille, France）
 function deduplicateStations(stations: string[]): string[] {
   const result: string[] = [];
   for (const s of stations) {
@@ -142,17 +109,14 @@ function deduplicateStations(stations: string[]): string[] {
   return result;
 }
 
-// 合并两个来源的登陆站，取并集后去重
 function mergeStationNames(tgNames: string[], snNames: string[]): string[] {
   return deduplicateStations([...tgNames, ...snNames]);
 }
 
 // ════════════════════════════════════════════════════════════════
 // 模块四：地理编码（解耦版）
-// 先无条件落库（坐标 NULL），再异步补坐标
 // ════════════════════════════════════════════════════════════════
 
-// 查本地字典缓存
 async function lookupLocationDict(rawString: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const cached = await prisma.locationDictionary.findUnique({ where: { rawString } });
@@ -161,12 +125,10 @@ async function lookupLocationDict(rawString: string): Promise<{ lat: number; lng
   return null;
 }
 
-// Nominatim 地理编码（带 DLQ 写入）
 async function geocodeAsync(
   stationName: string, city: string, country: string,
   cableId: string, source: string,
 ): Promise<{ lat: number; lng: number } | null> {
-  // 先查字典缓存
   const cached = await lookupLocationDict(stationName);
   if (cached) return cached;
 
@@ -183,7 +145,6 @@ async function geocodeAsync(
     const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     const cc = validateCountryCode(getCountryCode(country), stationName);
 
-    // 写入字典缓存
     await prisma.locationDictionary.upsert({
       where: { rawString: stationName },
       update: { latitude: coords.lat, longitude: coords.lng },
@@ -196,7 +157,6 @@ async function geocodeAsync(
 
     return coords;
   } catch (err: any) {
-    // 写入 DLQ（不阻断流程）
     await prisma.unresolvedLocation.upsert({
       where: { rawString: stationName },
       update: { retryCount: { increment: 1 }, updatedAt: new Date(), errorReason: err.message },
@@ -233,29 +193,30 @@ async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
   });
 
   if (sameNameDiff) {
-    // 删除低质量占位记录，释放 name 唯一索引
     log('INFO', `  清理占位记录: ${sameNameDiff.id} → 让位给 TG ${tg.id}`);
     await prisma.cableLandingStation.deleteMany({ where: { cableId: sameNameDiff.id } });
     await prisma.cableOwnership.deleteMany({ where: { cableId: sameNameDiff.id } });
     await prisma.cable.delete({ where: { id: sameNameDiff.id } }).catch(() => {});
   }
 
-  // TG 强制覆盖写入（覆盖所有核心物理字段）
+  // TG 强制覆盖写入（v7: 新增 dataSource 标记）
   await prisma.cable.upsert({
     where: { id: tg.id },
     update: {
       name: tg.name, slug: slugify(tg.name), status,
       lengthKm, rfsDate, routeGeojson: tg.geoJson,
       vendorId, notes: tg.notes || null,
+      dataSource: 'TELEGEOGRAPHY',
     },
     create: {
       id: tg.id, name: tg.name, slug: slugify(tg.name), status,
       lengthKm, rfsDate, routeGeojson: tg.geoJson,
       vendorId, notes: tg.notes || null,
+      dataSource: 'TELEGEOGRAPHY',
     },
   });
 
-  // 写入登陆站（模块四：先无条件落库，坐标异步补）
+  // 写入登陆站
   for (const lp of tg.landing_points || []) {
     const cc = validateCountryCode(getCountryCode(lp.country), lp.name);
     if (!cc || cc === 'XX') continue;
@@ -265,7 +226,6 @@ async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
       create: { code: cc, nameEn: cc },
     }).catch(() => {});
 
-    // TG 自带坐标，直接用
     const lat = lp.lat ?? null;
     const lng = lp.lng ?? null;
 
@@ -304,7 +264,7 @@ async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 模块一：Tier 2 写入（SN，只追加不覆盖核心物理字段）
+// 模块一：Tier 2 合并到已有记录（SN，只追加不覆盖核心物理字段）
 // ════════════════════════════════════════════════════════════════
 
 async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
@@ -314,14 +274,12 @@ async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
   });
   if (!existing) return;
 
-  // 只在 TG 没有该字段时才用 SN 的数据补充（不覆盖核心物理字段）
   const updates: any = {};
   if (!existing.lengthKm && snDetail.lengthKm) updates.lengthKm = snDetail.lengthKm;
   if (!existing.rfsDate && snDetail.rfsYear) updates.rfsDate = new Date(snDetail.rfsYear, 0, 1);
 
-  // SN 标注退役且 TG 没有标注时，更新状态
+  // SN 标注退役且 TG 没有标注时，需要 Wikipedia 仲裁
   if (snDetail.isRetired && existing.status === 'IN_SERVICE') {
-    // 需要 Wikipedia 仲裁，不直接覆盖
     const wikiResult = await checkWikipedia(existing.name);
     if (wikiResult.isRetired) updates.status = 'DECOMMISSIONED';
   }
@@ -330,9 +288,8 @@ async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
     await prisma.cable.update({ where: { id: cableId }, data: updates }).catch(() => {});
   }
 
-  // 追加 SN 独有的登陆站（模块三：取并集）
+  // 追加 SN 独有的登陆站（取并集）
   const existingStationNames = existing.landingStations.map(ls => ls.landingStation.name);
-  const allStationNames = mergeStationNames(existingStationNames, snDetail.landingPoints.map(lp => lp.name));
   const snOnlyStations = snDetail.landingPoints.filter(lp => {
     const normLp = normalizeStationName(lp.name);
     return !existingStationNames.some(n => jaroWinkler(normalizeStationName(n), normLp) >= 0.92);
@@ -353,7 +310,6 @@ async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
 
     const stationId = `sn-${slugify(lp.name)}-${cc.toLowerCase()}`;
 
-    // 模块四：无条件先落库（坐标为 NULL），再异步补坐标
     const station = await prisma.landingStation.upsert({
       where: { id: stationId },
       update: { name: lp.name, countryCode: cc },
@@ -366,7 +322,6 @@ async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
         update: {}, create: { cableId, landingStationId: station.id },
       }).catch(() => {});
 
-      // 异步补坐标（不阻断主流程）
       geocodeAsync(lp.name, lp.city, lp.country, cableId, 'SN').then(coords => {
         if (coords) {
           prisma.landingStation.update({
@@ -381,9 +336,16 @@ async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
 
 // ════════════════════════════════════════════════════════════════
 // Tier 2 独立入库（SN 独有海缆）
+// v7: 新增 dataSource 标记 + reviewStatus 参数
 // ════════════════════════════════════════════════════════════════
 
-async function upsertTier2Cable(ref: SNCableRef, snDetail: SNDetail, status: string) {
+async function upsertTier2Cable(
+  ref: SNCableRef,
+  snDetail: SNDetail,
+  status: string,
+  reviewStatus?: string | null,
+  possibleDuplicateOf?: string | null,
+) {
   const cableId = `sn-${ref.slug}`;
   const rfsDate = snDetail.rfsYear ? new Date(snDetail.rfsYear, 0, 1) : null;
 
@@ -393,7 +355,6 @@ async function upsertTier2Cable(ref: SNCableRef, snDetail: SNDetail, status: str
   });
 
   if (sameNameExisting) {
-    // TG 已有此缆，转为 Tier 2 合并模式
     log('INFO', `  [${ref.name}] TG已有(${sameNameExisting.id})，转为 Tier2 合并`);
     await mergeTier2IntoExisting(sameNameExisting.id, snDetail);
     return;
@@ -402,8 +363,20 @@ async function upsertTier2Cable(ref: SNCableRef, snDetail: SNDetail, status: str
   try {
     await prisma.cable.upsert({
       where: { id: cableId },
-      update: { name: ref.name, slug: slugify(ref.name), status, lengthKm: snDetail.lengthKm, rfsDate },
-      create: { id: cableId, name: ref.name, slug: slugify(ref.name), status, lengthKm: snDetail.lengthKm, rfsDate },
+      update: {
+        name: ref.name, slug: slugify(ref.name), status,
+        lengthKm: snDetail.lengthKm, rfsDate,
+        dataSource: 'SUBMARINE_NETWORKS',
+        reviewStatus: reviewStatus || null,
+        possibleDuplicateOf: possibleDuplicateOf || null,
+      },
+      create: {
+        id: cableId, name: ref.name, slug: slugify(ref.name), status,
+        lengthKm: snDetail.lengthKm, rfsDate,
+        dataSource: 'SUBMARINE_NETWORKS',
+        reviewStatus: reviewStatus || null,
+        possibleDuplicateOf: possibleDuplicateOf || null,
+      },
     });
   } catch (e: any) {
     log("WARN", `Tier2 upsert 跳过 ${ref.name}: ${String(e.message).slice(0,80)}`);
@@ -421,7 +394,6 @@ async function upsertTier2Cable(ref: SNCableRef, snDetail: SNDetail, status: str
 
     const stationId = `sn-${slugify(lp.name)}-${cc.toLowerCase()}`;
 
-    // 无条件先落库（坐标可为 NULL）
     const station = await prisma.landingStation.upsert({
       where: { id: stationId },
       update: { name: lp.name, countryCode: cc },
@@ -434,7 +406,6 @@ async function upsertTier2Cable(ref: SNCableRef, snDetail: SNDetail, status: str
         update: {}, create: { cableId, landingStationId: station.id },
       }).catch(() => {});
 
-      // 异步补坐标
       geocodeAsync(lp.name, lp.city, lp.country, cableId, 'SN').then(coords => {
         if (coords) {
           prisma.landingStation.update({
@@ -486,7 +457,7 @@ function parseSNDetail(html: string, sourceUrl: string): SNDetail {
   const rfsMatch = html.match(/(\d{4})\s+(?:November|December|January|February|March|April|May|June|July|August|September|October)/i);
   if (rfsMatch) result.rfsYear = parseInt(rfsMatch[1]);
   const section = html.match(/lands at the following[^<]*(?:<\/[^>]+>)*\s*<[ou]l[^>]*>([\s\S]*?)<\/[ou]l>/i)?.[1] || '';
-for (const li of section.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || []) {
+  for (const li of section.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || []) {
     const text = li.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').replace(/^\d+\.\s*/, '').trim();
     if (text.length < 3 || text.length > 300) continue;
     const parts = text.split(',').map(p => p.trim()).filter(Boolean);
@@ -582,8 +553,8 @@ async function fetchTG(): Promise<Map<string, TGCable>> {
 async function main() {
   const startTime = Date.now();
   console.log('\n╔══════════════════════════════════════════════════════════════╗');
-  console.log('║  Deep Blue 夜间同步 v6 — PRD v2.0 合规                      ║');
-  console.log('║  TG先写(覆盖) → SN后合并(追加) → 登陆站解耦落库            ║');
+  console.log('║  Deep Blue 夜间同步 v7 — 集成去重守门                       ║');
+  console.log('║  TG先写(覆盖) → SN去重检查 → 合并/入库/待审核              ║');
   console.log(`║  ${new Date().toISOString()}                            ║`);
   console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
@@ -602,11 +573,6 @@ async function main() {
   // ── 步骤二：Tier 1 — TG 全量写入（强制覆盖，确立权威）────────
   log('INFO', `\n[Tier 1] 写入 TG ${tgCables.size} 条海缆...`);
 
-  const tgEntityList = [...tgCables.values()].map(c => ({
-    id: c.id, name: c.name, rfsYear: c.rfs_year,
-    landings: (c.landing_points || []).map(lp => lp.name),
-  }));
-
   for (const [cableId, tg] of tgCables) {
     try {
       const rfsDate = tg.rfs_year ? new Date(tg.rfs_year, 0, 1) : null;
@@ -622,62 +588,72 @@ async function main() {
   }
   log('OK', `[Tier 1] 完成：写入 ${stats.tgWritten} 条`);
 
-  // ── 步骤三：Tier 2 — SN 合并/入库（只追加，不覆盖核心字段）──
+  // ── 步骤三：初始化去重守门 ───────────────────────────────────
+  // v7 新增：在 Tier 2 处理之前初始化 SyncDedupGuard
+  // 它会加载别名表 + 构建现有海缆的内存索引
+  log('INFO', '\n[Dedup] 初始化去重守门...');
+  const guard = new SyncDedupGuard(prisma);
+  await guard.init();
+
+  // ── 步骤四：Tier 2 — SN 通过去重守门检查后入库 ────────────────
+  // v7 改造：用 SyncDedupGuard 替代原来的 alignCableEntity
+  // 三级判断：MERGE（合并到已有）/ REVIEW（入库但标记待审核）/ CREATE（新建）
   log('INFO', `\n[Tier 2] 处理 SN ${snCables.size} 条海缆...`);
 
   for (const [, ref] of snCables) {
-    // 用实体对齐算法找最佳匹配的 TG 海缆
-    let bestMatch: typeof tgEntityList[0] | null = null;
-    let bestResult: AlignmentResult | null = null;
+    // 构建 SN 海缆的登陆站名称集合（用于去重匹配）
+    const snDetail = await fetchSNDetail(ref);
+    await delay(200);
+    if (!snDetail) { stats.snSkipped++; continue; }
 
-    for (const tg of tgEntityList) {
-      const result = alignCableEntity(
-        ref.name, [], null,
-        tg.name, tg.landings, tg.rfsYear,
-      );
-      if (!bestResult || result.score > bestResult.score) {
-        bestResult = result;
-        bestMatch  = tg;
-      }
-      if (result.decision === 'MATCH') break;
-    }
+    const stationNames = new Set(
+      snDetail.landingPoints.map(lp => lp.name.toLowerCase().split(',')[0].trim()).filter(Boolean)
+    );
 
-    if (bestResult!.decision === 'MATCH' && bestMatch) {
-      // 自动合并：TG 已有，只追加 SN 的增量数据
-      const snDetail = await fetchSNDetail(ref);
-      await delay(200);
-      if (snDetail) {
-        await mergeTier2IntoExisting(bestMatch.id, snDetail);
+    // 通过去重守门检查
+    const decision = guard.check(ref.name, stationNames, snDetail.rfsYear);
+
+    switch (decision.action) {
+      case 'MERGE': {
+        // 已有相同海缆 → 合并补全字段，不创建新记录
+        await mergeTier2IntoExisting(decision.existingId!, snDetail);
         stats.snMatched++;
+        log('OK', `  [合并] "${ref.name}" → "${decision.existingName}" (${decision.score}分)`);
+        break;
       }
 
-    } else if (bestResult!.decision === 'PENDING_REVIEW') {
-      // 疑似同源：独立入库但标记 PENDING_REVIEW，推入后台等待人工确认
-      log('WARN', `[PENDING_REVIEW] ${ref.name} ↔ ${bestMatch?.name} (${bestResult!.score.toFixed(0)}分)`);
-      const snDetail = await fetchSNDetail(ref);
-      await delay(200);
-      if (snDetail) {
-        await upsertTier2Cable(ref, snDetail, 'PENDING_REVIEW');
+      case 'REVIEW': {
+        // 不确定是否重复 → 入库但标记待审核
+        const wiki = await checkWikipedia(ref.name);
+        await delay(300);
+        const status = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
+        await upsertTier2Cable(ref, snDetail, status, 'PENDING_REVIEW', decision.existingId);
+        // 入库后加入内存索引，确保后续 SN 海缆能看到它
+        guard.addToIndex(`sn-${ref.slug}`, ref.name, stationNames, snDetail.rfsYear);
         stats.snPendingReview++;
+        log('WARN', `  [待审核] "${ref.name}" ↔ "${decision.existingName}" (${decision.score}分)`);
+        break;
       }
 
-    } else {
-      // 全新海缆：独立入库
-      const snDetail = await fetchSNDetail(ref);
-      await delay(200);
-      if (!snDetail) { stats.snSkipped++; continue; }
-
-      const wiki = await checkWikipedia(ref.name);
-      await delay(300);
-
-      const status = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
-      await upsertTier2Cable(ref, snDetail, status);
-      log('OK', `[新缆] ${ref.name} (${status}, ${snDetail.landingPoints.length} 站${wiki.exists ? ', Wiki✓' : ''})`);
-      stats.snNewAdded++;
+      case 'CREATE': {
+        // 确认是新海缆 → 独立入库
+        const wiki = await checkWikipedia(ref.name);
+        await delay(300);
+        const status = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
+        await upsertTier2Cable(ref, snDetail, status);
+        // 入库后加入内存索引
+        guard.addToIndex(`sn-${ref.slug}`, ref.name, stationNames, snDetail.rfsYear);
+        stats.snNewAdded++;
+        log('OK', `  [新缆] ${ref.name} (${status}, ${snDetail.landingPoints.length} 站${wiki.exists ? ', Wiki✓' : ''})`);
+        break;
+      }
     }
   }
 
-  // ── 步骤四：统计坐标为 NULL 的登陆站数量 ─────────────────────
+  // 打印去重统计
+  guard.printStats();
+
+  // ── 步骤五：统计坐标为 NULL 的登陆站数量 ─────────────────────
   try {
     stats.stationsNullCoord = await prisma.landingStation.count({
       where: { OR: [{ latitude: null }, { longitude: null }] },
@@ -690,7 +666,7 @@ async function main() {
   console.log('\n╔══════════════════════════════════════════════════════════════╗');
   console.log(`║  同步完成！耗时 ${elapsed}s`);
   console.log(`║  [Tier1-TG]  写入: ${stats.tgWritten} 条`);
-  console.log(`║  [Tier2-SN]  合并到TG: ${stats.snMatched} | 待审: ${stats.snPendingReview} | 新增: ${stats.snNewAdded} | 跳过: ${stats.snSkipped}`);
+  console.log(`║  [Tier2-SN]  合并到已有: ${stats.snMatched} | 待审: ${stats.snPendingReview} | 新增: ${stats.snNewAdded} | 跳过: ${stats.snSkipped}`);
   console.log(`║  坐标待补全的登陆站: ${stats.stationsNullCoord} 个`);
   console.log(`║  DLQ待处理: ${stats.dlqTotal} 个`);
   console.log('╚══════════════════════════════════════════════════════════════╝');
