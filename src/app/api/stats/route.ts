@@ -1,6 +1,6 @@
 // src/app/api/stats/route.ts
 // 统计数据 API — Redis 缓存1小时，包含精确海缆分类
-// v7: 排除已合并记录（mergedInto: null）
+// v8: 排除 REMOVED + mergedInto
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -9,6 +9,12 @@ const CACHE_TTL = 60 * 60;
 
 const DOMESTIC_OVERRIDES: Record<string, string[]> = {
   'taiwan-strait-express-1': ['CN', 'TW', 'HK', 'MO'],
+};
+
+// v8: 基础过滤条件 — 排除已合并 + 已移除 + 待审核
+const ACTIVE_FILTER = {
+  mergedInto: null,
+  status: { notIn: ['PENDING_REVIEW', 'REMOVED'] as string[] },
 };
 
 async function getFromRedis(): Promise<any | null> {
@@ -23,7 +29,6 @@ async function getFromRedis(): Promise<any | null> {
     const d = await res.json();
     if (!d.result) return null;
     const raw = JSON.parse(d.result);
-    // 兼容 [jsonString, "EX", ttl] 数组格式
     const actual = Array.isArray(raw) ? raw[0] : raw;
     return typeof actual === 'string' ? JSON.parse(actual) : actual;
   } catch { return null; }
@@ -52,23 +57,19 @@ export async function GET() {
       });
     }
 
-    // v7: 所有查询加 mergedInto: null 排除已合并记录
-    const notMerged = { mergedInto: null };
-
-    // 基础计数
+    // v8: 所有查询使用统一的 ACTIVE_FILTER
     const [totalCables, inService, underConstruction, planned, decommissioned, totalStations, totalCountries] = await Promise.all([
-      prisma.cable.count({ where: { status: { not: 'PENDING_REVIEW' }, ...notMerged } }),
-      prisma.cable.count({ where: { status: 'IN_SERVICE', ...notMerged } }),
-      prisma.cable.count({ where: { status: 'UNDER_CONSTRUCTION', ...notMerged } }),
-      prisma.cable.count({ where: { status: 'PLANNED', ...notMerged } }),
-      prisma.cable.count({ where: { status: 'DECOMMISSIONED', ...notMerged } }),
+      prisma.cable.count({ where: ACTIVE_FILTER }),
+      prisma.cable.count({ where: { status: 'IN_SERVICE', mergedInto: null } }),
+      prisma.cable.count({ where: { status: 'UNDER_CONSTRUCTION', mergedInto: null } }),
+      prisma.cable.count({ where: { status: 'PLANNED', mergedInto: null } }),
+      prisma.cable.count({ where: { status: 'DECOMMISSIONED', mergedInto: null } }),
       prisma.landingStation.count(),
       prisma.country.count({ where: { landingStations: { some: {} } } }),
     ]);
 
-    // 在役海缆分类（activeInternational / activeDomestic）
     const inServiceCables = await prisma.cable.findMany({
-      where: { status: 'IN_SERVICE', ...notMerged },
+      where: { status: 'IN_SERVICE', mergedInto: null },
       select: {
         slug: true,
         landingStations: {
@@ -90,10 +91,9 @@ export async function GET() {
       activeInternational++;
     }
 
-    // 总铺设里程
     const lengthResult = await prisma.cable.aggregate({
       _sum: { lengthKm: true },
-      where: { status: { not: 'PENDING_REVIEW' }, ...notMerged },
+      where: ACTIVE_FILTER,
     });
     const totalLengthKm = Math.round((lengthResult._sum.lengthKm || 0) / 10000) * 10000;
 

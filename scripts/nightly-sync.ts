@@ -1,10 +1,13 @@
 // scripts/nightly-sync.ts
-// Deep Blue 夜间数据同步脚本 v7
+// Deep Blue 夜间数据同步脚本 v8
 //
-// v7 变更：集成去重守门模块 (SyncDedupGuard)
-//   - Tier 2 入库前通过三级匹配管道判断：合并/待审核/新建
-//   - 名称结构化解析：区分"同一条缆的不同写法"和"同系列不同编号"
-//   - 所有写入标记 dataSource（TELEGEOGRAPHY / SUBMARINE_NETWORKS）
+// v8 变更：同步追踪 + 孤儿清理 + 状态变更检测
+//   - 每次同步记录 lastSyncedAt，同步后清理上游不再收录的孤儿记录
+//   - 检测状态变更并记录 statusChangedAt + previousStatus
+//   - 新增海缆记录 firstSeenAt，前端可用于"新增"红色小星星
+//   - 数据库总数 = 上游确认的海缆数（不再只增不减）
+//
+// v7 保留：去重守门模块 (SyncDedupGuard) + dataSource 标记
 //
 // 核心架构（依据 PRD v2.0）：
 //   Tier 1（TG）先写入，强制覆盖，确立主数据权威
@@ -25,6 +28,9 @@ const TG_LP     = 'https://www.submarinecablemap.com/api/v3/landing-point/landin
 const SN_BASE   = 'https://www.submarinenetworks.com';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const WIKI_API  = 'https://en.wikipedia.org/api/rest_v1/page/summary';
+
+// v8: 全局同步时间戳，用于标记本轮同步确认的记录
+let SYNC_TIMESTAMP: Date;
 
 // ── 工具函数 ─────────────────────────────────────────────────────
 function slugify(n: string) {
@@ -63,26 +69,48 @@ interface SNDetail {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 模块二：实体对齐算法（保留用于 Tier 1 内部冲突检测）
+// v8: Schema 迁移（幂等，每次运行自动检查）
 // ════════════════════════════════════════════════════════════════
 
-function normalizeCableName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\b(cable|system|network|submarine|fibre|fiber|optic)\b/g, '')
-    .replace(/[^a-z0-9]/g, '')
-    .trim();
-}
-
-function jaccardSimilarity(setA: Set<string>, setB: Set<string>): number {
-  if (setA.size === 0 && setB.size === 0) return 0;
-  const intersection = new Set([...setA].filter(x => setB.has(x)));
-  const union = new Set([...setA, ...setB]);
-  return intersection.size / union.size;
+async function ensureSyncSchema(): Promise<void> {
+  const ddl = [
+    `ALTER TABLE cables ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMPTZ`,
+    `ALTER TABLE cables ADD COLUMN IF NOT EXISTS status_changed_at TIMESTAMPTZ`,
+    `ALTER TABLE cables ADD COLUMN IF NOT EXISTS previous_status TEXT`,
+    `ALTER TABLE cables ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ DEFAULT NOW()`,
+    `CREATE INDEX IF NOT EXISTS idx_cables_last_synced_at ON cables (last_synced_at)`,
+  ];
+  for (const sql of ddl) {
+    try { await prisma.$executeRawUnsafe(sql); } catch (_) {}
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
-// 模块三：登陆站标准化 + 并集去重
+// v8: 状态变更检测辅助函数
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * 检测状态变更并返回需要额外更新的字段
+ * 如果状态发生了变化，返回 { statusChangedAt, previousStatus }
+ */
+async function detectStatusChange(cableId: string, newStatus: string): Promise<Record<string, any>> {
+  try {
+    const existing = await prisma.cable.findUnique({
+      where: { id: cableId },
+      select: { status: true },
+    });
+    if (existing && existing.status && existing.status !== newStatus) {
+      return {
+        statusChangedAt: SYNC_TIMESTAMP,
+        previousStatus: existing.status,
+      };
+    }
+  } catch (_) {}
+  return {};
+}
+
+// ════════════════════════════════════════════════════════════════
+// 模块二：登陆站标准化 + 并集去重
 // ════════════════════════════════════════════════════════════════
 
 function normalizeStationName(name: string): string {
@@ -171,6 +199,7 @@ async function geocodeAsync(
 
 // ════════════════════════════════════════════════════════════════
 // 模块一：Tier 1 写入（TG，强制覆盖，确立权威）
+// v8: 加 lastSyncedAt + firstSeenAt + 状态变更检测
 // ════════════════════════════════════════════════════════════════
 
 async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
@@ -199,7 +228,10 @@ async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
     await prisma.cable.delete({ where: { id: sameNameDiff.id } }).catch(() => {});
   }
 
-  // TG 强制覆盖写入（v7: 新增 dataSource 标记）
+  // v8: 检测状态变更
+  const statusChangeFields = await detectStatusChange(tg.id, status);
+
+  // TG 强制覆盖写入
   await prisma.cable.upsert({
     where: { id: tg.id },
     update: {
@@ -207,12 +239,16 @@ async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
       lengthKm, rfsDate, routeGeojson: tg.geoJson,
       vendorId, notes: tg.notes || null,
       dataSource: 'TELEGEOGRAPHY',
+      lastSyncedAt: SYNC_TIMESTAMP,   // v8: 标记本轮同步确认
+      ...statusChangeFields,           // v8: 状态变更追踪
     },
     create: {
       id: tg.id, name: tg.name, slug: slugify(tg.name), status,
       lengthKm, rfsDate, routeGeojson: tg.geoJson,
       vendorId, notes: tg.notes || null,
       dataSource: 'TELEGEOGRAPHY',
+      lastSyncedAt: SYNC_TIMESTAMP,
+      firstSeenAt: SYNC_TIMESTAMP,     // v8: 新增记录标记入库时间
     },
   });
 
@@ -264,7 +300,8 @@ async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 模块一：Tier 2 合并到已有记录（SN，只追加不覆盖核心物理字段）
+// Tier 2 合并到已有记录（SN，只追加不覆盖核心物理字段）
+// v8: 合并时也更新 lastSyncedAt
 // ════════════════════════════════════════════════════════════════
 
 async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
@@ -274,19 +311,23 @@ async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
   });
   if (!existing) return;
 
-  const updates: any = {};
+  const updates: any = {
+    lastSyncedAt: SYNC_TIMESTAMP,   // v8: 确认本轮同步
+  };
   if (!existing.lengthKm && snDetail.lengthKm) updates.lengthKm = snDetail.lengthKm;
   if (!existing.rfsDate && snDetail.rfsYear) updates.rfsDate = new Date(snDetail.rfsYear, 0, 1);
 
   // SN 标注退役且 TG 没有标注时，需要 Wikipedia 仲裁
   if (snDetail.isRetired && existing.status === 'IN_SERVICE') {
     const wikiResult = await checkWikipedia(existing.name);
-    if (wikiResult.isRetired) updates.status = 'DECOMMISSIONED';
+    if (wikiResult.isRetired) {
+      updates.status = 'DECOMMISSIONED';
+      updates.statusChangedAt = SYNC_TIMESTAMP;
+      updates.previousStatus = existing.status;
+    }
   }
 
-  if (Object.keys(updates).length > 0) {
-    await prisma.cable.update({ where: { id: cableId }, data: updates }).catch(() => {});
-  }
+  await prisma.cable.update({ where: { id: cableId }, data: updates }).catch(() => {});
 
   // 追加 SN 独有的登陆站（取并集）
   const existingStationNames = existing.landingStations.map(ls => ls.landingStation.name);
@@ -336,7 +377,7 @@ async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
 
 // ════════════════════════════════════════════════════════════════
 // Tier 2 独立入库（SN 独有海缆）
-// v7: 新增 dataSource 标记 + reviewStatus 参数
+// v8: 加 lastSyncedAt + firstSeenAt + 状态变更检测
 // ════════════════════════════════════════════════════════════════
 
 async function upsertTier2Cable(
@@ -360,6 +401,9 @@ async function upsertTier2Cable(
     return;
   }
 
+  // v8: 检测状态变更
+  const statusChangeFields = await detectStatusChange(cableId, status);
+
   try {
     await prisma.cable.upsert({
       where: { id: cableId },
@@ -369,6 +413,8 @@ async function upsertTier2Cable(
         dataSource: 'SUBMARINE_NETWORKS',
         reviewStatus: reviewStatus || null,
         possibleDuplicateOf: possibleDuplicateOf || null,
+        lastSyncedAt: SYNC_TIMESTAMP,
+        ...statusChangeFields,
       },
       create: {
         id: cableId, name: ref.name, slug: slugify(ref.name), status,
@@ -376,6 +422,8 @@ async function upsertTier2Cable(
         dataSource: 'SUBMARINE_NETWORKS',
         reviewStatus: reviewStatus || null,
         possibleDuplicateOf: possibleDuplicateOf || null,
+        lastSyncedAt: SYNC_TIMESTAMP,
+        firstSeenAt: SYNC_TIMESTAMP,
       },
     });
   } catch (e: any) {
@@ -547,20 +595,69 @@ async function fetchTG(): Promise<Map<string, TGCable>> {
 }
 
 // ════════════════════════════════════════════════════════════════
+// v8: 孤儿清理 — 标记上游不再收录的记录
+// ════════════════════════════════════════════════════════════════
+
+async function cleanupOrphans(): Promise<number> {
+  // 找出本轮同步中未被确认的活跃记录（lastSyncedAt 不等于本轮 SYNC_TIMESTAMP）
+  // 这些记录上游已不再收录，应该标记为 REMOVED
+  try {
+    const orphans: any[] = await prisma.$queryRawUnsafe(`
+      SELECT id, name, status FROM cables 
+      WHERE (last_synced_at IS NULL OR last_synced_at < $1)
+        AND (merged_into IS NULL)
+        AND (status != 'REMOVED' OR status IS NULL)
+    `, SYNC_TIMESTAMP);
+
+    if (orphans.length === 0) return 0;
+
+    log('INFO', `\n[孤儿清理] 发现 ${orphans.length} 条上游不再收录的记录：`);
+    for (const o of orphans.slice(0, 20)) {
+      log('WARN', `  "${o.name}" (${o.status}) → REMOVED`);
+    }
+    if (orphans.length > 20) {
+      log('WARN', `  ... 还有 ${orphans.length - 20} 条`);
+    }
+
+    // 批量标记为 REMOVED
+    await prisma.$executeRawUnsafe(`
+      UPDATE cables 
+      SET status = 'REMOVED', 
+          previous_status = status, 
+          status_changed_at = $1
+      WHERE (last_synced_at IS NULL OR last_synced_at < $1)
+        AND (merged_into IS NULL)
+        AND (status != 'REMOVED' OR status IS NULL)
+    `, SYNC_TIMESTAMP);
+
+    return orphans.length;
+  } catch (e: any) {
+    log('ERROR', `孤儿清理失败: ${e.message}`);
+    return 0;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
 // 主流程
 // ════════════════════════════════════════════════════════════════
 
 async function main() {
   const startTime = Date.now();
+  SYNC_TIMESTAMP = new Date();
+
   console.log('\n╔══════════════════════════════════════════════════════════════╗');
-  console.log('║  Deep Blue 夜间同步 v7 — 集成去重守门                       ║');
-  console.log('║  TG先写(覆盖) → SN去重检查 → 合并/入库/待审核              ║');
-  console.log(`║  ${new Date().toISOString()}                            ║`);
+  console.log('║  Deep Blue 夜间同步 v8 — 同步追踪 + 孤儿清理              ║');
+  console.log('║  TG先写(覆盖) → SN去重检查 → 孤儿清理 → 缓存刷新        ║');
+  console.log(`║  ${SYNC_TIMESTAMP.toISOString()}                            ║`);
   console.log('╚══════════════════════════════════════════════════════════════╝\n');
+
+  // v8: 确保新字段存在
+  await ensureSyncSchema();
 
   const stats = {
     tgWritten: 0, tgConflictsResolved: 0,
     snMatched: 0, snPendingReview: 0, snNewAdded: 0, snSkipped: 0,
+    orphansRemoved: 0,
     stationsNullCoord: 0, dlqTotal: 0,
   };
 
@@ -589,19 +686,14 @@ async function main() {
   log('OK', `[Tier 1] 完成：写入 ${stats.tgWritten} 条`);
 
   // ── 步骤三：初始化去重守门 ───────────────────────────────────
-  // v7 新增：在 Tier 2 处理之前初始化 SyncDedupGuard
-  // 它会加载别名表 + 构建现有海缆的内存索引
   log('INFO', '\n[Dedup] 初始化去重守门...');
   const guard = new SyncDedupGuard(prisma);
   await guard.init();
 
   // ── 步骤四：Tier 2 — SN 通过去重守门检查后入库 ────────────────
-  // v7 改造：用 SyncDedupGuard 替代原来的 alignCableEntity
-  // 三级判断：MERGE（合并到已有）/ REVIEW（入库但标记待审核）/ CREATE（新建）
   log('INFO', `\n[Tier 2] 处理 SN ${snCables.size} 条海缆...`);
 
   for (const [, ref] of snCables) {
-    // 构建 SN 海缆的登陆站名称集合（用于去重匹配）
     const snDetail = await fetchSNDetail(ref);
     await delay(200);
     if (!snDetail) { stats.snSkipped++; continue; }
@@ -610,12 +702,10 @@ async function main() {
       snDetail.landingPoints.map(lp => lp.name.toLowerCase().split(',')[0].trim()).filter(Boolean)
     );
 
-    // 通过去重守门检查
     const decision = guard.check(ref.name, stationNames, snDetail.rfsYear);
 
     switch (decision.action) {
       case 'MERGE': {
-        // 已有相同海缆 → 合并补全字段，不创建新记录
         await mergeTier2IntoExisting(decision.existingId!, snDetail);
         stats.snMatched++;
         log('OK', `  [合并] "${ref.name}" → "${decision.existingName}" (${decision.score}分)`);
@@ -623,12 +713,10 @@ async function main() {
       }
 
       case 'REVIEW': {
-        // 不确定是否重复 → 入库但标记待审核
         const wiki = await checkWikipedia(ref.name);
         await delay(300);
         const status = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
         await upsertTier2Cable(ref, snDetail, status, 'PENDING_REVIEW', decision.existingId);
-        // 入库后加入内存索引，确保后续 SN 海缆能看到它
         guard.addToIndex(`sn-${ref.slug}`, ref.name, stationNames, snDetail.rfsYear);
         stats.snPendingReview++;
         log('WARN', `  [待审核] "${ref.name}" ↔ "${decision.existingName}" (${decision.score}分)`);
@@ -636,12 +724,10 @@ async function main() {
       }
 
       case 'CREATE': {
-        // 确认是新海缆 → 独立入库
         const wiki = await checkWikipedia(ref.name);
         await delay(300);
         const status = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
         await upsertTier2Cable(ref, snDetail, status);
-        // 入库后加入内存索引
         guard.addToIndex(`sn-${ref.slug}`, ref.name, stationNames, snDetail.rfsYear);
         stats.snNewAdded++;
         log('OK', `  [新缆] ${ref.name} (${status}, ${snDetail.landingPoints.length} 站${wiki.exists ? ', Wiki✓' : ''})`);
@@ -650,10 +736,15 @@ async function main() {
     }
   }
 
-  // 打印去重统计
   guard.printStats();
 
-  // ── 步骤五：统计坐标为 NULL 的登陆站数量 ─────────────────────
+  // ── 步骤五 v8：孤儿清理 ──────────────────────────────────────
+  // 标记上游不再收录的记录为 REMOVED
+  log('INFO', '\n[孤儿清理] 检查上游不再收录的海缆...');
+  stats.orphansRemoved = await cleanupOrphans();
+  log('OK', `[孤儿清理] 完成：标记 ${stats.orphansRemoved} 条为 REMOVED`);
+
+  // ── 步骤六：统计 ─────────────────────────────────────────────
   try {
     stats.stationsNullCoord = await prisma.landingStation.count({
       where: { OR: [{ latitude: null }, { longitude: null }] },
@@ -663,10 +754,21 @@ async function main() {
 
   // ── 报告 ─────────────────────────────────────────────────────
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+
+  // v8: 统计活跃海缆数（排除 REMOVED 和 merged）
+  let activeCableCount = 0;
+  try {
+    activeCableCount = await prisma.cable.count({
+      where: { mergedInto: null, NOT: { status: 'REMOVED' } },
+    });
+  } catch {}
+
   console.log('\n╔══════════════════════════════════════════════════════════════╗');
   console.log(`║  同步完成！耗时 ${elapsed}s`);
   console.log(`║  [Tier1-TG]  写入: ${stats.tgWritten} 条`);
   console.log(`║  [Tier2-SN]  合并到已有: ${stats.snMatched} | 待审: ${stats.snPendingReview} | 新增: ${stats.snNewAdded} | 跳过: ${stats.snSkipped}`);
+  console.log(`║  [孤儿清理]  标记REMOVED: ${stats.orphansRemoved} 条`);
+  console.log(`║  [活跃海缆]  当前总数: ${activeCableCount} 条`);
   console.log(`║  坐标待补全的登陆站: ${stats.stationsNullCoord} 个`);
   console.log(`║  DLQ待处理: ${stats.dlqTotal} 个`);
   console.log('╚══════════════════════════════════════════════════════════════╝');
@@ -680,19 +782,19 @@ async function main() {
     });
     await redis.set(
       `sync:report:${new Date().toISOString().slice(0, 10)}`,
-      JSON.stringify({ ...stats, runAt: new Date().toISOString() }),
+      JSON.stringify({ ...stats, activeCableCount, runAt: new Date().toISOString() }),
       { ex: 30 * 24 * 3600 }
     );
-    await redis.set('sync:report:latest', JSON.stringify({ ...stats, runAt: new Date().toISOString() }), { ex: 7 * 24 * 3600 });
-    // 清除所有前端缓存，让下次请求从数据库重新生成
+    await redis.set('sync:report:latest', JSON.stringify({ ...stats, activeCableCount, runAt: new Date().toISOString() }), { ex: 7 * 24 * 3600 });
+    // v8: 清除所有前端缓存
     await Promise.all([
-      redis.del('cables:geojson:full'),   // 旧 key（兼容）
-      redis.del('cables:geo:details'),    // 海缆 GeoJSON + 详情
-      redis.del('cables:geo'),            // 海缆 GeoJSON
-      redis.del('cables:list'),           // 海缆列表
-      redis.del('stats:global'),          // 全局统计
+      redis.del('cables:geojson:full'),
+      redis.del('cables:geo:details'),
+      redis.del('cables:geo'),
+      redis.del('cables:list'),
+      redis.del('stats:global'),
     ]);
-    log('OK', 'Redis: 报告已保存，缓存已清除(cables:geo:details, cables:list, stats:global)');
+    log('OK', 'Redis: 报告已保存，缓存已清除');
   } catch (e: any) {
     log('WARN', `Redis 写入失败（非致命）: ${e.message}`);
   }

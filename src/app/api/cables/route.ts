@@ -1,8 +1,6 @@
 // src/app/api/cables/route.ts
-// 海缆数据 API v2 — Redis 缓存优先
-// 首次加载从数据库查询后写入 Redis，后续请求直接读缓存
-// 缓存由 nightly-sync.ts 每晚刷新
-// v7: 排除已合并记录（mergedInto: null）
+// 海缆数据 API v3 — Redis 缓存优先
+// v8: 排除 REMOVED + mergedInto，返回 isNew / statusChanged 标记
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
@@ -10,9 +8,6 @@ import { prisma } from '@/lib/db';
 const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-// Redis key 设计：
-//   cables:geo:details   — 包含 GeoJSON + vendor/owners（地图渲染用）
-//   cables:list          — 不含 GeoJSON（列表页/搜索用）
 function getCacheKey(includeGeo: boolean, includeDetails: boolean): string {
   if (includeGeo && includeDetails) return 'cables:geo:details';
   if (includeGeo) return 'cables:geo';
@@ -31,7 +26,6 @@ async function redisGet(key: string): Promise<any | null> {
     if (!data.result) return null;
 
     const parsed = JSON.parse(data.result);
-    // 兼容旧格式 {value: "...", ex: N}
     if (parsed.value && typeof parsed.value === 'string' && !parsed.cables) {
       return JSON.parse(parsed.value);
     }
@@ -50,6 +44,9 @@ async function redisSet(key: string, value: string, exSeconds: number): Promise<
   } catch {}
 }
 
+// v8: 7天内算"新增"或"状态变更"
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const includeGeo     = searchParams.get('geo') === 'true';
@@ -58,7 +55,6 @@ export async function GET(request: NextRequest) {
 
   const cacheKey = getCacheKey(includeGeo, includeDetails);
 
-  // ── 1. 读 Redis 缓存 ──────────────────────────────────────────
   if (!skipCache) {
     const cached = await redisGet(cacheKey);
     if (cached) {
@@ -72,16 +68,18 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── 2. 缓存未命中：查数据库 ───────────────────────────────────
   try {
     const cables = await prisma.cable.findMany({
       where: {
-        status: { not: 'PENDING_REVIEW' },
-        mergedInto: null,  // v7: 排除已合并记录
+        status: { notIn: ['PENDING_REVIEW', 'REMOVED'] },  // v8: 排除 REMOVED
+        mergedInto: null,
       },
       select: {
         id: true, name: true, slug: true, status: true,
         rfsDate: true, lengthKm: true, designCapacityTbps: true, fiberPairs: true,
+        firstSeenAt: true,          // v8: 用于 isNew 标记
+        statusChangedAt: true,      // v8: 用于 statusChanged 标记
+        previousStatus: true,       // v8: 变更前的状态
         ...(includeGeo ? { routeGeojson: true } : {}),
         ...(includeDetails ? {
           vendor: { select: { name: true } },
@@ -89,16 +87,22 @@ export async function GET(request: NextRequest) {
         } : {}),
       },
       orderBy: [
-        // 在役的排前面，加载时优先渲染
         { status: 'asc' },
         { name: 'asc' },
       ],
     });
 
-    const payload = { total: cables.length, cables, generatedAt: new Date().toISOString() };
+    const now = Date.now();
+    const cablesWithFlags = cables.map(c => ({
+      ...c,
+      // v8: 7天内首次出现 → 新增标记
+      isNew: c.firstSeenAt ? (now - new Date(c.firstSeenAt).getTime()) < SEVEN_DAYS_MS : false,
+      // v8: 7天内状态变更 → 变更标记
+      statusChanged: c.statusChangedAt ? (now - new Date(c.statusChangedAt).getTime()) < SEVEN_DAYS_MS : false,
+    }));
 
-    // ── 3. 写入 Redis 缓存（异步，不阻塞响应）──────────────────
-    // geo+details 数据量大，缓存 12 小时；list 缓存 1 小时
+    const payload = { total: cablesWithFlags.length, cables: cablesWithFlags, generatedAt: new Date().toISOString() };
+
     const ttl = includeGeo ? 12 * 3600 : 3600;
     redisSet(cacheKey, JSON.stringify(payload), ttl).catch(() => {});
 

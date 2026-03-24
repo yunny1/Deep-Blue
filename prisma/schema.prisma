@@ -30,6 +30,11 @@ model Cable {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
   @@map("cables")
+lastSyncedAt       DateTime? @map("last_synced_at")         // 上次被上游确认的时间
+  statusChangedAt    DateTime? @map("status_changed_at")      // 状态变更时间
+  previousStatus     String?   @map("previous_status")        // 变更前的状态
+  firstSeenAt        DateTime? @map("first_seen_at")          // 首次入库时间（新增标记用）
+
 
 // --- 去重系统字段 ---
   dataSource          String?   @map("data_source")

@@ -1,5 +1,5 @@
 // src/app/api/analysis/country/route.ts
-// v7: 排除已合并记录（mergedInto: null）
+// v8: 排除 REMOVED + mergedInto
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -26,7 +26,6 @@ const REGION_LABEL: Record<string, string> = {
   CN: '中国大陆', HK: '中国香港', MO: '中国澳门', TW: '中国台湾',
 };
 
-// 强制国内线覆盖：cable slug → 视为国内线的国家代码组
 const DOMESTIC_OVERRIDES: Record<string, string[]> = {
   'taiwan-strait-express-1': ['CN', 'TW', 'HK', 'MO'],
 };
@@ -37,9 +36,12 @@ async function getCountryData(codes: string[]) {
     include: {
       country: true,
       cables: {
-        // v7: 只包含未被合并的海缆
+        // v8: 只包含活跃海缆（排除 merged + REMOVED）
         where: {
-          cable: { mergedInto: null },
+          cable: {
+            mergedInto: null,
+            status: { notIn: ['REMOVED'] },
+          },
         },
         include: {
           cable: {
@@ -72,7 +74,6 @@ async function getCountryData(codes: string[]) {
     const allCodes: string[] = [...new Set<string>(cable.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
     const localStations = cable.landingStations.filter((cls: any) => codes.includes(cls.landingStation.countryCode));
 
-    // 检查强制覆盖
     const override = DOMESTIC_OVERRIDES[cable.slug];
     if (override) {
       const isOverrideDomestic = allCodes.every((c: string) => override.includes(c));
@@ -86,6 +87,10 @@ async function getCountryData(codes: string[]) {
     else if (isBranch) branch.push(cable);
     else international.push(cable);
   }
+
+  // v8: 7天内算新增或状态变更
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
 
   return {
     stations,
@@ -104,7 +109,6 @@ async function getCountryData(codes: string[]) {
 
       const allCodes: string[] = [...new Set<string>(c.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
 
-      // 重新判断类型（含 override）
       const override = DOMESTIC_OVERRIDES[c.slug];
       let type: 'international' | 'domestic' | 'branch';
       if (override && allCodes.every((cc: string) => override.includes(cc))) {
@@ -126,6 +130,9 @@ async function getCountryData(codes: string[]) {
         countries: allCodes,
         totalStations: c.landingStations.length,
         type,
+        // v8: 新增/变更标记
+        isNew: c.firstSeenAt ? (now - new Date(c.firstSeenAt).getTime()) < SEVEN_DAYS_MS : false,
+        statusChanged: c.statusChangedAt ? (now - new Date(c.statusChangedAt).getTime()) < SEVEN_DAYS_MS : false,
       };
     }),
     stationsFormatted: stations.map(s => ({
