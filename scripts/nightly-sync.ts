@@ -19,6 +19,7 @@ import { PrismaClient } from '@prisma/client';
 import jaroWinkler from 'jaro-winkler';
 import { getCountryCode, validateCountryCode } from '../src/lib/countryCodeMap';
 import { SyncDedupGuard } from './dedup-sync-guard';
+import { extractAndRegisterAlias, persistAliasesToDB } from '../src/lib/cable-name-parser';
 
 const prisma = new PrismaClient();
 
@@ -670,6 +671,7 @@ async function main() {
   // ── 步骤二：Tier 1 — TG 全量写入（强制覆盖，确立权威）────────
   log('INFO', `\n[Tier 1] 写入 TG ${tgCables.size} 条海缆...`);
 
+  let newAliasCount = 0;
   for (const [cableId, tg] of tgCables) {
     try {
       const rfsDate = tg.rfs_year ? new Date(tg.rfs_year, 0, 1) : null;
@@ -677,12 +679,24 @@ async function main() {
       if (tg.is_planned) status = 'PLANNED';
       else if (rfsDate && rfsDate > new Date()) status = 'UNDER_CONSTRUCTION';
 
+      // v8: 每条 TG 海缆写入时提取括号缩写，自动扩充别名表
+      // 例如 "Africa Coast to Europe (ACE)" → 注册 ace → africa-coast-to-europe
+      newAliasCount += extractAndRegisterAlias(tg.name);
+
       await upsertTier1Cable(tg, status);
       stats.tgWritten++;
     } catch (e: any) {
       log('ERROR', `TG ${cableId}: ${e.message}`);
     }
   }
+
+  // v8: Tier 1 写完后，将新提取的缩写别名持久化到 DB
+  // 这样 Tier 2 阶段（SN 去重守门）就能立即使用这些别名
+  if (newAliasCount > 0) {
+    const persisted = await persistAliasesToDB(prisma);
+    log('OK', `[别名] 自动提取 ${newAliasCount} 条缩写别名，持久化 ${persisted} 条到 DB`);
+  }
+
   log('OK', `[Tier 1] 完成：写入 ${stats.tgWritten} 条`);
 
   // ── 步骤三：初始化去重守门 ───────────────────────────────────
@@ -738,11 +752,10 @@ async function main() {
 
   guard.printStats();
 
-  // ── 步骤五 v8：孤儿清理 ──────────────────────────────────────
-  // 标记上游不再收录的记录为 REMOVED
-  log('INFO', '\n[孤儿清理] 检查上游不再收录的海缆...');
-  stats.orphansRemoved = await cleanupOrphans();
-  log('OK', `[孤儿清理] 完成：标记 ${stats.orphansRemoved} 条为 REMOVED`);
+  // ── 步骤五：孤儿清理已移除 ────────────────────────────────────
+  // 时间戳判断法有严重缺陷（曾误删全部数据），已禁用。
+  // 如需清理孤儿，使用独立脚本 cleanup-orphans.ts（直接对比上游数据源，安全可靠）
+  stats.orphansRemoved = 0;
 
   // ── 步骤六：统计 ─────────────────────────────────────────────
   try {
