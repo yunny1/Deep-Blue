@@ -1,5 +1,6 @@
 // src/app/api/stats/route.ts
 // 统计数据 API — Redis 缓存1小时，包含精确海缆分类
+// v7: 排除已合并记录（mergedInto: null）
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -51,20 +52,23 @@ export async function GET() {
       });
     }
 
+    // v7: 所有查询加 mergedInto: null 排除已合并记录
+    const notMerged = { mergedInto: null };
+
     // 基础计数
     const [totalCables, inService, underConstruction, planned, decommissioned, totalStations, totalCountries] = await Promise.all([
-      prisma.cable.count({ where: { status: { not: 'PENDING_REVIEW' } } }),
-      prisma.cable.count({ where: { status: 'IN_SERVICE' } }),
-      prisma.cable.count({ where: { status: 'UNDER_CONSTRUCTION' } }),
-      prisma.cable.count({ where: { status: 'PLANNED' } }),
-      prisma.cable.count({ where: { status: 'DECOMMISSIONED' } }),
+      prisma.cable.count({ where: { status: { not: 'PENDING_REVIEW' }, ...notMerged } }),
+      prisma.cable.count({ where: { status: 'IN_SERVICE', ...notMerged } }),
+      prisma.cable.count({ where: { status: 'UNDER_CONSTRUCTION', ...notMerged } }),
+      prisma.cable.count({ where: { status: 'PLANNED', ...notMerged } }),
+      prisma.cable.count({ where: { status: 'DECOMMISSIONED', ...notMerged } }),
       prisma.landingStation.count(),
       prisma.country.count({ where: { landingStations: { some: {} } } }),
     ]);
 
     // 在役海缆分类（activeInternational / activeDomestic）
     const inServiceCables = await prisma.cable.findMany({
-      where: { status: 'IN_SERVICE' },
+      where: { status: 'IN_SERVICE', ...notMerged },
       select: {
         slug: true,
         landingStations: {
@@ -89,7 +93,7 @@ export async function GET() {
     // 总铺设里程
     const lengthResult = await prisma.cable.aggregate({
       _sum: { lengthKm: true },
-      where: { status: { not: 'PENDING_REVIEW' } },
+      where: { status: { not: 'PENDING_REVIEW' }, ...notMerged },
     });
     const totalLengthKm = Math.round((lengthResult._sum.lengthKm || 0) / 10000) * 10000;
 

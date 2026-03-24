@@ -1,5 +1,6 @@
 // src/app/api/cables/filter-options/route.ts
 // 返回各筛选维度的海缆数量，支持跨维度过滤后的实时计数
+// v7: 排除已合并记录（mergedInto: null）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
@@ -14,9 +15,10 @@ export async function GET(request: NextRequest) {
   const yearMin       = parseInt(searchParams.get('yearMin') || '1990');
   const yearMax       = parseInt(searchParams.get('yearMax') || '2030');
 
-  // 基础 where 条件（排除 PENDING_REVIEW）
+  // 基础 where 条件（排除 PENDING_REVIEW + 已合并记录）
   const baseWhere: any = {
     status: { not: 'PENDING_REVIEW' },
+    mergedInto: null,  // v7: 排除已合并记录
     OR: [
       { rfsDate: null },
       {

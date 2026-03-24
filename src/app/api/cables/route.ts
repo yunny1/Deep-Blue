@@ -2,6 +2,7 @@
 // 海缆数据 API v2 — Redis 缓存优先
 // 首次加载从数据库查询后写入 Redis，后续请求直接读缓存
 // 缓存由 nightly-sync.ts 每晚刷新
+// v7: 排除已合并记录（mergedInto: null）
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
     const cables = await prisma.cable.findMany({
       where: {
         status: { not: 'PENDING_REVIEW' },
+        mergedInto: null,  // v7: 排除已合并记录
       },
       select: {
         id: true, name: true, slug: true, status: true,

@@ -1,4 +1,5 @@
 // src/app/api/analysis/country/route.ts
+// v7: 排除已合并记录（mergedInto: null）
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -36,6 +37,10 @@ async function getCountryData(codes: string[]) {
     include: {
       country: true,
       cables: {
+        // v7: 只包含未被合并的海缆
+        where: {
+          cable: { mergedInto: null },
+        },
         include: {
           cable: {
             include: {
