@@ -26,9 +26,7 @@ const REGION_LABEL: Record<string, string> = {
   CN: '中国大陆', HK: '中国香港', MO: '中国澳门', TW: '中国台湾',
 };
 
-const DOMESTIC_OVERRIDES: Record<string, string[]> = {
-  'taiwan-strait-express-1': ['CN', 'TW', 'HK', 'MO'],
-};
+const CHINA_DOMESTIC_GROUP = ['CN', 'TW', 'HK', 'MO'];
 
 async function getCountryData(codes: string[]) {
   const stations = await prisma.landingStation.findMany({
@@ -74,10 +72,8 @@ async function getCountryData(codes: string[]) {
     const allCodes: string[] = [...new Set<string>(cable.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
     const localStations = cable.landingStations.filter((cls: any) => codes.includes(cls.landingStation.countryCode));
 
-    const override = DOMESTIC_OVERRIDES[cable.slug];
-    if (override) {
-      const isOverrideDomestic = allCodes.every((c: string) => override.includes(c));
-      if (isOverrideDomestic) { domestic.push(cable); continue; }
+    if (allCodes.length > 1 && allCodes.every((c: string) => CHINA_DOMESTIC_GROUP.includes(c))) {
+  domestic.push(cable); continue;
     }
 
     const isDomestic = allCodes.every((c: string) => codes.includes(c));
@@ -109,9 +105,8 @@ async function getCountryData(codes: string[]) {
 
       const allCodes: string[] = [...new Set<string>(c.landingStations.map((cls: any) => cls.landingStation.countryCode as string))];
 
-      const override = DOMESTIC_OVERRIDES[c.slug];
       let type: 'international' | 'domestic' | 'branch';
-      if (override && allCodes.every((cc: string) => override.includes(cc))) {
+      if (allCodes.length > 1 && allCodes.every((cc: string) => CHINA_DOMESTIC_GROUP.includes(cc))) {
         type = 'domestic';
       } else {
         const isDomestic = allCodes.every((cc: string) => codes.includes(cc));

@@ -7,9 +7,8 @@ import { prisma } from '@/lib/db';
 const CACHE_KEY = 'stats:global';
 const CACHE_TTL = 60 * 60;
 
-const DOMESTIC_OVERRIDES: Record<string, string[]> = {
-  'taiwan-strait-express-1': ['CN', 'TW', 'HK', 'MO'],
-};
+// 大中华区国家/地区代码：这些代码之间的海缆自动归为国内线
+const CHINA_DOMESTIC_GROUP = ['CN', 'TW', 'HK', 'MO'];
 
 // v8: 基础过滤条件 — 排除已合并 + 已移除 + 待审核
 const ACTIVE_FILTER = {
@@ -82,10 +81,7 @@ export async function GET() {
     for (const cable of inServiceCables) {
       const allCodes = [...new Set(cable.landingStations.map(ls => ls.landingStation.countryCode))];
 
-      const override = DOMESTIC_OVERRIDES[cable.slug];
-      if (override) {
-        if (allCodes.every(c => override.includes(c))) { activeDomestic++; continue; }
-      }
+      if (allCodes.length > 1 && allCodes.every(c => CHINA_DOMESTIC_GROUP.includes(c))) { activeDomestic++; continue; }
 
       if (new Set(allCodes).size <= 1) { activeDomestic++; continue; }
       activeInternational++;
