@@ -203,7 +203,8 @@ function removeNoise(name: string): string {
     .replace(/\bnetwork\b/gi, '')
     .replace(/\bproject\b/gi, '')
     .replace(/\bcable\b/gi, '')
-    .replace(/[()[\]{}"']/g, '')
+    .replace(/\s*\([^)]*\)/g, '')   // 删除整个括号及其内容（关键修复：之前只删括号字符不删内容）
+    .replace(/[[\]{}"']/g, '')       // 其他类型括号仍然只删字符
     .replace(/\s+/g, ' ')
     .trim();
 }
