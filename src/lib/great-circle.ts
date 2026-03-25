@@ -337,7 +337,16 @@ function orderStationsNearestNeighbor(stations: StationCoord[]): StationCoord[] 
 // ============================================================
 
 const KM_PER_POINT = 80;
-const SHORT_DISTANCE_KM = 300;
+
+/**
+ * Snap a coordinate to the nearest ocean waypoint.
+ * Exported so scripts can use it independently.
+ */
+export function snapToOceanWaypoint(lat: number, lon: number): { lat: number; lon: number } {
+  buildGraph();
+  const wp = findNearestWaypoint(lat, lon);
+  return { lat: wp.lat, lon: wp.lon };
+}
 
 export function generateApproximateRoute(
   stations: StationCoord[],
@@ -359,29 +368,33 @@ export function generateApproximateRoute(
   buildGraph();
   const allCoords: [number, number][] = [];
 
-  for (let i = 0; i < ordered.length - 1; i++) {
-    const a = ordered[i], b = ordered[i + 1];
-    const directDist = haversineKm(a.lat, a.lon, b.lat, b.lon);
+  // Snap all stations to nearest ocean waypoints first
+  // This ensures routes never start/end at inland country centroids
+  const snappedStations = ordered.map(s => {
+    const wp = findNearestWaypoint(s.lat, s.lon);
+    return { lat: wp.lat, lon: wp.lon, name: s.name, wpId: wp.id };
+  });
 
-    if (directDist < SHORT_DISTANCE_KM) {
-      const n = Math.max(2, Math.ceil(directDist / KM_PER_POINT) + 1);
-      const pts = interpolateGreatCircle(a.lat, a.lon, b.lat, b.lon, n);
-      if (allCoords.length === 0) allCoords.push(...pts);
-      else allCoords.push(...pts.slice(1));
-      continue;
-    }
+  for (let i = 0; i < snappedStations.length - 1; i++) {
+    const a = snappedStations[i];
+    const b = snappedStations[i + 1];
 
-    const wpA = findNearestWaypoint(a.lat, a.lon);
-    const wpB = findNearestWaypoint(b.lat, b.lon);
-    const meshPath = dijkstra(wpA.id, wpB.id);
-    const routePoints: [number, number][] = [[a.lon, a.lat]];
+    // If same waypoint, skip (two stations very close together)
+    if (a.wpId === b.wpId) continue;
+
+    const meshPath = dijkstra(a.wpId, b.wpId);
+    const routePoints: [number, number][] = [];
+
     if (meshPath) {
       for (const wpId of meshPath) {
         const wp = waypointMap!.get(wpId)!;
         routePoints.push([wp.lon, wp.lat]);
       }
+    } else {
+      // Fallback: direct connect between the two waypoints
+      routePoints.push([a.lon, a.lat]);
+      routePoints.push([b.lon, b.lat]);
     }
-    routePoints.push([b.lon, b.lat]);
 
     for (let j = 0; j < routePoints.length - 1; j++) {
       const [lon1, lat1] = routePoints[j];
