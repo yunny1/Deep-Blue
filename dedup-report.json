@@ -1,0 +1,135 @@
+{
+  "generatedAt": "2026-03-24T01:24:57.489Z",
+  "dryRun": false,
+  "originalTotal": 896,
+  "exactMerges": [
+    {
+      "keep": "Kattegat Cable",
+      "remove": "Kattegat",
+      "reason": "canonical=\"kattegat\""
+    },
+    {
+      "keep": "SeaMeWe-6",
+      "remove": "SEA-ME-WE 6",
+      "reason": "canonical=\"sea-me-we--6\""
+    },
+    {
+      "keep": "SEA-ME-WE 4",
+      "remove": "SeaMeWe-4",
+      "reason": "canonical=\"sea-me-we--4\""
+    },
+    {
+      "keep": "SeaMeWe-5",
+      "remove": "SEA-ME-WE 5",
+      "reason": "canonical=\"sea-me-we--5\""
+    },
+    {
+      "keep": "Le Vasa",
+      "remove": "Le Vasa Cable",
+      "reason": "canonical=\"le-vasa\""
+    },
+    {
+      "keep": "Medusa Submarine Cable System",
+      "remove": "Medusa",
+      "reason": "canonical=\"medusa\""
+    },
+    {
+      "keep": "PEACE Cable",
+      "remove": "PEACE",
+      "reason": "canonical=\"pakistan-east-africa-connecting-europe\""
+    },
+    {
+      "keep": "Hawaiki",
+      "remove": "Hawaiki Cable",
+      "reason": "canonical=\"hawaiki\""
+    },
+    {
+      "keep": "Hokkaido-Akita Cable",
+      "remove": "Hokkaido-Akita",
+      "reason": "canonical=\"hokkaido-akita\""
+    },
+    {
+      "keep": "Saudi Vision",
+      "remove": "Saudi Vision Cable",
+      "reason": "canonical=\"saudi-vision\""
+    },
+    {
+      "keep": "Trans-Caspian Fiber Optic Cable Project",
+      "remove": "Trans-Caspian Fiber Optic",
+      "reason": "canonical=\"trans-caspian-fiber-optic\""
+    },
+    {
+      "keep": "Project Waterworth",
+      "remove": "Waterworth",
+      "reason": "canonical=\"waterworth\""
+    }
+  ],
+  "fuzzyMerges": [
+    {
+      "keep": "Finland Estonia Connection 2 (FEC-2)",
+      "remove": "Finland-Estonia 2 (EESF-2)",
+      "score": 86,
+      "reason": "name=90 station=100 year=50"
+    }
+  ],
+  "pendingReviews": [
+    {
+      "cable": "GlobalConnect-KPN",
+      "duplicate": "Elektra-GlobalConnect 1 (GC1)",
+      "score": 77,
+      "detail": "name=67 station=100 year=50"
+    },
+    {
+      "cable": "Dumai-Melaka Cable System (DMCS)",
+      "duplicate": "Batam Dumai Melaka (BDM)",
+      "score": 65,
+      "detail": "name=71 station=67 year=50"
+    },
+    {
+      "cable": "Jakarta-Bangka-Bintan-Batam-Singapore (B3JS)",
+      "duplicate": "Jakarta-Bangka-Batam-Singapore (B2JS)",
+      "score": 80,
+      "detail": "name=91 station=83 year=50"
+    },
+    {
+      "cable": "Hawaii Island Fibre Network (HIFN)",
+      "duplicate": "Hawaii Inter-Island Cable System (HICS)",
+      "score": 66,
+      "detail": "name=89 station=50 year=50"
+    },
+    {
+      "cable": "Jalapati",
+      "duplicate": "Java Bali Cable System (JBCS)",
+      "score": 79,
+      "detail": "name=74 station=100 year=50"
+    },
+    {
+      "cable": "CADMOS-2",
+      "duplicate": "CADMOS",
+      "score": 77,
+      "detail": "name=100 station=67 year=50"
+    },
+    {
+      "cable": "Channel Islands-9 Liberty Submarine Cable",
+      "duplicate": "UK-Channel Islands-7",
+      "score": 77,
+      "detail": "name=69 station=100 year=50"
+    }
+  ],
+  "mergedCount": 13,
+  "remainingByStatus": [
+    {
+      "status": "IN_SERVICE",
+      "count": 783
+    },
+    {
+      "status": "PLANNED",
+      "count": 94
+    },
+    {
+      "status": "DECOMMISSIONED",
+      "count": 6
+    }
+  ],
+  "remainingTotal": 883
+}

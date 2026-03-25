@@ -1,0 +1,1160 @@
+{
+  "generatedAt": "2026-03-24T00:54:19.803Z",
+  "summary": {
+    "totalCables": 896,
+    "statusDistribution": {
+      "IN_SERVICE": 796,
+      "PLANNED": 94,
+      "DECOMMISSIONED": 6
+    },
+    "sourceDistribution": {
+      "UNKNOWN": 896
+    },
+    "inServiceTotal": 796,
+    "inServiceBySource": {
+      "UNKNOWN": 796
+    },
+    "suspectedDuplicatePairs": 54,
+    "crossSourcePairs": 0,
+    "sameSourcePairs": 54,
+    "inServiceCrossSourcePairs": 0,
+    "estimatedRealInService": 796
+  },
+  "crossSourceDuplicates": [],
+  "sameSourceDuplicates": [
+    {
+      "cableA": {
+        "id": "finland-estonia-connection-1-fec-1",
+        "name": "Finland Estonia Connection 1 (FEC-1)",
+        "slug": "finland-estonia-connection-1-fec-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "finland-estonia-connection-2-fec-2",
+        "name": "Finland Estonia Connection 2 (FEC-2)",
+        "slug": "finland-estonia-connection-2-fec-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 98,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 89,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "portsmouth-ryde-11",
+        "name": "Portsmouth-Ryde 11",
+        "slug": "portsmouth-ryde-11",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "portsmouth-ryde-10",
+        "name": "Portsmouth-Ryde 10",
+        "slug": "portsmouth-ryde-10",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 98,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 89,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "saudi-arabia-sudan-1-sas-1",
+        "name": "Saudi Arabia-Sudan-1 (SAS-1)",
+        "slug": "saudi-arabia-sudan-1-sas-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "saudi-arabia-sudan-2-sas-2",
+        "name": "Saudi Arabia-Sudan-2 (SAS-2)",
+        "slug": "saudi-arabia-sudan-2-sas-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 97,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 89,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "subcan-link-1",
+        "name": "Subcan Link 1",
+        "slug": "subcan-link-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "subcan-link-2",
+        "name": "Subcan Link 2",
+        "slug": "subcan-link-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 97,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 89,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "finland-estonia-connection-2-fec-2",
+        "name": "Finland Estonia Connection 2 (FEC-2)",
+        "slug": "finland-estonia-connection-2-fec-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "finland-estonia-2-eesf-2",
+        "name": "Finland-Estonia 2 (EESF-2)",
+        "slug": "finland-estonia-2-eesf-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 85,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 84,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "finland-estonia-connection-1-fec-1",
+        "name": "Finland Estonia Connection 1 (FEC-1)",
+        "slug": "finland-estonia-connection-1-fec-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "finland-estonia-2-eesf-2",
+        "name": "Finland-Estonia 2 (EESF-2)",
+        "slug": "finland-estonia-2-eesf-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 83,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 83,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "channel-islands-9-liberty-submarine-cable",
+        "name": "Channel Islands-9 Liberty Submarine Cable",
+        "slug": "channel-islands-9-liberty-submarine-cable",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "uk-channel-islands-7",
+        "name": "UK-Channel Islands-7",
+        "slug": "uk-channel-islands-7",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 81,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 83,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "jakarta-bangka-bintan-batam-singapore-b3js",
+        "name": "Jakarta-Bangka-Bintan-Batam-Singapore (B3JS)",
+        "slug": "jakarta-bangka-bintan-batam-singapore-b3js",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "jakarta-bangka-batam-singapore-b2js",
+        "name": "Jakarta-Bangka-Batam-Singapore (B2JS)",
+        "slug": "jakarta-bangka-batam-singapore-b2js",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 91,
+      "stationScore": 83,
+      "yearScore": 50,
+      "totalScore": 80,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "jalapati",
+        "name": "Jalapati",
+        "slug": "jalapati",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "java-bali-cable-system-jbcs",
+        "name": "Java Bali Cable System (JBCS)",
+        "slug": "java-bali-cable-system-jbcs",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 74,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 79,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "globalconnect-kpn",
+        "name": "GlobalConnect-KPN",
+        "slug": "globalconnect-kpn",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "elektra-globalconnect-1-gc1",
+        "name": "Elektra-GlobalConnect 1 (GC1)",
+        "slug": "elektra-globalconnect-1-gc1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 67,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 77,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "sn-smw4",
+        "name": "SEA-ME-WE 4",
+        "slug": "sea-me-we-4",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "seamewe-4",
+        "name": "SeaMeWe-4",
+        "slug": "seamewe-4",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 89,
+      "stationScore": 74,
+      "yearScore": 50,
+      "totalScore": 75,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "cadmos-2",
+        "name": "CADMOS-2",
+        "slug": "cadmos-2",
+        "status": "PLANNED",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "cadmos",
+        "name": "CADMOS",
+        "slug": "cadmos",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 95,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 75,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "ceiba-1",
+        "name": "Ceiba-1",
+        "slug": "ceiba-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "ceiba-2",
+        "name": "Ceiba-2",
+        "slug": "ceiba-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 94,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 74,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "batam-singapore-cable-system-bscs",
+        "name": "Batam Singapore Cable System (BSCS)",
+        "slug": "batam-singapore-cable-system-bscs",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "moratelindo-international-cable-system-1-mic-1",
+        "name": "Moratelindo International Cable System-1 (MIC-1)",
+        "slug": "moratelindo-international-cable-system-1-mic-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 54,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 71,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "scylla",
+        "name": "Scylla",
+        "slug": "scylla",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "ulysses-2",
+        "name": "Ulysses 2",
+        "slug": "ulysses-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 50,
+      "stationScore": 100,
+      "yearScore": 50,
+      "totalScore": 70,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "cabo-verde-telecom-domestic-submarine-cable-phase-2",
+        "name": "Cabo Verde Telecom Domestic Submarine Cable Phase 2",
+        "slug": "cabo-verde-telecom-domestic-submarine-cable-phase-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "cabo-verde-telecom-domestic-submarine-cable-phase-3",
+        "name": "Cabo Verde Telecom Domestic Submarine Cable Phase 3",
+        "slug": "cabo-verde-telecom-domestic-submarine-cable-phase-3",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 99,
+      "stationScore": 38,
+      "yearScore": 50,
+      "totalScore": 65,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "hawaii-island-fibre-network-hifn",
+        "name": "Hawaii Island Fibre Network (HIFN)",
+        "slug": "hawaii-island-fibre-network-hifn",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "hawaii-inter-island-cable-system-hics",
+        "name": "Hawaii Inter-Island Cable System (HICS)",
+        "slug": "hawaii-inter-island-cable-system-hics",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 87,
+      "stationScore": 50,
+      "yearScore": 50,
+      "totalScore": 65,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "dumai-melaka-cable-system-dmcs",
+        "name": "Dumai-Melaka Cable System (DMCS)",
+        "slug": "dumai-melaka-cable-system-dmcs",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "batam-dumai-melaka-bdm",
+        "name": "Batam Dumai Melaka (BDM)",
+        "slug": "batam-dumai-melaka-bdm",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 67,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 63,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "cyclades-b",
+        "name": "Cyclades B",
+        "slug": "cyclades-b",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "cyclades-a",
+        "name": "Cyclades A",
+        "slug": "cyclades-a",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 96,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 62,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "finland-estonia-3-eesf-3",
+        "name": "Finland-Estonia 3 (EESF-3)",
+        "slug": "finland-estonia-3-eesf-3",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "finland-estonia-2-eesf-2",
+        "name": "Finland-Estonia 2 (EESF-2)",
+        "slug": "finland-estonia-2-eesf-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 97,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 62,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "jeju-mainland-2",
+        "name": "Jeju-Mainland 2",
+        "slug": "jeju-mainland-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "jeju-mainland-3",
+        "name": "Jeju-Mainland 3",
+        "slug": "jeju-mainland-3",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 97,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 62,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "link-1-phase-1",
+        "name": "Link 1 Phase-1",
+        "slug": "link-1-phase-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "link-3-phase-1",
+        "name": "Link 3 Phase-1",
+        "slug": "link-3-phase-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 97,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 62,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "link-5-phase-2",
+        "name": "Link 5 Phase-2",
+        "slug": "link-5-phase-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "link-4-phase-2",
+        "name": "Link 4 Phase-2",
+        "slug": "link-4-phase-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 97,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 62,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "cabo-verde-telecom-domestic-submarine-cable-phase-1",
+        "name": "Cabo Verde Telecom Domestic Submarine Cable Phase 1",
+        "slug": "cabo-verde-telecom-domestic-submarine-cable-phase-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "cabo-verde-telecom-domestic-submarine-cable-phase-3",
+        "name": "Cabo Verde Telecom Domestic Submarine Cable Phase 3",
+        "slug": "cabo-verde-telecom-domestic-submarine-cable-phase-3",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 99,
+      "stationScore": 30,
+      "yearScore": 50,
+      "totalScore": 62,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "thailand-indonesia-singapore-tis",
+        "name": "Thailand-Indonesia-Singapore (TIS)",
+        "slug": "thailand-indonesia-singapore-tis",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "moratelindo-international-cable-system-1-mic-1",
+        "name": "Moratelindo International Cable System-1 (MIC-1)",
+        "slug": "moratelindo-international-cable-system-1-mic-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 63,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 62,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "link-1-phase-2",
+        "name": "Link 1 Phase-2",
+        "slug": "link-1-phase-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "link-3-phase-1",
+        "name": "Link 3 Phase-1",
+        "slug": "link-3-phase-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 94,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 61,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "batam-singapore-cable-system-bscs",
+        "name": "Batam Singapore Cable System (BSCS)",
+        "slug": "batam-singapore-cable-system-bscs",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "thailand-indonesia-singapore-tis",
+        "name": "Thailand-Indonesia-Singapore (TIS)",
+        "slug": "thailand-indonesia-singapore-tis",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 58,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 60,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "bicentenario",
+        "name": "Bicentenario",
+        "slug": "bicentenario",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "tannat",
+        "name": "Tannat",
+        "slug": "tannat",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 58,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 60,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "emc-west-2",
+        "name": "EMC West-2",
+        "slug": "emc-west-2",
+        "status": "PLANNED",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "emc-west-1",
+        "name": "EMC West-1",
+        "slug": "emc-west-1",
+        "status": "PLANNED",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 96,
+      "stationScore": 29,
+      "yearScore": 50,
+      "totalScore": 60,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "gtmo-1",
+        "name": "GTMO-1",
+        "slug": "gtmo-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "gtmo-pr",
+        "name": "GTMO-PR",
+        "slug": "gtmo-pr",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 91,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 60,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "sovetskaya-gavan-ilyinskoye",
+        "name": "Sovetskaya Gavan-Ilyinskoye",
+        "slug": "sovetskaya-gavan-ilyinskoye",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "sovetskaya-gavan-uglegorsk",
+        "name": "Sovetskaya Gavan-Uglegorsk",
+        "slug": "sovetskaya-gavan-uglegorsk",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 91,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 60,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "south-atlantic-cable-system-sacs",
+        "name": "South Atlantic Cable System (SACS)",
+        "slug": "south-atlantic-cable-system-sacs",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "south-atlantic-inter-link-sail",
+        "name": "South Atlantic Inter Link (SAIL)",
+        "slug": "south-atlantic-inter-link-sail",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 89,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 59,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "japan-guam-australia-south-jga-s",
+        "name": "Japan-Guam-Australia South (JGA-S)",
+        "slug": "japan-guam-australia-south-jga-s",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "japan-guam-australia-north-jga-n",
+        "name": "Japan-Guam-Australia North (JGA-N)",
+        "slug": "japan-guam-australia-north-jga-n",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 96,
+      "stationScore": 25,
+      "yearScore": 50,
+      "totalScore": 59,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "energinet-laeso-varberg",
+        "name": "Energinet Laeso-Varberg",
+        "slug": "energinet-laeso-varberg",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "energinet-lyngsa-laeso",
+        "name": "Energinet Lyngsa-Laeso",
+        "slug": "energinet-lyngsa-laeso",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 88,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 59,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "korea-japan-cable-network-kjcn",
+        "name": "Korea-Japan Cable Network (KJCN)",
+        "slug": "korea-japan-cable-network-kjcn",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "jako",
+        "name": "JAKO",
+        "slug": "jako",
+        "status": "PLANNED",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 56,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 59,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "finland-estonia-2-eesf-2",
+        "name": "Finland-Estonia 2 (EESF-2)",
+        "slug": "finland-estonia-2-eesf-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "baltic-sea-submarine-cable",
+        "name": "Baltic Sea Submarine Cable",
+        "slug": "baltic-sea-submarine-cable",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 57,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 59,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "link-4-phase-2",
+        "name": "Link 4 Phase-2",
+        "slug": "link-4-phase-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "link-3-phase-2",
+        "name": "Link 3 Phase-2",
+        "slug": "link-3-phase-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 97,
+      "stationScore": 25,
+      "yearScore": 50,
+      "totalScore": 59,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "konstanz-friedrichshafen",
+        "name": "Konstanz-Friedrichshafen",
+        "slug": "konstanz-friedrichshafen",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "konstanz-meersburg",
+        "name": "Konstanz-Meersburg",
+        "slug": "konstanz-meersburg",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 86,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 58,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "bcs-east-west-interlink",
+        "name": "BCS East-West Interlink",
+        "slug": "bcs-east-west-interlink",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "bcs-east",
+        "name": "BCS East",
+        "slug": "bcs-east",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 87,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 58,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "whidbey-island-everett",
+        "name": "Whidbey Island-Everett",
+        "slug": "whidbey-island-everett",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "whidbey-island-hat-island",
+        "name": "Whidbey Island-Hat Island",
+        "slug": "whidbey-island-hat-island",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 87,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 58,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "seamewe-6",
+        "name": "SeaMeWe-6",
+        "slug": "seamewe-6",
+        "status": "PLANNED",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "seamewe-4",
+        "name": "SeaMeWe-4",
+        "slug": "seamewe-4",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 96,
+      "stationScore": 22,
+      "yearScore": 50,
+      "totalScore": 57,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "batam-sarawak-internet-cable-system-basics",
+        "name": "Batam Sarawak Internet Cable System (BaSICS)",
+        "slug": "batam-sarawak-internet-cable-system-basics",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "batam-singapore-cable-system-bscs",
+        "name": "Batam Singapore Cable System (BSCS)",
+        "slug": "batam-singapore-cable-system-bscs",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 85,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 57,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "finland-estonia-3-eesf-3",
+        "name": "Finland-Estonia 3 (EESF-3)",
+        "slug": "finland-estonia-3-eesf-3",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "finland-estonia-connection-1-fec-1",
+        "name": "Finland Estonia Connection 1 (FEC-1)",
+        "slug": "finland-estonia-connection-1-fec-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 83,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 57,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "finland-estonia-3-eesf-3",
+        "name": "Finland-Estonia 3 (EESF-3)",
+        "slug": "finland-estonia-3-eesf-3",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "finland-estonia-connection-2-fec-2",
+        "name": "Finland Estonia Connection 2 (FEC-2)",
+        "slug": "finland-estonia-connection-2-fec-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 83,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 57,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "hawaii-island-fibre-network-hifn",
+        "name": "Hawaii Island Fibre Network (HIFN)",
+        "slug": "hawaii-island-fibre-network-hifn",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "hawaiian-islands-fiber-link-hifl",
+        "name": "Hawaiian Islands Fiber Link (HIFL)",
+        "slug": "hawaiian-islands-fiber-link-hifl",
+        "status": "PLANNED",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 88,
+      "stationScore": 30,
+      "yearScore": 50,
+      "totalScore": 57,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "jeju-mainland-2",
+        "name": "Jeju-Mainland 2",
+        "slug": "jeju-mainland-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "jeju-udo",
+        "name": "Jeju-Udo",
+        "slug": "jeju-udo",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 83,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 57,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "jeju-udo",
+        "name": "Jeju-Udo",
+        "slug": "jeju-udo",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "jeju-mainland-3",
+        "name": "Jeju-Mainland 3",
+        "slug": "jeju-mainland-3",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 83,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 57,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "yellow",
+        "name": "Yellow",
+        "slug": "yellow",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "grace-hopper",
+        "name": "Grace Hopper",
+        "slug": "grace-hopper",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 50,
+      "stationScore": 67,
+      "yearScore": 50,
+      "totalScore": 57,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "circe-south",
+        "name": "Circe South",
+        "slug": "circe-south",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "qe-south",
+        "name": "Q&E South",
+        "slug": "q-e-south",
+        "status": "PLANNED",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 80,
+      "stationScore": 33,
+      "yearScore": 50,
+      "totalScore": 56,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "indigo-central",
+        "name": "INDIGO-Central",
+        "slug": "indigo-central",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "indigo-west",
+        "name": "INDIGO-West",
+        "slug": "indigo-west",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 89,
+      "stationScore": 25,
+      "yearScore": 50,
+      "totalScore": 56,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "south-america-1-sam-1",
+        "name": "South America-1 (SAm-1)",
+        "slug": "south-america-1-sam-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "south-american-crossing-sac",
+        "name": "South American Crossing (SAC)",
+        "slug": "south-american-crossing-sac",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 87,
+      "stationScore": 29,
+      "yearScore": 50,
+      "totalScore": 56,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "southern-cross-cable-network-sccn",
+        "name": "Southern Cross Cable Network (SCCN)",
+        "slug": "southern-cross-cable-network-sccn",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "southern-cross-next",
+        "name": "Southern Cross NEXT",
+        "slug": "southern-cross-next",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 90,
+      "stationScore": 23,
+      "yearScore": 50,
+      "totalScore": 55,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "cabo-verde-telecom-domestic-submarine-cable-phase-2",
+        "name": "Cabo Verde Telecom Domestic Submarine Cable Phase 2",
+        "slug": "cabo-verde-telecom-domestic-submarine-cable-phase-2",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "cabo-verde-telecom-domestic-submarine-cable-phase-1",
+        "name": "Cabo Verde Telecom Domestic Submarine Cable Phase 1",
+        "slug": "cabo-verde-telecom-domestic-submarine-cable-phase-1",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 99,
+      "stationScore": 14,
+      "yearScore": 50,
+      "totalScore": 55,
+      "crossSource": false
+    },
+    {
+      "cableA": {
+        "id": "eastern-light-sweden-finland-ii",
+        "name": "Eastern Light Sweden-Finland II",
+        "slug": "eastern-light-sweden-finland-ii",
+        "status": "PLANNED",
+        "source": "UNKNOWN"
+      },
+      "cableB": {
+        "id": "eastern-light-sweden-finland-i",
+        "name": "Eastern Light Sweden-Finland I",
+        "slug": "eastern-light-sweden-finland-i",
+        "status": "IN_SERVICE",
+        "source": "UNKNOWN"
+      },
+      "nameScore": 99,
+      "stationScore": 14,
+      "yearScore": 50,
+      "totalScore": 55,
+      "crossSource": false
+    }
+  ]
+}

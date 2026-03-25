@@ -1,0 +1,674 @@
+{
+  "generatedAt": "2026-03-24T07:37:36.223Z",
+  "execute": false,
+  "snTotal": 199,
+  "zeroStationChecked": 195,
+  "wikiConfirmedCable": [
+    {
+      "name": "APCN",
+      "length": 12000
+    },
+    {
+      "name": "APNG-2",
+      "length": 1800
+    },
+    {
+      "name": "ARCOS-1",
+      "length": 8700
+    },
+    {
+      "name": "EPEG",
+      "length": 10000
+    },
+    {
+      "name": "Far North Fiber",
+      "length": 17000
+    },
+    {
+      "name": "Humboldt Cable",
+      "length": 14810
+    },
+    {
+      "name": "MedNautilus",
+      "length": 2600
+    },
+    {
+      "name": "Megacable",
+      "length": 250
+    },
+    {
+      "name": "MENA",
+      "length": 8800
+    },
+    {
+      "name": "Nibble",
+      "length": 6500
+    },
+    {
+      "name": "OEG",
+      "length": 16600
+    },
+    {
+      "name": "Pacific Fibre",
+      "length": 12750
+    },
+    {
+      "name": "PC-1",
+      "length": 21000
+    },
+    {
+      "name": "RJK",
+      "length": 1762
+    },
+    {
+      "name": "SEACOM",
+      "length": 17000
+    },
+    {
+      "name": "TAT-14",
+      "length": 15428
+    },
+    {
+      "name": "TE North",
+      "length": 3600
+    },
+    {
+      "name": "TGA",
+      "length": 2300
+    }
+  ],
+  "wikiFoundNotCable": [
+    {
+      "name": "AAG"
+    },
+    {
+      "name": "Al Khaleej"
+    },
+    {
+      "name": "ALPHA"
+    },
+    {
+      "name": "Arsinoe"
+    },
+    {
+      "name": "ARTEMIS"
+    },
+    {
+      "name": "ATHENA"
+    },
+    {
+      "name": "BTI (SSBS)"
+    },
+    {
+      "name": "C2C"
+    },
+    {
+      "name": "CAP-1"
+    },
+    {
+      "name": "COBRA"
+    },
+    {
+      "name": "DREAM"
+    },
+    {
+      "name": "EMC"
+    },
+    {
+      "name": "ERA"
+    },
+    {
+      "name": "ERJ"
+    },
+    {
+      "name": "ERMC"
+    },
+    {
+      "name": "FOA"
+    },
+    {
+      "name": "G2A"
+    },
+    {
+      "name": "GBI"
+    },
+    {
+      "name": "GGC"
+    },
+    {
+      "name": "H2"
+    },
+    {
+      "name": "HARP"
+    },
+    {
+      "name": "Havhingsten"
+    },
+    {
+      "name": "HKA"
+    },
+    {
+      "name": "IGG"
+    },
+    {
+      "name": "INDIGO"
+    },
+    {
+      "name": "IOX"
+    },
+    {
+      "name": "J2M"
+    },
+    {
+      "name": "JAWS"
+    },
+    {
+      "name": "KLI"
+    },
+    {
+      "name": "KNOT"
+    },
+    {
+      "name": "Leif Erikson"
+    },
+    {
+      "name": "Maya-1"
+    },
+    {
+      "name": "MCT"
+    },
+    {
+      "name": "Minerva"
+    },
+    {
+      "name": "NCP"
+    },
+    {
+      "name": "Orient Express"
+    },
+    {
+      "name": "Pisces"
+    },
+    {
+      "name": "SABR"
+    },
+    {
+      "name": "SHARE"
+    },
+    {
+      "name": "SING"
+    },
+    {
+      "name": "SJC"
+    },
+    {
+      "name": "SxS"
+    },
+    {
+      "name": "Synapse"
+    },
+    {
+      "name": "Te Waipounamu"
+    },
+    {
+      "name": "TEA"
+    },
+    {
+      "name": "TEAS"
+    },
+    {
+      "name": "TMP"
+    },
+    {
+      "name": "Tokyo Port"
+    },
+    {
+      "name": "TPE"
+    },
+    {
+      "name": "TPN"
+    },
+    {
+      "name": "Trident"
+    },
+    {
+      "name": "TW1"
+    },
+    {
+      "name": "UEL"
+    },
+    {
+      "name": "Unity"
+    },
+    {
+      "name": "Varuna Cable System"
+    },
+    {
+      "name": "WAC"
+    },
+    {
+      "name": "WorldLink"
+    }
+  ],
+  "wikiNotFoundSuspicious": [
+    {
+      "name": "AAE-2"
+    },
+    {
+      "name": "AMX3/Tikal"
+    },
+    {
+      "name": "ANDROMEDA"
+    },
+    {
+      "name": "Anel CAM"
+    },
+    {
+      "name": "Antarctic SMART Cable"
+    },
+    {
+      "name": "ARBR"
+    },
+    {
+      "name": "Arctic Fiber"
+    },
+    {
+      "name": "ASH/SAS"
+    },
+    {
+      "name": "Bagha-1"
+    },
+    {
+      "name": "BLCS"
+    },
+    {
+      "name": "Blue-Raman"
+    },
+    {
+      "name": "BlueMed"
+    },
+    {
+      "name": "Bridge One"
+    },
+    {
+      "name": "BT North Sea"
+    },
+    {
+      "name": "Cahaya Malaysia"
+    },
+    {
+      "name": "Caribbean Express"
+    },
+    {
+      "name": "CeltixConnect-2 (CC-2)"
+    },
+    {
+      "name": "Central Pacific Cable"
+    },
+    {
+      "name": "Channel Tunnel Fibre"
+    },
+    {
+      "name": "Chile - Antarctica Cable"
+    },
+    {
+      "name": "China-US CN"
+    },
+    {
+      "name": "Djibouti-Ethiopia"
+    },
+    {
+      "name": "EMIC-1"
+    },
+    {
+      "name": "EWTC"
+    },
+    {
+      "name": "GigNet-1"
+    },
+    {
+      "name": "Gold Data 1"
+    },
+    {
+      "name": "Grand Cayman Connect"
+    },
+    {
+      "name": "GreenMed"
+    },
+    {
+      "name": "Guam-Philippines"
+    },
+    {
+      "name": "HK-G"
+    },
+    {
+      "name": "ICE System 2"
+    },
+    {
+      "name": "ICN1"
+    },
+    {
+      "name": "ICX"
+    },
+    {
+      "name": "Japan-US CN"
+    },
+    {
+      "name": "KIMONAS"
+    },
+    {
+      "name": "Kunoa North"
+    },
+    {
+      "name": "LaValette"
+    },
+    {
+      "name": "Magna Grecia Cable"
+    },
+    {
+      "name": "Maple Leaf Fibre"
+    },
+    {
+      "name": "Minor Islands Plan"
+    },
+    {
+      "name": "MViSTA"
+    },
+    {
+      "name": "MYUS"
+    },
+    {
+      "name": "Nordic Wave"
+    },
+    {
+      "name": "North Sea Connect"
+    },
+    {
+      "name": "North Shore submarine cable"
+    },
+    {
+      "name": "Pak-China Cable"
+    },
+    {
+      "name": "PLDT DFON"
+    },
+    {
+      "name": "Polar Connect"
+    },
+    {
+      "name": "RBT-2"
+    },
+    {
+      "name": "SCNX-3"
+    },
+    {
+      "name": "SEACOM2.0"
+    },
+    {
+      "name": "SednaLink"
+    },
+    {
+      "name": "Silk Route Transit"
+    },
+    {
+      "name": "SilkLink"
+    },
+    {
+      "name": "SMART TamTam"
+    },
+    {
+      "name": "South American Crossing-2 (SAC-2)"
+    },
+    {
+      "name": "Super TSR"
+    },
+    {
+      "name": "TEA NEXT"
+    },
+    {
+      "name": "TEA-2"
+    },
+    {
+      "name": "TEA-3"
+    },
+    {
+      "name": "TEA-4"
+    },
+    {
+      "name": "TGN-IA2"
+    },
+    {
+      "name": "TGN-Pacific"
+    },
+    {
+      "name": "TKO Express"
+    },
+    {
+      "name": "WALL-LI"
+    },
+    {
+      "name": "WASACE 1"
+    }
+  ],
+  "wikiNotFoundReasonable": [
+    {
+      "name": "AC-2/Yellow",
+      "length": 6400
+    },
+    {
+      "name": "AEC-1/AEConnect",
+      "length": 5200
+    },
+    {
+      "name": "ALASIA",
+      "length": 240
+    },
+    {
+      "name": "Albania Crossing",
+      "length": 220
+    },
+    {
+      "name": "ALEXANDROS",
+      "length": 3600
+    },
+    {
+      "name": "Alval / Orval",
+      "length": 560
+    },
+    {
+      "name": "Americas-II",
+      "length": 8373
+    },
+    {
+      "name": "Amitié/AEC-3",
+      "length": 6783
+    },
+    {
+      "name": "APOLLO-EAST and APOLLO-WEST",
+      "length": 350
+    },
+    {
+      "name": "Arctic Connect",
+      "length": 13800
+    },
+    {
+      "name": "ASSC-1",
+      "length": 4600
+    },
+    {
+      "name": "Black Sea Submarine Cable (BSSC)",
+      "length": 1195
+    },
+    {
+      "name": "BtoBE",
+      "length": 15400
+    },
+    {
+      "name": "Celtic Norse",
+      "length": 2000
+    },
+    {
+      "name": "Chennai-A&amp;N",
+      "length": 2300
+    },
+    {
+      "name": "Colombia-Florida Subsea Fiber (CFX-1)",
+      "length": 2400
+    },
+    {
+      "name": "Columbus-III",
+      "length": 9900
+    },
+    {
+      "name": "CSN-2",
+      "length": 1700
+    },
+    {
+      "name": "DARE1",
+      "length": 5400
+    },
+    {
+      "name": "EXA Atlantic",
+      "length": 12200
+    },
+    {
+      "name": "FNAL/RNAL",
+      "length": 10000
+    },
+    {
+      "name": "GC-LNZ-FU",
+      "length": 553
+    },
+    {
+      "name": "Globe FOBN",
+      "length": 400
+    },
+    {
+      "name": "Hawaiki Nui",
+      "length": 22000
+    },
+    {
+      "name": "Ifriqya",
+      "length": 950
+    },
+    {
+      "name": "IOEMA",
+      "length": 1400
+    },
+    {
+      "name": "Khaleej North",
+      "length": 1400
+    },
+    {
+      "name": "LION &amp; LION2",
+      "length": 2700
+    },
+    {
+      "name": "Medex",
+      "length": 184
+    },
+    {
+      "name": "MEETS",
+      "length": 1400
+    },
+    {
+      "name": "OMRAN",
+      "length": 600
+    },
+    {
+      "name": "Optikor Network",
+      "length": 3000
+    },
+    {
+      "name": "Palau Cable 1",
+      "length": 200
+    },
+    {
+      "name": "Palau Cable 2 (PC2)",
+      "length": 110
+    },
+    {
+      "name": "PLCN",
+      "length": 13000
+    },
+    {
+      "name": "POI NETWORK",
+      "length": 400
+    },
+    {
+      "name": "Q&amp;E North &amp; South",
+      "length": 112
+    },
+    {
+      "name": "Qatar-UAE",
+      "length": 100
+    },
+    {
+      "name": "SAEx1",
+      "length": 25000
+    },
+    {
+      "name": "Sihanoukville-HK Cable",
+      "length": 3000
+    },
+    {
+      "name": "SJC2",
+      "length": 10500
+    },
+    {
+      "name": "Skagen Fiber West",
+      "length": 170
+    },
+    {
+      "name": "SKR1M",
+      "length": 3700
+    },
+    {
+      "name": "SPSC/Mistral",
+      "length": 7300
+    },
+    {
+      "name": "Super Highway 1",
+      "length": 1000
+    },
+    {
+      "name": "TGN Western Europe",
+      "length": 3578
+    },
+    {
+      "name": "TGN-Atlantic",
+      "length": 13000
+    },
+    {
+      "name": "TGN-EA",
+      "length": 9280
+    },
+    {
+      "name": "TGN-Gulf",
+      "length": 4031
+    },
+    {
+      "name": "TGN-Tata Indicom",
+      "length": 3175
+    },
+    {
+      "name": "TPC-5",
+      "length": 22560
+    },
+    {
+      "name": "TRANSKZ",
+      "length": 15000
+    },
+    {
+      "name": "Tusass Connect",
+      "length": 94
+    },
+    {
+      "name": "VSTN",
+      "length": 3900
+    }
+  ],
+  "markedLowQuality": 123,
+  "markedUnverified": 72,
+  "finalActiveCount": 887
+}

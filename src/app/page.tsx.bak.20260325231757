@@ -25,7 +25,6 @@ import AiToggle from '@/components/layout/AiToggle';
 import LangSwitcher from '@/components/layout/LangSwitcher';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
 import AnalysisMenu from '@/components/layout/AnalysisMenu';
-import BRICSNavButton from '@/components/layout/BRICSNavButton';
 import MobileUI from '@/components/mobile/MobileUI';
 
 const CesiumGlobe = dynamic(() => import('@/components/map/CesiumGlobe'), { ssr: false });
@@ -120,7 +119,6 @@ function HomeContent() {
           {!isMobile && (
             <>
               <AnalysisMenu />
-              <BRICSNavButton />
               <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.1)' }} />
             </>
           )}
@@ -244,4 +242,3 @@ function StatBadge({ number, label, color }: { number: number; label: string; co
     </div>
   );
 }
-

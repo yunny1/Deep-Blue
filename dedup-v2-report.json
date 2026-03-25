@@ -1,0 +1,539 @@
+{
+  "generatedAt": "2026-03-24T07:05:35.712Z",
+  "execute": true,
+  "aliasesAdded": 151,
+  "duplicatesFound": 66,
+  "crossSource": 55,
+  "sameSource": 11,
+  "details": [
+    {
+      "keep": "Asia Africa Europe-1 (AAE-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "AAE-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "asia-africa-europe--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "2Africa",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "2Africa (Simba)",
+      "removeSource": "UNKNOWN",
+      "canonical": "two-africa",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "CHI",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "California-Hawaii S1 (CHI)",
+      "removeSource": "UNKNOWN",
+      "canonical": "california-hawaii-s1",
+      "stationOverlap": 100
+    },
+    {
+      "keep": "UMO",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "UMO (SIGMAR)",
+      "removeSource": "UNKNOWN",
+      "canonical": "umo",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Southern Cross Cable Network (SCCN)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Southern Cross",
+      "removeSource": "UNKNOWN",
+      "canonical": "southern-cross",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "FLAG Atlantic-1 (FA-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "FA-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "flag-atlantic--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Philippine Domestic Submarine Cable Network (PDSCN)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "PDSCN",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "philippine-domestic",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Russia-Japan Cable Network (RJCN)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "RJCN",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "russia-japan",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Eastern Africa Submarine System (EASSy)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "EASSy",
+      "removeSource": "UNKNOWN",
+      "canonical": "eastern-africa-submarine",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "India Europe Xpress (IEX)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "IEX",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "india-europe-xpress",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Italy-Greece 1 (IG-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Italy-Greece 1",
+      "removeSource": "UNKNOWN",
+      "canonical": "italy-greece--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Mauritius and Rodrigues Submarine Cable System (MARS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "MARS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "mauritius-and-rodrigues",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Mid-Atlantic Crossing (MAC)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Mid-Atlantic Crossing",
+      "removeSource": "UNKNOWN",
+      "canonical": "mid-atlantic-crossing",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "South America-1 (SAm-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "SAm-1",
+      "removeSource": "UNKNOWN",
+      "canonical": "south-america--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Batam Dumai Melaka (BDM)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "BDM",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "batam-dumai-melaka",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Australia-Japan Cable (AJC)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "AJC (Australia-Japan Cable)",
+      "removeSource": "UNKNOWN",
+      "canonical": "australia-japan",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "East-West Submarine Cable System",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "East-West Cable (EWC)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "east-west",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Africa Coast to Europe (ACE)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "ACE",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "africa-coast-to-europe",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Norte Conectado (Infovia 02)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Norte Conectado (Infovia 01)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "norte-conectado",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Norte Conectado (Infovia 02)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Norte Conectado (Infovia 05)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "norte-conectado",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Norte Conectado (Infovia 02)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Norte Conectado (Infovia 03)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "norte-conectado",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Norte Conectado (Infovia 02)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Norte Conectado (Infovia 00)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "norte-conectado",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Norte Conectado (Infovia 02)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Norte Conectado (Infovia 04)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "norte-conectado",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Norte Conectado (Infovia 02)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Norte Conectado (Infovia 06)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "norte-conectado",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Norte Conectado (Infovia 02)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Norte Conectado (Infovia 08)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "norte-conectado",
+      "stationOverlap": 7
+    },
+    {
+      "keep": "India Asia Xpress (IAX)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "IAX",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "india-asia-xpress",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Meltingpot Indianoceanic Submarine System (METISS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "METISS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "meltingpot-indianoceanic-submarine",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Hokkaido-Sakhalin Cable System (HSCS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "HSCS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "hokkaido-sakhalin",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Europe India Gateway (EIG)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "EIG",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "europe-india-gateway",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Asia Link Cable (ALC)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "ALC",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "asia-link",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Asia Pacific Gateway (APG)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "APG",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "asia-pacific-gateway",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "America Movil Submarine Cable System-1 (AMX-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "AMX-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "america-movil--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Bay of Bengal Gateway (BBG)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "BBG",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "bay-of-bengal-gateway",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Converge Domestic Submarine Cable Network (CDSCN)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "CDSCN",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "converge-domestic",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "East Micronesia Cable System (EMCS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "EMCS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "east-micronesia",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Dumai-Melaka Cable System (DMCS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "DMCS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "dumai-melaka",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Hainan to Hong Kong Express (H2HE)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "H2HE",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "hainan-to-hong-kong-express",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Seychelles to East Africa System (SEAS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "SEAS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "seychelles-to-east-africa",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Hawaiian Islands Fiber Link (HIFL)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "HIFL",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "hawaiian-islands-fiber-link",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Korea-Japan Cable Network (KJCN)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "KJCN",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "korea-japan",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Moratelindo International Cable System-1 (MIC-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "MIC-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "moratelindo-international--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Maldives Sri Lanka Cable (MSC)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "MSC",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "maldives-sri-lanka",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Tata TGN-Intra Asia (TGN-IA)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "TGN-IA",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "tata-tgn-intra-asia",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Thailand-Indonesia-Singapore (TIS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "TIS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "thailand-indonesia-singapore",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Taiwan Strait Express-1 (TSE-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "TSE-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "taiwan-strait-express--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Nigeria Cameroon Submarine Cable System (NCSCS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "NCSCS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "nigeria-cameroon",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "West Africa Cable System (WACS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "WACS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "west-africa",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Trans Adriatic Express (TAE)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "TAE",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "trans-adriatic-express",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Bangladesh Private Cable System (BPCS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "BPCS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "bangladesh-private",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Australia-Singapore Cable (ASC)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "ASC (Australia-Singapore Cable)",
+      "removeSource": "UNKNOWN",
+      "canonical": "australia-singapore",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Projeto Amazônia Conectada (PAC 01)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Projeto Amazônia Conectada (PAC 02)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "projeto-amazônia-conectada",
+      "stationOverlap": 10
+    },
+    {
+      "keep": "Carnival Submarine Network-1 (CSN-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "CSN-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "carnival-submarine--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Batam Singapore Cable System (BSCS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "BSCS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "batam-singapore",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Batam Sarawak Internet Cable System (BaSICS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "BaSICS",
+      "removeSource": "UNKNOWN",
+      "canonical": "batam-sarawak-internet",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Asia Direct Cable (ADC)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "ADC",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "asia-direct",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "PIPE Pacific Cable-1 (PPC-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "PPC-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "pipe-pacific--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Vietnam-Singapore Cable System (VTS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "VTS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "vietnam-singapore",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "i2i Cable Network (i2icn)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "i2i",
+      "removeSource": "UNKNOWN",
+      "canonical": "i2i",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Asia United Gateway East (AUG East)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "AUG East",
+      "removeSource": "UNKNOWN",
+      "canonical": "asia-united-gateway-east",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Pan European Crossing (UK-Ireland)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "Pan European Crossing (UK-Belgium)",
+      "removeSource": "TELEGEOGRAPHY",
+      "canonical": "pan-european-crossing",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Atlantic Crossing-1 (AC-1)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "AC-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "atlantic-crossing--1",
+      "stationOverlap": 33
+    },
+    {
+      "keep": "South Atlantic Cable System (SACS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "SACS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "south-atlantic",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "Palau Cable 1",
+      "keepSource": "UNKNOWN",
+      "remove": "PC-1",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "palau--1",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "The East African Marine System (TEAMS)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "TEAMS",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "the-east-african-marine",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "SX Tasman Express (SX-TX)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "SX-TX",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "sx-tasman-express",
+      "stationOverlap": 0
+    },
+    {
+      "keep": "South Atlantic Inter Link (SAIL)",
+      "keepSource": "TELEGEOGRAPHY",
+      "remove": "SAIL",
+      "removeSource": "SUBMARINE_NETWORKS",
+      "canonical": "south-atlantic-inter-link",
+      "stationOverlap": 0
+    }
+  ],
+  "finalTotal": 887
+}

@@ -1,0 +1,1570 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║  Deep Blue 夜间同步 v6 — PRD v2.0 合规                      ║
+║  TG先写(覆盖) → SN后合并(追加) → 登陆站解耦落库            ║
+║  2026-03-23T00:37:43.690Z                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+• [INFO] SN: 解析全量列表...
+• [INFO] TG: 下载数据...
+✓ [OK] SN: 395 条
+• [INFO]   TG: 50/690
+
+╔══════════════════════════════════════════════════════════════╗
+║  Deep Blue 夜间同步 v6 — PRD v2.0 合规                      ║
+║  TG先写(覆盖) → SN后合并(追加) → 登陆站解耦落库            ║
+║  2026-03-23T00:38:12.385Z                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+• [INFO] SN: 解析全量列表...
+• [INFO] TG: 下载数据...
+✓ [OK] SN: 395 条
+• [INFO]   TG: 100/690
+• [INFO]   TG: 150/690
+• [INFO]   TG: 50/690
+• [INFO]   TG: 200/690
+• [INFO]   TG: 100/690
+• [INFO]   TG: 250/690
+• [INFO]   TG: 150/690
+• [INFO]   TG: 300/690
+• [INFO]   TG: 200/690
+• [INFO]   TG: 350/690
+• [INFO]   TG: 250/690
+• [INFO]   TG: 400/690
+• [INFO]   TG: 300/690
+• [INFO]   TG: 450/690
+• [INFO]   TG: 350/690
+• [INFO]   TG: 500/690
+• [INFO]   TG: 400/690
+• [INFO]   TG: 450/690
+• [INFO]   TG: 550/690
+• [INFO]   TG: 500/690
+• [INFO]   TG: 600/690
+• [INFO]   TG: 550/690
+• [INFO]   TG: 650/690
+✓ [OK] TG: 690 条
+• [INFO] 
+[Tier 1] 写入 TG 690 条海缆...
+• [INFO]   TG: 600/690
+• [INFO]   TG: 650/690
+✓ [OK] TG: 690 条
+• [INFO] 
+[Tier 1] 写入 TG 690 条海缆...
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+
+╔══════════════════════════════════════════════════════════════╗
+║  Deep Blue 夜间同步 v6 — PRD v2.0 合规                      ║
+║  TG先写(覆盖) → SN后合并(追加) → 登陆站解耦落库            ║
+║  2026-03-23T00:54:02.606Z                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+• [INFO] SN: 解析全量列表...
+• [INFO] TG: 下载数据...
+✓ [OK] SN: 395 条
+• [INFO]   TG: 50/690
+• [INFO]   TG: 100/690
+• [INFO]   TG: 150/690
+• [INFO]   TG: 200/690
+• [INFO]   TG: 250/690
+• [INFO]   TG: 300/690
+• [INFO]   TG: 350/690
+• [INFO]   TG: 400/690
+• [INFO]   TG: 450/690
+• [INFO]   TG: 500/690
+• [INFO]   TG: 550/690
+• [INFO]   TG: 600/690
+• [INFO]   TG: 650/690
+✓ [OK] TG: 690 条
+• [INFO] 
+[Tier 1] 写入 TG 690 条海缆...
+[countryCodeMap] Unknown country: "British Indian Ocean Territory"
+[countryCodeMap] Unknown country: "British Indian Ocean Territory"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+✓ [OK] [Tier 1] 完成：写入 690 条
+• [INFO] 
+[Tier 2] 处理 SN 395 条海缆...
+✓ [OK] [新缆] AAG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASH/SAS (IN_SERVICE, 0 站)
+• [INFO]   [Bifrost] TG已有(bifrost)，转为 Tier2 合并
+✓ [OK] [新缆] Bifrost (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BtoBE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CAP-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Central Pacific Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] China-US CN (DECOMMISSIONED, 0 站)
+• [INFO]   [Echo] TG已有(echo)，转为 Tier2 合并
+✓ [OK] [新缆] Echo (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMCS (IN_SERVICE, 0 站)
+• [INFO]   [FASTER] TG已有(faster)，转为 Tier2 合并
+✓ [OK] [新缆] FASTER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Guam-Philippines (IN_SERVICE, 0 站)
+✓ [OK] [新缆] H2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Hawaiki Nui (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HKA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HK-G (IN_SERVICE, 0 站)
+• [INFO]   [Honomoana] TG已有(honomoana)，转为 Tier2 合并
+✓ [OK] [新缆] Honomoana (IN_SERVICE, 0 站)
+• [INFO]   [Honotua] TG已有(honotua)，转为 Tier2 合并
+✓ [OK] [新缆] Honotua (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Humboldt Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Japan-US CN (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] JAWS (IN_SERVICE, 0 站)
+• [INFO]   [JUNO] TG已有(juno)，转为 Tier2 合并
+✓ [OK] [新缆] JUNO (IN_SERVICE, 0 站)
+• [INFO]   [JUPITER] TG已有(jupiter)，转为 Tier2 合并
+✓ [OK] [新缆] JUPITER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] NCP (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 2 (PC2) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PLCN (IN_SERVICE, 0 站)
+• [INFO]   [SEA-US] TG已有(sea-us)，转为 Tier2 合并
+✓ [OK] [新缆] SEA-US (IN_SERVICE, 0 站)
+• [INFO]   [Southern Cross NEXT] TG已有(southern-cross-next)，转为 Tier2 合并
+✓ [OK] [新缆] Southern Cross NEXT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Southern Cross (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SxS (IN_SERVICE, 0 站)
+✓ [OK] [Tier 1] 完成：写入 690 条
+• [INFO] 
+[Tier 2] 处理 SN 395 条海缆...
+• [INFO]   [Tabua] TG已有(tabua)，转为 Tier2 合并
+✓ [OK] [新缆] Tabua (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AAG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASH/SAS (IN_SERVICE, 0 站)
+• [INFO]   [Telstra Endeavour] TG已有(telstra-endeavour)，转为 Tier2 合并
+✓ [OK] [新缆] Telstra Endeavour (IN_SERVICE, 0 站)
+• [INFO]   [Bifrost] TG已有(bifrost)，转为 Tier2 合并
+✓ [OK] [新缆] Bifrost (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Pacific (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BtoBE (IN_SERVICE, 0 站)
+• [INFO]   [Topaz] TG已有(topaz)，转为 Tier2 合并
+✓ [OK] [新缆] Topaz (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CAP-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPC-5 (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] Central Pacific Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] China-US CN (DECOMMISSIONED, 0 站)
+• [INFO]   [Echo] TG已有(echo)，转为 Tier2 合并
+✓ [OK] [新缆] Echo (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMCS (IN_SERVICE, 0 站)
+• [INFO]   [TPU] TG已有(tpu)，转为 Tier2 合并
+✓ [OK] [新缆] TPU (IN_SERVICE, 0 站)
+• [INFO]   [FASTER] TG已有(faster)，转为 Tier2 合并
+✓ [OK] [新缆] FASTER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Unity (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Guam-Philippines (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HIFL (IN_SERVICE, 0 站)
+✓ [OK] [新缆] H2 (IN_SERVICE, 0 站)
+• [INFO]   [Bulikula] TG已有(bulikula)，转为 Tier2 合并
+✓ [OK] [新缆] Bulikula (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Hawaiki Nui (IN_SERVICE, 0 站)
+• [INFO]   [Halaihai] TG已有(halaihai)，转为 Tier2 合并
+✓ [OK] [新缆] Halaihai (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HKA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HK-G (IN_SERVICE, 0 站)
+• [INFO]   [Proa] TG已有(proa)，转为 Tier2 合并
+✓ [OK] [新缆] Proa (IN_SERVICE, 0 站)
+• [INFO]   [Honomoana] TG已有(honomoana)，转为 Tier2 合并
+✓ [OK] [新缆] Honomoana (IN_SERVICE, 0 站)
+• [INFO]   [Taihei] TG已有(taihei)，转为 Tier2 合并
+✓ [OK] [新缆] Taihei (IN_SERVICE, 0 站)
+• [INFO]   [Honotua] TG已有(honotua)，转为 Tier2 合并
+✓ [OK] [新缆] Honotua (IN_SERVICE, 0 站)
+✓ [OK] [新缆] California-Hawaii S1 (CHI) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Humboldt Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MYUS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Japan-US CN (DECOMMISSIONED, 0 站)
+同步失败: PrismaClientKnownRequestError: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/nightly-sync.ts:402:22
+
+  399   return;
+  400 }
+  401 
+→ 402 await prisma.cable.upsert(
+Unique constraint failed on the fields: (`slug`)
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async upsertTier2Cable (/home/ubuntu/deep-blue/scripts/nightly-sync.ts:402:3)
+    at async main (/home/ubuntu/deep-blue/scripts/nightly-sync.ts:669:7) {
+  code: 'P2002',
+  meta: { modelName: 'Cable', target: [ 'slug' ] },
+  clientVersion: '6.19.2'
+}
+✓ [OK] [新缆] JAWS (IN_SERVICE, 0 站)
+• [INFO]   [JUNO] TG已有(juno)，转为 Tier2 合并
+✓ [OK] [新缆] JUNO (IN_SERVICE, 0 站)
+• [INFO]   [JUPITER] TG已有(jupiter)，转为 Tier2 合并
+✓ [OK] [新缆] JUPITER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] NCP (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 2 (PC2) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PLCN (IN_SERVICE, 0 站)
+• [INFO]   [SEA-US] TG已有(sea-us)，转为 Tier2 合并
+✓ [OK] [新缆] SEA-US (IN_SERVICE, 0 站)
+• [INFO]   [Southern Cross NEXT] TG已有(southern-cross-next)，转为 Tier2 合并
+✓ [OK] [新缆] Southern Cross NEXT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Southern Cross (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SxS (IN_SERVICE, 0 站)
+• [INFO]   [Tabua] TG已有(tabua)，转为 Tier2 合并
+✓ [OK] [新缆] Tabua (IN_SERVICE, 0 站)
+• [INFO]   [Telstra Endeavour] TG已有(telstra-endeavour)，转为 Tier2 合并
+✓ [OK] [新缆] Telstra Endeavour (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Pacific (IN_SERVICE, 0 站)
+• [INFO]   [Topaz] TG已有(topaz)，转为 Tier2 合并
+✓ [OK] [新缆] Topaz (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPC-5 (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] TPE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPN (IN_SERVICE, 0 站)
+• [INFO]   [TPU] TG已有(tpu)，转为 Tier2 合并
+✓ [OK] [新缆] TPU (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Unity (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HIFL (IN_SERVICE, 0 站)
+• [INFO]   [Bulikula] TG已有(bulikula)，转为 Tier2 合并
+✓ [OK] [新缆] Bulikula (IN_SERVICE, 0 站)
+• [INFO]   [Halaihai] TG已有(halaihai)，转为 Tier2 合并
+✓ [OK] [新缆] Halaihai (IN_SERVICE, 0 站)
+• [INFO]   [Proa] TG已有(proa)，转为 Tier2 合并
+✓ [OK] [新缆] Proa (IN_SERVICE, 0 站)
+• [INFO]   [Taihei] TG已有(taihei)，转为 Tier2 合并
+✓ [OK] [新缆] Taihei (IN_SERVICE, 0 站)
+✓ [OK] [新缆] California-Hawaii S1 (CHI) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MYUS (IN_SERVICE, 0 站)
+同步失败: PrismaClientKnownRequestError: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/nightly-sync.ts:402:22
+
+  399   return;
+  400 }
+  401 
+→ 402 await prisma.cable.upsert(
+Unique constraint failed on the fields: (`slug`)
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async upsertTier2Cable (/home/ubuntu/deep-blue/scripts/nightly-sync.ts:402:3)
+    at async main (/home/ubuntu/deep-blue/scripts/nightly-sync.ts:669:7) {
+  code: 'P2002',
+  meta: { modelName: 'Cable', target: [ 'slug' ] },
+  clientVersion: '6.19.2'
+}
+[countryCodeMap] Unknown country: "British Indian Ocean Territory"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+✓ [OK] [Tier 1] 完成：写入 690 条
+• [INFO] 
+[Tier 2] 处理 SN 395 条海缆...
+✓ [OK] [新缆] AAG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASH/SAS (IN_SERVICE, 0 站)
+• [INFO]   [Bifrost] TG已有(bifrost)，转为 Tier2 合并
+✓ [OK] [新缆] Bifrost (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BtoBE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CAP-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Central Pacific Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] China-US CN (DECOMMISSIONED, 0 站)
+• [INFO]   [Echo] TG已有(echo)，转为 Tier2 合并
+✓ [OK] [新缆] Echo (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMCS (IN_SERVICE, 0 站)
+• [INFO]   [FASTER] TG已有(faster)，转为 Tier2 合并
+✓ [OK] [新缆] FASTER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Guam-Philippines (IN_SERVICE, 0 站)
+✓ [OK] [新缆] H2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Hawaiki Nui (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HKA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HK-G (IN_SERVICE, 0 站)
+• [INFO]   [Honomoana] TG已有(honomoana)，转为 Tier2 合并
+✓ [OK] [新缆] Honomoana (IN_SERVICE, 0 站)
+• [INFO]   [Honotua] TG已有(honotua)，转为 Tier2 合并
+✓ [OK] [新缆] Honotua (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Humboldt Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Japan-US CN (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] JAWS (IN_SERVICE, 0 站)
+• [INFO]   [JUNO] TG已有(juno)，转为 Tier2 合并
+✓ [OK] [新缆] JUNO (IN_SERVICE, 0 站)
+• [INFO]   [JUPITER] TG已有(jupiter)，转为 Tier2 合并
+✓ [OK] [新缆] JUPITER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] NCP (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 2 (PC2) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PLCN (IN_SERVICE, 0 站)
+• [INFO]   [SEA-US] TG已有(sea-us)，转为 Tier2 合并
+✓ [OK] [新缆] SEA-US (IN_SERVICE, 0 站)
+• [INFO]   [Southern Cross NEXT] TG已有(southern-cross-next)，转为 Tier2 合并
+✓ [OK] [新缆] Southern Cross NEXT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Southern Cross (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SxS (IN_SERVICE, 0 站)
+• [INFO]   [Tabua] TG已有(tabua)，转为 Tier2 合并
+✓ [OK] [新缆] Tabua (IN_SERVICE, 0 站)
+• [INFO]   [Telstra Endeavour] TG已有(telstra-endeavour)，转为 Tier2 合并
+✓ [OK] [新缆] Telstra Endeavour (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Pacific (IN_SERVICE, 0 站)
+• [INFO]   [Topaz] TG已有(topaz)，转为 Tier2 合并
+✓ [OK] [新缆] Topaz (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPC-5 (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] TPE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPN (IN_SERVICE, 0 站)
+• [INFO]   [TPU] TG已有(tpu)，转为 Tier2 合并
+✓ [OK] [新缆] TPU (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Unity (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HIFL (IN_SERVICE, 0 站)
+• [INFO]   [Bulikula] TG已有(bulikula)，转为 Tier2 合并
+✓ [OK] [新缆] Bulikula (IN_SERVICE, 0 站)
+• [INFO]   [Halaihai] TG已有(halaihai)，转为 Tier2 合并
+✓ [OK] [新缆] Halaihai (IN_SERVICE, 0 站)
+• [INFO]   [Proa] TG已有(proa)，转为 Tier2 合并
+✓ [OK] [新缆] Proa (IN_SERVICE, 0 站)
+• [INFO]   [Taihei] TG已有(taihei)，转为 Tier2 合并
+✓ [OK] [新缆] Taihei (IN_SERVICE, 0 站)
+✓ [OK] [新缆] California-Hawaii S1 (CHI) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MYUS (IN_SERVICE, 0 站)
+同步失败: PrismaClientKnownRequestError: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/nightly-sync.ts:402:22
+
+  399   return;
+  400 }
+  401 
+→ 402 await prisma.cable.upsert(
+Unique constraint failed on the fields: (`slug`)
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async upsertTier2Cable (/home/ubuntu/deep-blue/scripts/nightly-sync.ts:402:3)
+    at async main (/home/ubuntu/deep-blue/scripts/nightly-sync.ts:669:7) {
+  code: 'P2002',
+  meta: { modelName: 'Cable', target: [ 'slug' ] },
+  clientVersion: '6.19.2'
+}
+
+╔══════════════════════════════════════════════════════════════╗
+║  Deep Blue 夜间同步 v6 — PRD v2.0 合规                      ║
+║  TG先写(覆盖) → SN后合并(追加) → 登陆站解耦落库            ║
+║  2026-03-23T02:16:15.756Z                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+• [INFO] SN: 解析全量列表...
+• [INFO] TG: 下载数据...
+✓ [OK] SN: 395 条
+• [INFO]   TG: 50/690
+• [INFO]   TG: 100/690
+• [INFO]   TG: 150/690
+• [INFO]   TG: 200/690
+• [INFO]   TG: 250/690
+• [INFO]   TG: 300/690
+• [INFO]   TG: 350/690
+• [INFO]   TG: 400/690
+• [INFO]   TG: 450/690
+• [INFO]   TG: 500/690
+• [INFO]   TG: 550/690
+• [INFO]   TG: 600/690
+• [INFO]   TG: 650/690
+✓ [OK] TG: 690 条
+• [INFO] 
+[Tier 1] 写入 TG 690 条海缆...
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "British Indian Ocean Territory"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+✓ [OK] [Tier 1] 完成：写入 690 条
+• [INFO] 
+[Tier 2] 处理 SN 395 条海缆...
+✓ [OK] [新缆] AAG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASH/SAS (IN_SERVICE, 0 站)
+• [INFO]   [Bifrost] TG已有(bifrost)，转为 Tier2 合并
+✓ [OK] [新缆] Bifrost (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BtoBE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CAP-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Central Pacific Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] China-US CN (DECOMMISSIONED, 0 站)
+• [INFO]   [Echo] TG已有(echo)，转为 Tier2 合并
+✓ [OK] [新缆] Echo (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMCS (IN_SERVICE, 0 站)
+• [INFO]   [FASTER] TG已有(faster)，转为 Tier2 合并
+✓ [OK] [新缆] FASTER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Guam-Philippines (IN_SERVICE, 0 站)
+✓ [OK] [新缆] H2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Hawaiki Nui (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HKA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HK-G (IN_SERVICE, 0 站)
+• [INFO]   [Honomoana] TG已有(honomoana)，转为 Tier2 合并
+✓ [OK] [新缆] Honomoana (IN_SERVICE, 0 站)
+• [INFO]   [Honotua] TG已有(honotua)，转为 Tier2 合并
+✓ [OK] [新缆] Honotua (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Humboldt Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Japan-US CN (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] JAWS (IN_SERVICE, 0 站)
+• [INFO]   [JUNO] TG已有(juno)，转为 Tier2 合并
+✓ [OK] [新缆] JUNO (IN_SERVICE, 0 站)
+• [INFO]   [JUPITER] TG已有(jupiter)，转为 Tier2 合并
+✓ [OK] [新缆] JUPITER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] NCP (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 2 (PC2) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PLCN (IN_SERVICE, 0 站)
+• [INFO]   [SEA-US] TG已有(sea-us)，转为 Tier2 合并
+✓ [OK] [新缆] SEA-US (IN_SERVICE, 0 站)
+• [INFO]   [Southern Cross NEXT] TG已有(southern-cross-next)，转为 Tier2 合并
+✓ [OK] [新缆] Southern Cross NEXT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Southern Cross (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SxS (IN_SERVICE, 0 站)
+• [INFO]   [Tabua] TG已有(tabua)，转为 Tier2 合并
+✓ [OK] [新缆] Tabua (IN_SERVICE, 0 站)
+• [INFO]   [Telstra Endeavour] TG已有(telstra-endeavour)，转为 Tier2 合并
+✓ [OK] [新缆] Telstra Endeavour (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Pacific (IN_SERVICE, 0 站)
+• [INFO]   [Topaz] TG已有(topaz)，转为 Tier2 合并
+✓ [OK] [新缆] Topaz (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPC-5 (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] TPE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPN (IN_SERVICE, 0 站)
+• [INFO]   [TPU] TG已有(tpu)，转为 Tier2 合并
+✓ [OK] [新缆] TPU (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Unity (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HIFL (IN_SERVICE, 0 站)
+
+╔══════════════════════════════════════════════════════════════╗
+║  Deep Blue 夜间同步 v6 — PRD v2.0 合规                      ║
+║  TG先写(覆盖) → SN后合并(追加) → 登陆站解耦落库            ║
+║  2026-03-23T02:50:43.769Z                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+• [INFO] SN: 解析全量列表...
+• [INFO] TG: 下载数据...
+✓ [OK] SN: 395 条
+• [INFO]   [Bulikula] TG已有(bulikula)，转为 Tier2 合并
+✓ [OK] [新缆] Bulikula (IN_SERVICE, 0 站)
+• [INFO]   [Halaihai] TG已有(halaihai)，转为 Tier2 合并
+✓ [OK] [新缆] Halaihai (IN_SERVICE, 0 站)
+• [INFO]   [Proa] TG已有(proa)，转为 Tier2 合并
+✓ [OK] [新缆] Proa (IN_SERVICE, 0 站)
+• [INFO]   [Taihei] TG已有(taihei)，转为 Tier2 合并
+✓ [OK] [新缆] Taihei (IN_SERVICE, 0 站)
+✓ [OK] [新缆] California-Hawaii S1 (CHI) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MYUS (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 Vaka: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] Vaka (IN_SERVICE, 0 站)
+• [INFO]   [ORCA] TG已有(orca)，转为 Tier2 合并
+✓ [OK] [新缆] ORCA (IN_SERVICE, 0 站)
+• [INFO]   [E2A] TG已有(e2a)，转为 Tier2 合并
+✓ [OK] [新缆] E2A (IN_SERVICE, 0 站)
+• [INFO]   [APX East] TG已有(apx-east)，转为 Tier2 合并
+✓ [OK] [新缆] APX East (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Le Vasa Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Kunoa North (IN_SERVICE, 0 站)
+[countryCodeMap] Unknown country: "the United States"
+[countryCodeMap] Unknown country: "the United Kingdom"
+✓ [OK] [新缆] AC-1 (IN_SERVICE, 4 站)
+✓ [OK] [新缆] AC-2/Yellow (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AEC-1/AEConnect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Amitié/AEC-3 (IN_SERVICE, 0 站)
+• [INFO]   TG: 50/690
+• [INFO]   [Anjana] TG已有(anjana)，转为 Tier2 合并
+✓ [OK] [新缆] Anjana (IN_SERVICE, 0 站)
+• [INFO]   [Apollo] TG已有(apollo)，转为 Tier2 合并
+✓ [OK] [新缆] Apollo (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Columbus-III (DECOMMISSIONED, 0 站)
+• [INFO]   [Dunant] TG已有(dunant)，转为 Tier2 合并
+✓ [OK] [新缆] Dunant (IN_SERVICE, 0 站)
+• [INFO]   [EllaLink] TG已有(ellalink)，转为 Tier2 合并
+✓ [OK] [新缆] EllaLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EXA Atlantic (IN_SERVICE, 0 站)
+• [INFO]   [EXA Express] TG已有(exa-express)，转为 Tier2 合并
+✓ [OK] [新缆] EXA Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] FA-1 (IN_SERVICE, 0 站)
+• [INFO]   [Grace Hopper] TG已有(grace-hopper)，转为 Tier2 合并
+✓ [OK] [新缆] Grace Hopper (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 HAVFRUE/AEC-2: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] HAVFRUE/AEC-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Leif Erikson (IN_SERVICE, 0 站)
+• [INFO]   [MAREA] TG已有(marea)，转为 Tier2 合并
+✓ [OK] [新缆] MAREA (IN_SERVICE, 0 站)
+• [INFO]   [Nuvem] TG已有(nuvem)，转为 Tier2 合并
+✓ [OK] [新缆] Nuvem (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TAT-14 (DECOMMISSIONED, 0 站)
+• [INFO]   TG: 100/690
+✓ [OK] [新缆] TGN-Atlantic (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WASACE 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Waterworth (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 SOL: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] SOL (IN_SERVICE, 0 站)
+• [INFO]   [Greenland Connect] TG已有(greenland-connect)，转为 Tier2 合并
+✓ [OK] [新缆] Greenland Connect (IN_SERVICE, 0 站)
+• [INFO]   [Fastnet] TG已有(fastnet)，转为 Tier2 合并
+✓ [OK] [新缆] Fastnet (IN_SERVICE, 0 站)
+• [INFO]   [2Africa] TG已有(2africa)，转为 Tier2 合并
+✓ [OK] [新缆] 2Africa (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AAE-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Alval / Orval (IN_SERVICE, 0 站)
+• [INFO]   [Africa-1] TG已有(africa-1)，转为 Tier2 合并
+✓ [OK] [新缆] Africa-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Al Khaleej (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ALASIA (IN_SERVICE, 0 站)
+• [INFO]   [Aletar] TG已有(aletar)，转为 Tier2 合并
+✓ [OK] [新缆] Aletar (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ALEXANDROS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ANDROMEDA (IN_SERVICE, 0 站)
+• [INFO]   TG: 150/690
+✓ [OK] [新缆] Arsinoe (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ATHENA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Blue-Raman (IN_SERVICE, 0 站)
+• [INFO]   [CADMOS-2] TG已有(cadmos-2)，转为 Tier2 合并
+✓ [OK] [新缆] CADMOS-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] DARE1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EASSy (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EIG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMIC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EPEG (IN_SERVICE, 0 站)
+• [INFO]   [FALCON] TG已有(falcon)，转为 Tier2 合并
+✓ [OK] [新缆] FALCON (IN_SERVICE, 0 站)
+• [INFO]   [FEA] TG已有(fea)，转为 Tier2 合并
+✓ [OK]   [FEA] SN补充 2 个独有登陆站
+✓ [OK] [新缆] FEA (DECOMMISSIONED, 18 站)
+✓ [OK] [新缆] G2A (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GBI (IN_SERVICE, 0 站)
+• [INFO]   TG: 200/690
+✓ [OK] [新缆] HARP (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 HAWK: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] HAWK (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HSCS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IEX (IN_SERVICE, 0 站)
+• [INFO]   [IMEWE] TG已有(imewe)，转为 Tier2 合并
+✓ [OK] [新缆] IMEWE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IOX (IN_SERVICE, 0 站)
+✓ [OK] [新缆] J2M (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 JONAH: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] JONAH (IN_SERVICE, 0 站)
+✓ [OK] [新缆] KIMONAS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] KNOT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] LaValette (IN_SERVICE, 0 站)
+✓ [OK] [新缆] LEV (IN_SERVICE, 4 站)
+✓ [OK] [新缆] LION &amp; LION2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Medusa (IN_SERVICE, 0 站)
+• [INFO]   TG: 250/690
+✓ [OK] [新缆] MARS (IN_SERVICE, 0 站)
+• [INFO]   [Med Cable Network] TG已有(med-cable-network)，转为 Tier2 合并
+✓ [OK] [新缆] Med Cable Network (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Medex (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MedNautilus (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MENA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] METISS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Minerva (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PEACE (IN_SERVICE, 0 站)
+• [INFO]   [Red2Med] TG已有(red2med)，转为 Tier2 合并
+✓ [OK] [新缆] Red2Med (IN_SERVICE, 0 站)
+✓ [OK] [新缆] RJK (IN_SERVICE, 0 站)
+✓ [OK] [新缆] RJCN (IN_SERVICE, 0 站)
+• [INFO]   [SAFE] TG已有(safe)，转为 Tier2 合并
+✓ [OK]   [SAFE] SN补充 1 个独有登陆站
+[countryCodeMap] Unknown country: "La Reunion"
+✓ [OK] [新缆] SAFE (IN_SERVICE, 6 站)
+✓ [OK] [新缆] SEACOM (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SEAS (IN_SERVICE, 0 站)
+• [INFO]   TG: 300/690
+• [INFO]   TG: 350/690
+✓ [OK] [新缆] SEA-ME-WE 3 (DECOMMISSIONED, 39 站)
+✓ [OK] [新缆] SEA-ME-WE 4 (IN_SERVICE, 17 站)
+✓ [OK] [新缆] SEA-ME-WE 5 (IN_SERVICE, 0 站)
+• [INFO]   TG: 400/690
+✓ [OK] [新缆] SEA-ME-WE 6 (IN_SERVICE, 0 站)
+• [INFO]   [Silphium] TG已有(silphium)，转为 Tier2 合并
+✓ [OK] [新缆] Silphium (IN_SERVICE, 0 站)
+• [INFO]   [T3] TG已有(t3)，转为 Tier2 合并
+✓ [OK] [新缆] T3 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEAMS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEAS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TE North (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-EA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Ifriqya (IN_SERVICE, 0 站)
+• [INFO]   [Mobily Red Sea Cable (MRSC)] TG已有(mobily-red-sea-cable-mrsc)，转为 Tier2 合并
+✓ [OK] [新缆] Mobily Red Sea Cable (MRSC) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Black Sea Submarine Cable (BSSC) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AAE-2 (IN_SERVICE, 0 站)
+• [INFO]   [Daraja] TG已有(daraja)，转为 Tier2 合并
+✓ [OK] [新缆] Daraja (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SEACOM2.0 (IN_SERVICE, 0 站)
+• [INFO]   [Coral Bridge] TG已有(coral-bridge)，转为 Tier2 合并
+✓ [OK] [新缆] Coral Bridge (IN_SERVICE, 0 站)
+• [INFO]   [Kardesa] TG已有(kardesa)，转为 Tier2 合并
+✓ [OK] [新缆] Kardesa (IN_SERVICE, 0 站)
+• [INFO]   TG: 450/690
+✓ [OK] [新缆] WorldLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SilkLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] APNG-2 (IN_SERVICE, 0 站)
+• [INFO]   [Gondwana-1] TG已有(gondwana-1)，转为 Tier2 合并
+✓ [OK]   [Gondwana-1] SN补充 3 个独有登陆站
+[countryCodeMap] Unknown country: "New Caledonia."
+✓ [OK] [新缆] Gondwana-1 (IN_SERVICE, 4 站)
+✓ [OK] [新缆] Hawaiki Cable (IN_SERVICE, 0 站)
+• [INFO]   [Manatua] TG已有(manatua)，转为 Tier2 合并
+✓ [OK] [新缆] Manatua (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Optikor Network (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Pacific Fibre (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PPC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGA (IN_SERVICE, 0 站)
+• [INFO]   [Tonga Cable] TG已有(tonga-cable)，转为 Tier2 合并
+✓ [OK] [新缆] Tonga Cable (IN_SERVICE, 0 站)
+• [INFO]   [Tui-Samoa] TG已有(tui-samoa)，转为 Tier2 合并
+✓ [OK] [新缆] Tui-Samoa (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Te Waipounamu (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SMART TamTam (IN_SERVICE, 0 站)
+• [INFO]   TG: 500/690
+• [INFO]   [Tasman Ring Network] TG已有(tasman-ring-network)，转为 Tier2 合并
+✓ [OK] [新缆] Tasman Ring Network (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ICN1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SX-TX (IN_SERVICE, 0 站)
+• [INFO]   [ALBA-1] TG已有(alba-1)，转为 Tier2 合并
+✓ [OK] [新缆] ALBA-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Americas-II (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AMX-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AMX3/Tikal (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ARBR (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ARCOS-1 (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 Arimao: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] Arimao (IN_SERVICE, 0 站)
+• [INFO]   [BRUSA] TG已有(brusa)，转为 Tier2 合并
+✓ [OK] [新缆] BRUSA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Caribbean Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Colombia-Florida Subsea Fiber (CFX-1) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CSN-1 (IN_SERVICE, 0 站)
+• [INFO]   [Curie] TG已有(curie)，转为 Tier2 合并
+✓ [OK] [新缆] Curie (IN_SERVICE, 0 站)
+• [INFO]   [Deep Blue One] TG已有(deep-blue-one)，转为 Tier2 合并
+✓ [OK] [新缆] Deep Blue One (IN_SERVICE, 0 站)
+• [INFO]   TG: 550/690
+• [INFO]   [Firmina] TG已有(firmina)，转为 Tier2 合并
+✓ [OK] [新缆] Firmina (IN_SERVICE, 0 站)
+✓ [OK] [新缆] FOA (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 Globenet: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] Globenet (IN_SERVICE, 7 站)
+• [INFO]   [GTMO-1] TG已有(gtmo-1)，转为 Tier2 合并
+✓ [OK] [新缆] GTMO-1 (IN_SERVICE, 0 站)
+• [INFO]   [GTMO-PR] TG已有(gtmo-pr)，转为 Tier2 合并
+✓ [OK] [新缆] GTMO-PR (IN_SERVICE, 0 站)
+• [INFO]   [Junior] TG已有(junior)，转为 Tier2 合并
+✓ [OK] [新缆] Junior (IN_SERVICE, 0 站)
+• [INFO]   [Kanawa] TG已有(kanawa)，转为 Tier2 合并
+✓ [OK] [新缆] Kanawa (IN_SERVICE, 0 站)
+• [INFO]   [Malbec] TG已有(malbec)，转为 Tier2 合并
+✓ [OK] [新缆] Malbec (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Maya-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Mid-Atlantic Crossing (IN_SERVICE, 0 站)
+• [INFO]   [Monet] TG已有(monet)，转为 Tier2 合并
+✓ [OK] [新缆] Monet (IN_SERVICE, 0 站)
+• [INFO]   [Pan-American Crossing (PAC)] TG已有(pan-american-crossing-pac)，转为 Tier2 合并
+✓ [OK] [新缆] Pan-American Crossing (PAC) (IN_SERVICE, 0 站)
+• [INFO]   [Pacific Caribbean Cable System (PCCS)] TG已有(pacific-caribbean-cable-system-pccs)，转为 Tier2 合并
+✓ [OK] [新缆] Pacific Caribbean Cable System (PCCS) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SAm-1 (IN_SERVICE, 0 站)
+• [INFO]   [Seabras-1] TG已有(seabras-1)，转为 Tier2 合并
+• [INFO]   TG: 600/690
+✓ [OK] [新缆] Seabras-1 (IN_SERVICE, 0 站)
+• [INFO]   [South American Crossing (SAC)] TG已有(south-american-crossing-sac)，转为 Tier2 合并
+✓ [OK] [新缆] South American Crossing (SAC) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SPSC/Mistral (IN_SERVICE, 0 站)
+• [INFO]   [TAM-1] TG已有(tam-1)，转为 Tier2 合并
+✓ [OK] [新缆] TAM-1 (IN_SERVICE, 0 站)
+• [INFO]   [Tannat] TG已有(tannat)，转为 Tier2 合并
+✓ [OK] [新缆] Tannat (IN_SERVICE, 0 站)
+• [INFO]   [Southern Caribbean Fiber] TG已有(southern-caribbean-fiber)，转为 Tier2 合并
+✓ [OK] [新缆] Southern Caribbean Fiber (IN_SERVICE, 0 站)
+• [INFO]   [MANTA] TG已有(manta)，转为 Tier2 合并
+✓ [OK] [新缆] MANTA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] South American Crossing-2 (SAC-2) (IN_SERVICE, 0 站)
+• [INFO]   [CELIA] TG已有(celia)，转为 Tier2 合并
+✓ [OK] [新缆] CELIA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CSN-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Synapse (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Grand Cayman Connect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] 2Africa (Simba) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ACE (IN_SERVICE, 0 站)
+• [INFO]   [Ceiba-1] TG已有(ceiba-1)，转为 Tier2 合并
+✓ [OK] [新缆] Ceiba-1 (IN_SERVICE, 0 站)
+• [INFO]   [Ceiba-2] TG已有(ceiba-2)，转为 Tier2 合并
+✓ [OK] [新缆] Ceiba-2 (IN_SERVICE, 0 站)
+• [INFO]   TG: 650/690
+• [INFO]   [Equiano] TG已有(equiano)，转为 Tier2 合并
+✓ [OK] [新缆] Equiano (IN_SERVICE, 0 站)
+• [INFO]   [Glo-1] TG已有(glo-1)，转为 Tier2 合并
+✓ [OK] [新缆] Glo-1 (IN_SERVICE, 0 站)
+• [INFO]   [MainOne] TG已有(mainone)，转为 Tier2 合并
+✓ [OK] [新缆] MainOne (IN_SERVICE, 0 站)
+✓ [OK] [新缆] NCSCS (IN_SERVICE, 0 站)
+• [INFO]   [SAT-3/WASC] TG已有(sat-3wasc)，转为 Tier2 合并
+✓ [OK] [新缆] SAT-3/WASC (IN_SERVICE, 12 站)
+✓ [OK] [新缆] SHARE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WACS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASC (Australia-Singapore Cable) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AJC (Australia-Japan Cable) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASSC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] INDIGO (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Trident (IN_SERVICE, 0 站)
+✓ [OK] TG: 690 条
+• [INFO] 
+[Tier 1] 写入 TG 690 条海缆...
+✓ [OK] [新缆] SACS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SAEx1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SAIL (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SABR (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ADC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ALC (IN_SERVICE, 0 站)
+[countryCodeMap] Unknown country: "KDDI"
+✓ [OK] [新缆] APCN (IN_SERVICE, 1 站)
+• [INFO]   [APCN-2] TG已有(apcn-2)，转为 Tier2 合并
+✓ [OK] [新缆] APCN-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] APG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASE (IN_SERVICE, 5 站)
+✓ [OK] [新缆] C2C (IN_SERVICE, 0 站)
+• [INFO]   [Apricot] TG已有(apricot)，转为 Tier2 合并
+✓ [OK] [新缆] Apricot (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BaSICS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BBG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BDM (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BLCS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Cahaya Malaysia (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CDSCN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Chennai-A&amp;N (IN_SERVICE, 0 站)
+✓ [OK] [新缆] DMCS (IN_SERVICE, 0 站)
+• [INFO]   [EAC-C2C] TG已有(eac-c2c)，转为 Tier2 合并
+✓ [OK] [新缆] EAC-C2C (IN_SERVICE, 0 站)
+• [INFO]   [Fiber Optic Gulf (FOG)] TG已有(fiber-optic-gulf-fog)，转为 Tier2 合并
+✓ [OK] [新缆] Fiber Optic Gulf (FOG) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] FNAL/RNAL (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Globe FOBN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] H2HE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Hokkaido-Akita (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IAX (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ICX (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IGG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] KJCN (IN_SERVICE, 0 站)
+• [INFO]   [Matrix Cable System] TG已有(matrix-cable-system)，转为 Tier2 合并
+✓ [OK] [新缆] Matrix Cable System (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MCT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Bridge One (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MIC-1 (IN_SERVICE, 0 站)
+• [INFO]   [MIST] TG已有(mist)，转为 Tier2 合并
+✓ [OK] [新缆] MIST (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MSC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] OEG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] OMRAN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Orient Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Pak-China Cable (IN_SERVICE, 0 站)
+• [INFO]   [Patara-2] TG已有(patara-2)，转为 Tier2 合并
+✓ [OK] [新缆] Patara-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PDSCN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] POI NETWORK (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PLDT DFON (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Qatar-UAE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] RBT-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Saudi Vision Cable (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 SeaX-1: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] SeaX-1 (IN_SERVICE, 0 站)
+• [INFO]   [SEA-H2X] TG已有(sea-h2x)，转为 Tier2 合并
+✓ [OK] [新缆] SEA-H2X (IN_SERVICE, 0 站)
+✓ [OK] [新缆] UMO (SIGMAR) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Sihanoukville-HK Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SING (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SJC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SJC2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SKR1M (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Gulf (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-IA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Tata Indicom (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TIS (IN_SERVICE, 0 站)
+• [INFO]   [TKO Connect] TG已有(tko-connect)，转为 Tier2 合并
+✓ [OK] [新缆] TKO Connect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TKO Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TSE-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TW1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] UEL (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WAC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Varuna Cable System (IN_SERVICE, 0 站)
+✓ [OK] [新缆] i2i (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Tokyo Port (IN_SERVICE, 0 站)
+✓ [OK] [新缆] KLI (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ALPHA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GGC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] VTS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BSCS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BTI (SSBS) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Bagha-1 (IN_SERVICE, 0 站)
+• [INFO]   [INSICA] TG已有(insica)，转为 Tier2 合并
+✓ [OK] [新缆] INSICA (IN_SERVICE, 0 站)
+• [INFO]   [Nongsa-Changi] TG已有(nongsa-changi)，转为 Tier2 合并
+✓ [OK] [新缆] Nongsa-Changi (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ICE System 2 (IN_SERVICE, 0 站)
+• [INFO]   [Fibre in Gulf (FIG)] TG已有(fibre-in-gulf-fig)，转为 Tier2 合并
+✓ [OK] [新缆] Fibre in Gulf (FIG) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Trans-Caspian Fiber Optic (IN_SERVICE, 0 站)
+• [INFO]   [JAKO] TG已有(jako)，转为 Tier2 合并
+✓ [OK] [新缆] JAKO (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-IA2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AUG East (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Khaleej North (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BPCS (IN_SERVICE, 0 站)
+• [INFO]   [Candle] TG已有(candle)，转为 Tier2 合并
+✓ [OK] [新缆] Candle (IN_SERVICE, 0 站)
+• [INFO]   [I-AM Cable] TG已有(i-am-cable)，转为 Tier2 合并
+✓ [OK] [新缆] I-AM Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SCNX-3 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MViSTA (IN_SERVICE, 0 站)
+• [INFO]   [PASELA] TG已有(pasela)，转为 Tier2 合并
+✓ [OK] [新缆] PASELA (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 CONFLUENCE-1: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] CONFLUENCE-1 (IN_SERVICE, 0 站)
+• [INFO]   [Crosslake Fibre] TG已有(crosslake-fibre)，转为 Tier2 合并
+✓ [OK] [新缆] Crosslake Fibre (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GigNet-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Gold Data 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Maple Leaf Fibre (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Megacable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SednaLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WALL-LI (IN_SERVICE, 0 站)
+• [INFO]   [Airraq] TG已有(airraq)，转为 Tier2 合并
+✓ [OK] [新缆] Airraq (IN_SERVICE, 0 站)
+✓ [OK] [新缆] North Shore submarine cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Albania Crossing (IN_SERVICE, 0 站)
+✓ [OK] [新缆] APOLLO-EAST and APOLLO-WEST (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 BalaLink: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] BalaLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BlueMed (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BT North Sea (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 CanaLink: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] CanaLink (IN_SERVICE, 0 站)
+• [INFO]   [CeltixConnect-1 (CC-1)] TG已有(celtixconnect-1-cc-1)，转为 Tier2 合并
+✓ [OK] [新缆] CeltixConnect-1 (CC-1) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CeltixConnect-2 (CC-2) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Celtic Norse (IN_SERVICE, 0 站)
+✓ [OK] [新缆] COBRA (IN_SERVICE, 0 站)
+• [INFO]   [CrossChannel Fibre] TG已有(crosschannel-fibre)，转为 Tier2 合并
+✓ [OK] [新缆] CrossChannel Fibre (IN_SERVICE, 0 站)
+• [INFO]   [C-Lion1] TG已有(c-lion1)，转为 Tier2 合并
+✓ [OK] [新缆] C-Lion1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GreenMed (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 IONIAN: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] IONIAN (IN_SERVICE, 0 站)
+• [INFO]   [IRIS] TG已有(iris)，转为 Tier2 合并
+✓ [OK] [新缆] IRIS (IN_SERVICE, 0 站)
+• [INFO]   [Italy-Albania] TG已有(italy-albania)，转为 Tier2 合并
+✓ [OK] [新缆] Italy-Albania (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Italy-Greece 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Havhingsten (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 HAVSIL: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] HAVSIL (IN_SERVICE, 0 站)
+• [INFO]   [KAFOS] TG已有(kafos)，转为 Tier2 合并
+✓ [OK] [新缆] KAFOS (IN_SERVICE, 0 站)
+• [INFO]   [Medloop] TG已有(medloop)，转为 Tier2 合并
+✓ [OK] [新缆] Medloop (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Nibble (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Minor Islands Plan (IN_SERVICE, 0 站)
+• [INFO]   [Norfest] TG已有(norfest)，转为 Tier2 合并
+✓ [OK] [新缆] Norfest (IN_SERVICE, 0 站)
+✓ [OK] [新缆] North Sea Connect (IN_SERVICE, 0 站)
+• [INFO]   [NO-UK] TG已有(no-uk)，转为 Tier2 合并
+✓ [OK] [新缆] NO-UK (IN_SERVICE, 0 站)
+• [INFO]   [Olisipo] TG已有(olisipo)，转为 Tier2 合并
+✓ [OK] [新缆] Olisipo (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 OTEGlobe Kokkini-Bari: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] OTEGlobe Kokkini-Bari (IN_SERVICE, 0 站)
+• [INFO]   [Scylla] TG已有(scylla)，转为 Tier2 合并
+✓ [OK] [新缆] Scylla (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Skagen Fiber West (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Super Highway 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TAE (IN_SERVICE, 0 站)
+• [INFO]   [Tangerine] TG已有(tangerine)，转为 Tier2 合并
+✓ [OK] [新缆] Tangerine (IN_SERVICE, 0 站)
+• [INFO]   [Unitirreno] TG已有(unitirreno)，转为 Tier2 合并
+✓ [OK] [新缆] Unitirreno (IN_SERVICE, 0 站)
+• [INFO]   [Zeus] TG已有(zeus)，转为 Tier2 合并
+✓ [OK] [新缆] Zeus (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Anel CAM (IN_SERVICE, 0 站)
+• [INFO]   [Beaufort] TG已有(beaufort)，转为 Tier2 合并
+✓ [OK] [新缆] Beaufort (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Pisces (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IOEMA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN Western Europe (IN_SERVICE, 0 站)
+• [INFO]   [N0r5ke Viking] TG已有(n0r5ke-viking)，转为 Tier2 合并
+✓ [OK] [新缆] N0r5ke Viking (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GC-LNZ-FU (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Tusass Connect (IN_SERVICE, 0 站)
+• [INFO]   [Barracuda] TG已有(barracuda)，转为 Tier2 合并
+✓ [OK] [新缆] Barracuda (IN_SERVICE, 0 站)
+• [INFO]   [Arctic Way] TG已有(arctic-way)，转为 Tier2 合并
+✓ [OK] [新缆] Arctic Way (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Nordic Wave (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Channel Tunnel Fibre (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Q&amp;E North &amp; South (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Magna Grecia Cable (IN_SERVICE, 0 站)
+• [INFO]   [Verena] TG已有(verena)，转为 Tier2 合并
+✓ [OK] [新缆] Verena (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ARTEMIS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Kattegat (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Djibouti-Ethiopia (IN_SERVICE, 0 站)
+✓ [OK] [新缆] DREAM (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ERA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ERJ (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ERMC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EWTC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MEETS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Silk Route Transit (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Super TSR (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA-3 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA-4 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA NEXT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TMP (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TRANSKZ (IN_SERVICE, 0 站)
+✓ [OK] [新缆] VSTN (IN_SERVICE, 0 站)
+• [INFO]   [Umoja] TG已有(umoja)，转为 Tier2 合并
+✓ [OK] [新缆] Umoja (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Arctic Connect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Arctic Fiber (IN_SERVICE, 0 站)
+• [INFO]   [Polar Express] TG已有(polar-express)，转为 Tier2 合并
+✓ [OK] [新缆] Polar Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Far North Fiber (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Polar Connect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Chile - Antarctica Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Antarctic SMART Cable (IN_SERVICE, 0 站)
+
+╔══════════════════════════════════════════════════════════════╗
+║  同步完成！耗时 2419s
+║  [Tier1-TG]  写入: 690 条
+║  [Tier2-SN]  合并到TG: 0 | 待审: 0 | 新增: 395 | 跳过: 0
+║  坐标待补全的登陆站: 7 个
+║  DLQ待处理: 9 个
+╚══════════════════════════════════════════════════════════════╝
+✓ [OK] Redis: 报告已保存
+✓ [OK] Vercel: 缓存刷新完成
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "British Indian Ocean Territory"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+[countryCodeMap] Unknown country: "Saint Barthélemy"
+[countryCodeMap] Unknown country: "Saint Martin"
+✓ [OK] [Tier 1] 完成：写入 690 条
+• [INFO] 
+[Tier 2] 处理 SN 395 条海缆...
+✓ [OK] [新缆] AAG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASH/SAS (IN_SERVICE, 0 站)
+• [INFO]   [Bifrost] TG已有(bifrost)，转为 Tier2 合并
+✓ [OK] [新缆] Bifrost (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BtoBE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CAP-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Central Pacific Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] China-US CN (DECOMMISSIONED, 0 站)
+• [INFO]   [Echo] TG已有(echo)，转为 Tier2 合并
+✓ [OK] [新缆] Echo (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMCS (IN_SERVICE, 0 站)
+• [INFO]   [FASTER] TG已有(faster)，转为 Tier2 合并
+✓ [OK] [新缆] FASTER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Guam-Philippines (IN_SERVICE, 0 站)
+✓ [OK] [新缆] H2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Hawaiki Nui (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HKA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HK-G (IN_SERVICE, 0 站)
+• [INFO]   [Honomoana] TG已有(honomoana)，转为 Tier2 合并
+✓ [OK] [新缆] Honomoana (IN_SERVICE, 0 站)
+• [INFO]   [Honotua] TG已有(honotua)，转为 Tier2 合并
+✓ [OK] [新缆] Honotua (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Humboldt Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Japan-US CN (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] JAWS (IN_SERVICE, 0 站)
+• [INFO]   [JUNO] TG已有(juno)，转为 Tier2 合并
+✓ [OK] [新缆] JUNO (IN_SERVICE, 0 站)
+• [INFO]   [JUPITER] TG已有(jupiter)，转为 Tier2 合并
+✓ [OK] [新缆] JUPITER (IN_SERVICE, 0 站)
+✓ [OK] [新缆] NCP (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Palau Cable 2 (PC2) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PLCN (IN_SERVICE, 0 站)
+• [INFO]   [SEA-US] TG已有(sea-us)，转为 Tier2 合并
+✓ [OK] [新缆] SEA-US (IN_SERVICE, 0 站)
+• [INFO]   [Southern Cross NEXT] TG已有(southern-cross-next)，转为 Tier2 合并
+✓ [OK] [新缆] Southern Cross NEXT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Southern Cross (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SxS (IN_SERVICE, 0 站)
+• [INFO]   [Tabua] TG已有(tabua)，转为 Tier2 合并
+✓ [OK] [新缆] Tabua (IN_SERVICE, 0 站)
+• [INFO]   [Telstra Endeavour] TG已有(telstra-endeavour)，转为 Tier2 合并
+✓ [OK] [新缆] Telstra Endeavour (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Pacific (IN_SERVICE, 0 站)
+• [INFO]   [Topaz] TG已有(topaz)，转为 Tier2 合并
+✓ [OK] [新缆] Topaz (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPC-5 (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] TPE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TPN (IN_SERVICE, 0 站)
+• [INFO]   [TPU] TG已有(tpu)，转为 Tier2 合并
+✓ [OK] [新缆] TPU (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Unity (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HIFL (IN_SERVICE, 0 站)
+• [INFO]   [Bulikula] TG已有(bulikula)，转为 Tier2 合并
+✓ [OK] [新缆] Bulikula (IN_SERVICE, 0 站)
+• [INFO]   [Halaihai] TG已有(halaihai)，转为 Tier2 合并
+✓ [OK] [新缆] Halaihai (IN_SERVICE, 0 站)
+• [INFO]   [Proa] TG已有(proa)，转为 Tier2 合并
+✓ [OK] [新缆] Proa (IN_SERVICE, 0 站)
+• [INFO]   [Taihei] TG已有(taihei)，转为 Tier2 合并
+✓ [OK] [新缆] Taihei (IN_SERVICE, 0 站)
+✓ [OK] [新缆] California-Hawaii S1 (CHI) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MYUS (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 Vaka: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] Vaka (IN_SERVICE, 0 站)
+• [INFO]   [ORCA] TG已有(orca)，转为 Tier2 合并
+✓ [OK] [新缆] ORCA (IN_SERVICE, 0 站)
+• [INFO]   [E2A] TG已有(e2a)，转为 Tier2 合并
+✓ [OK] [新缆] E2A (IN_SERVICE, 0 站)
+• [INFO]   [APX East] TG已有(apx-east)，转为 Tier2 合并
+✓ [OK] [新缆] APX East (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Le Vasa Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Kunoa North (IN_SERVICE, 0 站)
+[countryCodeMap] Unknown country: "the United States"
+[countryCodeMap] Unknown country: "the United Kingdom"
+✓ [OK] [新缆] AC-1 (IN_SERVICE, 4 站)
+✓ [OK] [新缆] AC-2/Yellow (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AEC-1/AEConnect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Amitié/AEC-3 (IN_SERVICE, 0 站)
+• [INFO]   [Anjana] TG已有(anjana)，转为 Tier2 合并
+✓ [OK] [新缆] Anjana (IN_SERVICE, 0 站)
+• [INFO]   [Apollo] TG已有(apollo)，转为 Tier2 合并
+✓ [OK] [新缆] Apollo (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Columbus-III (DECOMMISSIONED, 0 站)
+• [INFO]   [Dunant] TG已有(dunant)，转为 Tier2 合并
+✓ [OK] [新缆] Dunant (IN_SERVICE, 0 站)
+• [INFO]   [EllaLink] TG已有(ellalink)，转为 Tier2 合并
+✓ [OK] [新缆] EllaLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EXA Atlantic (IN_SERVICE, 0 站)
+• [INFO]   [EXA Express] TG已有(exa-express)，转为 Tier2 合并
+✓ [OK] [新缆] EXA Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] FA-1 (IN_SERVICE, 0 站)
+• [INFO]   [Grace Hopper] TG已有(grace-hopper)，转为 Tier2 合并
+✓ [OK] [新缆] Grace Hopper (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 HAVFRUE/AEC-2: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] HAVFRUE/AEC-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Leif Erikson (IN_SERVICE, 0 站)
+• [INFO]   [MAREA] TG已有(marea)，转为 Tier2 合并
+✓ [OK] [新缆] MAREA (IN_SERVICE, 0 站)
+• [INFO]   [Nuvem] TG已有(nuvem)，转为 Tier2 合并
+✓ [OK] [新缆] Nuvem (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TAT-14 (DECOMMISSIONED, 0 站)
+✓ [OK] [新缆] TGN-Atlantic (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WASACE 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Waterworth (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 SOL: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] SOL (IN_SERVICE, 0 站)
+• [INFO]   [Greenland Connect] TG已有(greenland-connect)，转为 Tier2 合并
+✓ [OK] [新缆] Greenland Connect (IN_SERVICE, 0 站)
+• [INFO]   [Fastnet] TG已有(fastnet)，转为 Tier2 合并
+✓ [OK] [新缆] Fastnet (IN_SERVICE, 0 站)
+• [INFO]   [2Africa] TG已有(2africa)，转为 Tier2 合并
+✓ [OK] [新缆] 2Africa (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AAE-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Alval / Orval (IN_SERVICE, 0 站)
+• [INFO]   [Africa-1] TG已有(africa-1)，转为 Tier2 合并
+✓ [OK] [新缆] Africa-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Al Khaleej (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ALASIA (IN_SERVICE, 0 站)
+• [INFO]   [Aletar] TG已有(aletar)，转为 Tier2 合并
+✓ [OK] [新缆] Aletar (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ALEXANDROS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ANDROMEDA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Arsinoe (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ATHENA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Blue-Raman (IN_SERVICE, 0 站)
+• [INFO]   [CADMOS-2] TG已有(cadmos-2)，转为 Tier2 合并
+✓ [OK] [新缆] CADMOS-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] DARE1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EASSy (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EIG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EMIC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EPEG (IN_SERVICE, 0 站)
+• [INFO]   [FALCON] TG已有(falcon)，转为 Tier2 合并
+✓ [OK] [新缆] FALCON (IN_SERVICE, 0 站)
+• [INFO]   [FEA] TG已有(fea)，转为 Tier2 合并
+✓ [OK] [新缆] FEA (DECOMMISSIONED, 18 站)
+✓ [OK] [新缆] G2A (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GBI (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HARP (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 HAWK: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] HAWK (IN_SERVICE, 0 站)
+✓ [OK] [新缆] HSCS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IEX (IN_SERVICE, 0 站)
+• [INFO]   [IMEWE] TG已有(imewe)，转为 Tier2 合并
+✓ [OK] [新缆] IMEWE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IOX (IN_SERVICE, 0 站)
+✓ [OK] [新缆] J2M (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 JONAH: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] JONAH (IN_SERVICE, 0 站)
+✓ [OK] [新缆] KIMONAS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] KNOT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] LaValette (IN_SERVICE, 0 站)
+✓ [OK] [新缆] LEV (IN_SERVICE, 4 站)
+✓ [OK] [新缆] LION &amp; LION2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Medusa (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MARS (IN_SERVICE, 0 站)
+• [INFO]   [Med Cable Network] TG已有(med-cable-network)，转为 Tier2 合并
+✓ [OK] [新缆] Med Cable Network (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Medex (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MedNautilus (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MENA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] METISS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Minerva (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PEACE (IN_SERVICE, 0 站)
+• [INFO]   [Red2Med] TG已有(red2med)，转为 Tier2 合并
+✓ [OK] [新缆] Red2Med (IN_SERVICE, 0 站)
+✓ [OK] [新缆] RJK (IN_SERVICE, 0 站)
+✓ [OK] [新缆] RJCN (IN_SERVICE, 0 站)
+• [INFO]   [SAFE] TG已有(safe)，转为 Tier2 合并
+✓ [OK]   [SAFE] SN补充 1 个独有登陆站
+[countryCodeMap] Unknown country: "La Reunion"
+✓ [OK] [新缆] SAFE (IN_SERVICE, 6 站)
+✓ [OK] [新缆] SEACOM (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SEAS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SEA-ME-WE 3 (DECOMMISSIONED, 39 站)
+✓ [OK] [新缆] SEA-ME-WE 4 (IN_SERVICE, 17 站)
+✓ [OK] [新缆] SEA-ME-WE 5 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SEA-ME-WE 6 (IN_SERVICE, 0 站)
+• [INFO]   [Silphium] TG已有(silphium)，转为 Tier2 合并
+✓ [OK] [新缆] Silphium (IN_SERVICE, 0 站)
+• [INFO]   [T3] TG已有(t3)，转为 Tier2 合并
+✓ [OK] [新缆] T3 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEAMS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEAS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TE North (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-EA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Ifriqya (IN_SERVICE, 0 站)
+• [INFO]   [Mobily Red Sea Cable (MRSC)] TG已有(mobily-red-sea-cable-mrsc)，转为 Tier2 合并
+✓ [OK] [新缆] Mobily Red Sea Cable (MRSC) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Black Sea Submarine Cable (BSSC) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AAE-2 (IN_SERVICE, 0 站)
+• [INFO]   [Daraja] TG已有(daraja)，转为 Tier2 合并
+✓ [OK] [新缆] Daraja (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SEACOM2.0 (IN_SERVICE, 0 站)
+• [INFO]   [Coral Bridge] TG已有(coral-bridge)，转为 Tier2 合并
+✓ [OK] [新缆] Coral Bridge (IN_SERVICE, 0 站)
+• [INFO]   [Kardesa] TG已有(kardesa)，转为 Tier2 合并
+✓ [OK] [新缆] Kardesa (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WorldLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SilkLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] APNG-2 (IN_SERVICE, 0 站)
+• [INFO]   [Gondwana-1] TG已有(gondwana-1)，转为 Tier2 合并
+✓ [OK]   [Gondwana-1] SN补充 1 个独有登陆站
+[countryCodeMap] Unknown country: "New Caledonia."
+✓ [OK] [新缆] Gondwana-1 (IN_SERVICE, 4 站)
+✓ [OK] [新缆] Hawaiki Cable (IN_SERVICE, 0 站)
+• [INFO]   [Manatua] TG已有(manatua)，转为 Tier2 合并
+✓ [OK] [新缆] Manatua (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Optikor Network (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Pacific Fibre (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PPC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGA (IN_SERVICE, 0 站)
+• [INFO]   [Tonga Cable] TG已有(tonga-cable)，转为 Tier2 合并
+✓ [OK] [新缆] Tonga Cable (IN_SERVICE, 0 站)
+• [INFO]   [Tui-Samoa] TG已有(tui-samoa)，转为 Tier2 合并
+✓ [OK] [新缆] Tui-Samoa (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Te Waipounamu (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SMART TamTam (IN_SERVICE, 0 站)
+• [INFO]   [Tasman Ring Network] TG已有(tasman-ring-network)，转为 Tier2 合并
+✓ [OK] [新缆] Tasman Ring Network (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ICN1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SX-TX (IN_SERVICE, 0 站)
+• [INFO]   [ALBA-1] TG已有(alba-1)，转为 Tier2 合并
+✓ [OK] [新缆] ALBA-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Americas-II (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AMX-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AMX3/Tikal (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ARBR (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ARCOS-1 (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 Arimao: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] Arimao (IN_SERVICE, 0 站)
+• [INFO]   [BRUSA] TG已有(brusa)，转为 Tier2 合并
+✓ [OK] [新缆] BRUSA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Caribbean Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Colombia-Florida Subsea Fiber (CFX-1) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CSN-1 (IN_SERVICE, 0 站)
+• [INFO]   [Curie] TG已有(curie)，转为 Tier2 合并
+✓ [OK] [新缆] Curie (IN_SERVICE, 0 站)
+• [INFO]   [Deep Blue One] TG已有(deep-blue-one)，转为 Tier2 合并
+✓ [OK] [新缆] Deep Blue One (IN_SERVICE, 0 站)
+• [INFO]   [Firmina] TG已有(firmina)，转为 Tier2 合并
+✓ [OK] [新缆] Firmina (IN_SERVICE, 0 站)
+✓ [OK] [新缆] FOA (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 Globenet: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] Globenet (IN_SERVICE, 7 站)
+• [INFO]   [GTMO-1] TG已有(gtmo-1)，转为 Tier2 合并
+✓ [OK] [新缆] GTMO-1 (IN_SERVICE, 0 站)
+• [INFO]   [GTMO-PR] TG已有(gtmo-pr)，转为 Tier2 合并
+✓ [OK] [新缆] GTMO-PR (IN_SERVICE, 0 站)
+• [INFO]   [Junior] TG已有(junior)，转为 Tier2 合并
+✓ [OK] [新缆] Junior (IN_SERVICE, 0 站)
+• [INFO]   [Kanawa] TG已有(kanawa)，转为 Tier2 合并
+✓ [OK] [新缆] Kanawa (IN_SERVICE, 0 站)
+• [INFO]   [Malbec] TG已有(malbec)，转为 Tier2 合并
+✓ [OK] [新缆] Malbec (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Maya-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Mid-Atlantic Crossing (IN_SERVICE, 0 站)
+• [INFO]   [Monet] TG已有(monet)，转为 Tier2 合并
+✓ [OK] [新缆] Monet (IN_SERVICE, 0 站)
+• [INFO]   [Pan-American Crossing (PAC)] TG已有(pan-american-crossing-pac)，转为 Tier2 合并
+✓ [OK] [新缆] Pan-American Crossing (PAC) (IN_SERVICE, 0 站)
+• [INFO]   [Pacific Caribbean Cable System (PCCS)] TG已有(pacific-caribbean-cable-system-pccs)，转为 Tier2 合并
+✓ [OK] [新缆] Pacific Caribbean Cable System (PCCS) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SAm-1 (IN_SERVICE, 0 站)
+• [INFO]   [Seabras-1] TG已有(seabras-1)，转为 Tier2 合并
+✓ [OK] [新缆] Seabras-1 (IN_SERVICE, 0 站)
+• [INFO]   [South American Crossing (SAC)] TG已有(south-american-crossing-sac)，转为 Tier2 合并
+✓ [OK] [新缆] South American Crossing (SAC) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SPSC/Mistral (IN_SERVICE, 0 站)
+• [INFO]   [TAM-1] TG已有(tam-1)，转为 Tier2 合并
+✓ [OK] [新缆] TAM-1 (IN_SERVICE, 0 站)
+• [INFO]   [Tannat] TG已有(tannat)，转为 Tier2 合并
+✓ [OK] [新缆] Tannat (IN_SERVICE, 0 站)
+• [INFO]   [Southern Caribbean Fiber] TG已有(southern-caribbean-fiber)，转为 Tier2 合并
+✓ [OK] [新缆] Southern Caribbean Fiber (IN_SERVICE, 0 站)
+• [INFO]   [MANTA] TG已有(manta)，转为 Tier2 合并
+✓ [OK] [新缆] MANTA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] South American Crossing-2 (SAC-2) (IN_SERVICE, 0 站)
+• [INFO]   [CELIA] TG已有(celia)，转为 Tier2 合并
+✓ [OK] [新缆] CELIA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CSN-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Synapse (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Grand Cayman Connect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] 2Africa (Simba) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ACE (IN_SERVICE, 0 站)
+• [INFO]   [Ceiba-1] TG已有(ceiba-1)，转为 Tier2 合并
+✓ [OK] [新缆] Ceiba-1 (IN_SERVICE, 0 站)
+• [INFO]   [Ceiba-2] TG已有(ceiba-2)，转为 Tier2 合并
+✓ [OK] [新缆] Ceiba-2 (IN_SERVICE, 0 站)
+• [INFO]   [Equiano] TG已有(equiano)，转为 Tier2 合并
+✓ [OK] [新缆] Equiano (IN_SERVICE, 0 站)
+• [INFO]   [Glo-1] TG已有(glo-1)，转为 Tier2 合并
+✓ [OK] [新缆] Glo-1 (IN_SERVICE, 0 站)
+• [INFO]   [MainOne] TG已有(mainone)，转为 Tier2 合并
+✓ [OK] [新缆] MainOne (IN_SERVICE, 0 站)
+✓ [OK] [新缆] NCSCS (IN_SERVICE, 0 站)
+• [INFO]   [SAT-3/WASC] TG已有(sat-3wasc)，转为 Tier2 合并
+✓ [OK] [新缆] SAT-3/WASC (IN_SERVICE, 12 站)
+✓ [OK] [新缆] SHARE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WACS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASC (Australia-Singapore Cable) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AJC (Australia-Japan Cable) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASSC-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] INDIGO (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Trident (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SACS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SAEx1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SAIL (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SABR (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ADC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ALC (IN_SERVICE, 0 站)
+[countryCodeMap] Unknown country: "KDDI"
+✓ [OK] [新缆] APCN (IN_SERVICE, 1 站)
+• [INFO]   [APCN-2] TG已有(apcn-2)，转为 Tier2 合并
+✓ [OK] [新缆] APCN-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] APG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ASE (IN_SERVICE, 5 站)
+✓ [OK] [新缆] C2C (IN_SERVICE, 0 站)
+• [INFO]   [Apricot] TG已有(apricot)，转为 Tier2 合并
+✓ [OK] [新缆] Apricot (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BaSICS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BBG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BDM (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BLCS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Cahaya Malaysia (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CDSCN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Chennai-A&amp;N (IN_SERVICE, 0 站)
+✓ [OK] [新缆] DMCS (IN_SERVICE, 0 站)
+• [INFO]   [EAC-C2C] TG已有(eac-c2c)，转为 Tier2 合并
+✓ [OK] [新缆] EAC-C2C (IN_SERVICE, 0 站)
+• [INFO]   [Fiber Optic Gulf (FOG)] TG已有(fiber-optic-gulf-fog)，转为 Tier2 合并
+✓ [OK] [新缆] Fiber Optic Gulf (FOG) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] FNAL/RNAL (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Globe FOBN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] H2HE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Hokkaido-Akita (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IAX (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ICX (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IGG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] KJCN (IN_SERVICE, 0 站)
+• [INFO]   [Matrix Cable System] TG已有(matrix-cable-system)，转为 Tier2 合并
+✓ [OK] [新缆] Matrix Cable System (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MCT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Bridge One (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MIC-1 (IN_SERVICE, 0 站)
+• [INFO]   [MIST] TG已有(mist)，转为 Tier2 合并
+✓ [OK] [新缆] MIST (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MSC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] OEG (IN_SERVICE, 0 站)
+✓ [OK] [新缆] OMRAN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Orient Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Pak-China Cable (IN_SERVICE, 0 站)
+• [INFO]   [Patara-2] TG已有(patara-2)，转为 Tier2 合并
+✓ [OK] [新缆] Patara-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PDSCN (IN_SERVICE, 0 站)
+✓ [OK] [新缆] POI NETWORK (IN_SERVICE, 0 站)
+✓ [OK] [新缆] PLDT DFON (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Qatar-UAE (IN_SERVICE, 0 站)
+✓ [OK] [新缆] RBT-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Saudi Vision Cable (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 SeaX-1: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] SeaX-1 (IN_SERVICE, 0 站)
+• [INFO]   [SEA-H2X] TG已有(sea-h2x)，转为 Tier2 合并
+✓ [OK] [新缆] SEA-H2X (IN_SERVICE, 0 站)
+✓ [OK] [新缆] UMO (SIGMAR) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Sihanoukville-HK Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SING (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SJC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SJC2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SKR1M (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Gulf (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-IA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-Tata Indicom (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TIS (IN_SERVICE, 0 站)
+• [INFO]   [TKO Connect] TG已有(tko-connect)，转为 Tier2 合并
+✓ [OK] [新缆] TKO Connect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TKO Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TSE-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TW1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] UEL (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WAC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Varuna Cable System (IN_SERVICE, 0 站)
+✓ [OK] [新缆] i2i (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Tokyo Port (IN_SERVICE, 0 站)
+✓ [OK] [新缆] KLI (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ALPHA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GGC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] VTS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BSCS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BTI (SSBS) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Bagha-1 (IN_SERVICE, 0 站)
+• [INFO]   [INSICA] TG已有(insica)，转为 Tier2 合并
+✓ [OK] [新缆] INSICA (IN_SERVICE, 0 站)
+• [INFO]   [Nongsa-Changi] TG已有(nongsa-changi)，转为 Tier2 合并
+✓ [OK] [新缆] Nongsa-Changi (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ICE System 2 (IN_SERVICE, 0 站)
+• [INFO]   [Fibre in Gulf (FIG)] TG已有(fibre-in-gulf-fig)，转为 Tier2 合并
+✓ [OK] [新缆] Fibre in Gulf (FIG) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Trans-Caspian Fiber Optic (IN_SERVICE, 0 站)
+• [INFO]   [JAKO] TG已有(jako)，转为 Tier2 合并
+✓ [OK] [新缆] JAKO (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN-IA2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] AUG East (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Khaleej North (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BPCS (IN_SERVICE, 0 站)
+• [INFO]   [Candle] TG已有(candle)，转为 Tier2 合并
+✓ [OK] [新缆] Candle (IN_SERVICE, 0 站)
+• [INFO]   [I-AM Cable] TG已有(i-am-cable)，转为 Tier2 合并
+✓ [OK] [新缆] I-AM Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SCNX-3 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MViSTA (IN_SERVICE, 0 站)
+• [INFO]   [PASELA] TG已有(pasela)，转为 Tier2 合并
+✓ [OK] [新缆] PASELA (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 CONFLUENCE-1: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] CONFLUENCE-1 (IN_SERVICE, 0 站)
+• [INFO]   [Crosslake Fibre] TG已有(crosslake-fibre)，转为 Tier2 合并
+✓ [OK] [新缆] Crosslake Fibre (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GigNet-1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Gold Data 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Maple Leaf Fibre (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Megacable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] SednaLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] WALL-LI (IN_SERVICE, 0 站)
+• [INFO]   [Airraq] TG已有(airraq)，转为 Tier2 合并
+✓ [OK] [新缆] Airraq (IN_SERVICE, 0 站)
+✓ [OK] [新缆] North Shore submarine cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Albania Crossing (IN_SERVICE, 0 站)
+✓ [OK] [新缆] APOLLO-EAST and APOLLO-WEST (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 BalaLink: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] BalaLink (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BlueMed (IN_SERVICE, 0 站)
+✓ [OK] [新缆] BT North Sea (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 CanaLink: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] CanaLink (IN_SERVICE, 0 站)
+• [INFO]   [CeltixConnect-1 (CC-1)] TG已有(celtixconnect-1-cc-1)，转为 Tier2 合并
+✓ [OK] [新缆] CeltixConnect-1 (CC-1) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] CeltixConnect-2 (CC-2) (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Celtic Norse (IN_SERVICE, 0 站)
+✓ [OK] [新缆] COBRA (IN_SERVICE, 0 站)
+• [INFO]   [CrossChannel Fibre] TG已有(crosschannel-fibre)，转为 Tier2 合并
+✓ [OK] [新缆] CrossChannel Fibre (IN_SERVICE, 0 站)
+• [INFO]   [C-Lion1] TG已有(c-lion1)，转为 Tier2 合并
+✓ [OK] [新缆] C-Lion1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GreenMed (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 IONIAN: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] IONIAN (IN_SERVICE, 0 站)
+• [INFO]   [IRIS] TG已有(iris)，转为 Tier2 合并
+✓ [OK] [新缆] IRIS (IN_SERVICE, 0 站)
+• [INFO]   [Italy-Albania] TG已有(italy-albania)，转为 Tier2 合并
+✓ [OK] [新缆] Italy-Albania (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Italy-Greece 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Havhingsten (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 HAVSIL: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] HAVSIL (IN_SERVICE, 0 站)
+• [INFO]   [KAFOS] TG已有(kafos)，转为 Tier2 合并
+✓ [OK] [新缆] KAFOS (IN_SERVICE, 0 站)
+• [INFO]   [Medloop] TG已有(medloop)，转为 Tier2 合并
+✓ [OK] [新缆] Medloop (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Nibble (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Minor Islands Plan (IN_SERVICE, 0 站)
+• [INFO]   [Norfest] TG已有(norfest)，转为 Tier2 合并
+✓ [OK] [新缆] Norfest (IN_SERVICE, 0 站)
+✓ [OK] [新缆] North Sea Connect (IN_SERVICE, 0 站)
+• [INFO]   [NO-UK] TG已有(no-uk)，转为 Tier2 合并
+✓ [OK] [新缆] NO-UK (IN_SERVICE, 0 站)
+• [INFO]   [Olisipo] TG已有(olisipo)，转为 Tier2 合并
+✓ [OK] [新缆] Olisipo (IN_SERVICE, 0 站)
+⚠ [WARN] Tier2 upsert 跳过 OTEGlobe Kokkini-Bari: 
+Invalid `prisma.cable.upsert()` invocation in
+/home/ubuntu/deep-blue/scripts/ni
+✓ [OK] [新缆] OTEGlobe Kokkini-Bari (IN_SERVICE, 0 站)
+• [INFO]   [Scylla] TG已有(scylla)，转为 Tier2 合并
+✓ [OK] [新缆] Scylla (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Skagen Fiber West (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Super Highway 1 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TAE (IN_SERVICE, 0 站)
+• [INFO]   [Tangerine] TG已有(tangerine)，转为 Tier2 合并
+✓ [OK] [新缆] Tangerine (IN_SERVICE, 0 站)
+• [INFO]   [Unitirreno] TG已有(unitirreno)，转为 Tier2 合并
+✓ [OK] [新缆] Unitirreno (IN_SERVICE, 0 站)
+• [INFO]   [Zeus] TG已有(zeus)，转为 Tier2 合并
+✓ [OK] [新缆] Zeus (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Anel CAM (IN_SERVICE, 0 站)
+• [INFO]   [Beaufort] TG已有(beaufort)，转为 Tier2 合并
+✓ [OK] [新缆] Beaufort (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Pisces (IN_SERVICE, 0 站)
+✓ [OK] [新缆] IOEMA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TGN Western Europe (IN_SERVICE, 0 站)
+• [INFO]   [N0r5ke Viking] TG已有(n0r5ke-viking)，转为 Tier2 合并
+✓ [OK] [新缆] N0r5ke Viking (IN_SERVICE, 0 站)
+✓ [OK] [新缆] GC-LNZ-FU (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Tusass Connect (IN_SERVICE, 0 站)
+• [INFO]   [Barracuda] TG已有(barracuda)，转为 Tier2 合并
+✓ [OK] [新缆] Barracuda (IN_SERVICE, 0 站)
+• [INFO]   [Arctic Way] TG已有(arctic-way)，转为 Tier2 合并
+✓ [OK] [新缆] Arctic Way (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Nordic Wave (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Channel Tunnel Fibre (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Q&amp;E North &amp; South (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Magna Grecia Cable (IN_SERVICE, 0 站)
+• [INFO]   [Verena] TG已有(verena)，转为 Tier2 合并
+✓ [OK] [新缆] Verena (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ARTEMIS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Kattegat (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Djibouti-Ethiopia (IN_SERVICE, 0 站)
+✓ [OK] [新缆] DREAM (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ERA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ERJ (IN_SERVICE, 0 站)
+✓ [OK] [新缆] ERMC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] EWTC (IN_SERVICE, 0 站)
+✓ [OK] [新缆] MEETS (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Silk Route Transit (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Super TSR (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA-2 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA-3 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA-4 (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TEA NEXT (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TMP (IN_SERVICE, 0 站)
+✓ [OK] [新缆] TRANSKZ (IN_SERVICE, 0 站)
+✓ [OK] [新缆] VSTN (IN_SERVICE, 0 站)
+• [INFO]   [Umoja] TG已有(umoja)，转为 Tier2 合并
+✓ [OK] [新缆] Umoja (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Arctic Connect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Arctic Fiber (IN_SERVICE, 0 站)
+• [INFO]   [Polar Express] TG已有(polar-express)，转为 Tier2 合并
+✓ [OK] [新缆] Polar Express (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Far North Fiber (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Polar Connect (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Chile - Antarctica Cable (IN_SERVICE, 0 站)
+✓ [OK] [新缆] Antarctic SMART Cable (IN_SERVICE, 0 站)
+
+╔══════════════════════════════════════════════════════════════╗
+║  同步完成！耗时 2422s
+║  [Tier1-TG]  写入: 690 条
+║  [Tier2-SN]  合并到TG: 0 | 待审: 0 | 新增: 395 | 跳过: 0
+║  坐标待补全的登陆站: 7 个
+║  DLQ待处理: 9 个
+╚══════════════════════════════════════════════════════════════╝
+✓ [OK] Redis: 报告已保存
+✓ [OK] Vercel: 缓存刷新完成

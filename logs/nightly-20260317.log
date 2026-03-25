@@ -1,0 +1,541 @@
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:25:11
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+导入失败: PrismaClientInitializationError: 
+Invalid `prisma.cableEvent.deleteMany()` invocation in
+/home/ubuntu/deep-blue/scripts/import-full.ts:129:27
+
+  126 
+  127 // ═══ 第4步：清空旧数据（重新导入） ═══
+  128 console.log('[4/6] 清空旧数据...');
+→ 129 await prisma.cableEvent.deleteMany(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async main (/home/ubuntu/deep-blue/scripts/import-full.ts:129:3) {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined
+}
+[1/2] ⚠️  数据导入出现错误（见上方日志），但继续执行缓存刷新
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 307
+[2/2] 响应内容: Redirecting...
+[2/2] ❌ 缓存刷新失败！请检查 REVALIDATE_SECRET 是否正确
+
+完成时间: 2026-03-17 21:25:18
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:26:29
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+导入失败: PrismaClientInitializationError: 
+Invalid `prisma.cableEvent.deleteMany()` invocation in
+/home/ubuntu/deep-blue/scripts/import-full.ts:129:27
+
+  126 
+  127 // ═══ 第4步：清空旧数据（重新导入） ═══
+  128 console.log('[4/6] 清空旧数据...');
+→ 129 await prisma.cableEvent.deleteMany(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async main (/home/ubuntu/deep-blue/scripts/import-full.ts:129:3) {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined
+}
+[1/2] ⚠️  数据导入出现错误（见上方日志），但继续执行缓存刷新
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 307
+[2/2] 响应内容: Redirecting...
+[2/2] ❌ 缓存刷新失败！请检查 REVALIDATE_SECRET 是否正确
+
+完成时间: 2026-03-17 21:26:34
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:30:01
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+导入失败: PrismaClientInitializationError: 
+Invalid `prisma.cableEvent.deleteMany()` invocation in
+/home/ubuntu/deep-blue/scripts/import-full.ts:129:27
+
+  126 
+  127 // ═══ 第4步：清空旧数据（重新导入） ═══
+  128 console.log('[4/6] 清空旧数据...');
+→ 129 await prisma.cableEvent.deleteMany(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async main (/home/ubuntu/deep-blue/scripts/import-full.ts:129:3) {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined
+}
+[1/2] ⚠️  数据导入出现错误（见上方日志），但继续执行缓存刷新
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 404
+[2/2] 响应内容: <!DOCTYPE html><!--zcLL9PhKFl6q_t_qKGCrp--><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/_next/static/chunks/a7fd00c0b3fff0f7.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/e90d6ead1c1607ac.js"/><script src="/_next/static/chunks/f56dbb0445c63c1b.js" async=""></script><script src="/_next/static/chunks/ba4f7e9a72eb0632.js" async=""></script><script src="/_next/static/chunks/ff3d1bb9203cb30c.js" async=""></script><script src="/_next/static/chunks/turbopack-dce0872f7520f592.js" async=""></script><script src="/_next/static/chunks/f25eb5ad90cbde7a.js" async=""></script><link rel="preload" href="/cesium/Widgets/widgets.css" as="style"/><meta name="robots" content="noindex"/><title>404: This page could not be found.</title><title>Deep Blue | Global Submarine Cable Intelligence</title><meta name="description" content="Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun."/><meta name="author" content="Jiangyun"/><link rel="manifest" href="/manifest.json"/><meta name="keywords" content="submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue"/><meta name="creator" content="Jiangyun"/><meta name="theme-color" content="#2A9D8F"/><meta property="og:title" content="Deep Blue | Global Submarine Cable Intelligence"/><meta property="og:description" content="Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis."/><meta property="og:url" content="https://deep-cloud.org"/><meta property="og:site_name" content="Deep Blue"/><meta property="og:locale" content="en_US"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:creator" content="@Jiangyun"/><meta name="twitter:title" content="Deep Blue | Submarine Cable Intelligence"/><meta name="twitter:description" content="AI-powered global submarine cable monitoring platform"/><link rel="icon" href="/favicon.ico?favicon.0b3bf435.ico" sizes="256x256" type="image/x-icon"/><link rel="icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/icons/icon-180.png"/><link rel="stylesheet" href="/cesium/Widgets/widgets.css"/><script src="/_next/static/chunks/a6dad97d9634a72d.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><div style="font-family:system-ui,&quot;Segoe UI&quot;,Roboto,Helvetica,Arial,sans-serif,&quot;Apple Color Emoji&quot;,&quot;Segoe UI Emoji&quot;;height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center"><div><style>body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}</style><h1 class="next-error-h1" style="display:inline-block;margin:0 20px 0 0;padding:0 23px 0 0;font-size:24px;font-weight:500;vertical-align:top;line-height:49px">404</h1><div style="display:inline-block"><h2 style="font-size:14px;font-weight:400;line-height:49px;margin:0">This page could not be found.</h2></div></div></div><!--$--><!--/$--><script src="/_next/static/chunks/e90d6ead1c1607ac.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[84916,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n3:I[46792,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n4:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"OutletBoundary\"]\n5:\"$Sreact.suspense\"\n7:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"ViewportBoundary\"]\n9:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"MetadataBoundary\"]\nb:I[62713,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n:HL[\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"style\"]\n:HL[\"/cesium/Widgets/widgets.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"zcLL9PhKFl6q-t_qKGCrp\",\"c\":[\"\",\"_not-found\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"/_not-found\",{\"children\":[\"__PAGE__\",{}]}]},\"$undefined\",\"$undefined\",true],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"suppressHydrationWarning\":true,\"children\":[[\"$\",\"head\",null,{\"children\":[\"$\",\"link\",null,{\"rel\":\"stylesheet\",\"href\":\"/cesium/Widgets/widgets.css\"}]}],[\"$\",\"body\",null,{\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:style\",\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:1:props:style\",\"children\":404}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:style\",\"children\":[\"$\",\"h2\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:children:props:style\",\"children\":\"This page could not be found.\"}]}]]}]}]],null,[\"$\",\"$L4\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@6\"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],[\"$\",\"$1\",\"h\",{\"children\":[[\"$\",\"meta\",null,{\"name\":\"robots\",\"content\":\"noindex\"}],[\"$\",\"$L7\",null,{\"children\":\"$L8\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$L9\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.Metadata\",\"children\":\"$La\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$b\",\"$undefined\"],\"S\":true}\n"])</script><script>self.__next_f.push([1,"8:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\n"])</script><script>self.__next_f.push([1,"c:I[7841,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"IconMark\"]\n6:null\n"])</script><script>self.__next_f.push([1,"a:[[\"$\",\"title\",\"0\",{\"children\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun.\"}],[\"$\",\"meta\",\"2\",{\"name\":\"author\",\"content\":\"Jiangyun\"}],[\"$\",\"link\",\"3\",{\"rel\":\"manifest\",\"href\":\"/manifest.json\",\"crossOrigin\":\"$undefined\"}],[\"$\",\"meta\",\"4\",{\"name\":\"keywords\",\"content\":\"submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue\"}],[\"$\",\"meta\",\"5\",{\"name\":\"creator\",\"content\":\"Jiangyun\"}],[\"$\",\"meta\",\"6\",{\"name\":\"theme-color\",\"content\":\"#2A9D8F\"}],[\"$\",\"meta\",\"7\",{\"property\":\"og:title\",\"content\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"8\",{\"property\":\"og:description\",\"content\":\"Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis.\"}],[\"$\",\"meta\",\"9\",{\"property\":\"og:url\",\"content\":\"https://deep-cloud.org\"}],[\"$\",\"meta\",\"10\",{\"property\":\"og:site_name\",\"content\":\"Deep Blue\"}],[\"$\",\"meta\",\"11\",{\"property\":\"og:locale\",\"content\":\"en_US\"}],[\"$\",\"meta\",\"12\",{\"property\":\"og:type\",\"content\":\"website\"}],[\"$\",\"meta\",\"13\",{\"name\":\"twitter:card\",\"content\":\"summary_large_image\"}],[\"$\",\"meta\",\"14\",{\"name\":\"twitter:creator\",\"content\":\"@Jiangyun\"}],[\"$\",\"meta\",\"15\",{\"name\":\"twitter:title\",\"content\":\"Deep Blue | Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"16\",{\"name\":\"twitter:description\",\"content\":\"AI-powered global submarine cable monitoring platform\"}],[\"$\",\"link\",\"17\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.0b3bf435.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"link\",\"18\",{\"rel\":\"icon\",\"href\":\"/favicon.ico\"}],[\"$\",\"link\",\"19\",{\"rel\":\"apple-touch-icon\",\"href\":\"/icons/icon-180.png\"}],[\"$\",\"$Lc\",\"20\",{}]]\n"])</script></body></html>
+[2/2] ❌ 缓存刷新失败！请检查 REVALIDATE_SECRET 是否正确
+
+完成时间: 2026-03-17 21:30:06
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:32:23
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+导入失败: PrismaClientInitializationError: 
+Invalid `prisma.cableEvent.deleteMany()` invocation in
+/home/ubuntu/deep-blue/scripts/import-full.ts:129:27
+
+  126 
+  127 // ═══ 第4步：清空旧数据（重新导入） ═══
+  128 console.log('[4/6] 清空旧数据...');
+→ 129 await prisma.cableEvent.deleteMany(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async main (/home/ubuntu/deep-blue/scripts/import-full.ts:129:3) {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined
+}
+[1/2] ⚠️  数据导入出现错误（见上方日志），但继续执行缓存刷新
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 404
+[2/2] 响应内容: <!DOCTYPE html><!--zcLL9PhKFl6q_t_qKGCrp--><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/_next/static/chunks/a7fd00c0b3fff0f7.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/e90d6ead1c1607ac.js"/><script src="/_next/static/chunks/f56dbb0445c63c1b.js" async=""></script><script src="/_next/static/chunks/ba4f7e9a72eb0632.js" async=""></script><script src="/_next/static/chunks/ff3d1bb9203cb30c.js" async=""></script><script src="/_next/static/chunks/turbopack-dce0872f7520f592.js" async=""></script><script src="/_next/static/chunks/f25eb5ad90cbde7a.js" async=""></script><link rel="preload" href="/cesium/Widgets/widgets.css" as="style"/><meta name="robots" content="noindex"/><title>404: This page could not be found.</title><title>Deep Blue | Global Submarine Cable Intelligence</title><meta name="description" content="Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun."/><meta name="author" content="Jiangyun"/><link rel="manifest" href="/manifest.json"/><meta name="keywords" content="submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue"/><meta name="creator" content="Jiangyun"/><meta name="theme-color" content="#2A9D8F"/><meta property="og:title" content="Deep Blue | Global Submarine Cable Intelligence"/><meta property="og:description" content="Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis."/><meta property="og:url" content="https://deep-cloud.org"/><meta property="og:site_name" content="Deep Blue"/><meta property="og:locale" content="en_US"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:creator" content="@Jiangyun"/><meta name="twitter:title" content="Deep Blue | Submarine Cable Intelligence"/><meta name="twitter:description" content="AI-powered global submarine cable monitoring platform"/><link rel="icon" href="/favicon.ico?favicon.0b3bf435.ico" sizes="256x256" type="image/x-icon"/><link rel="icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/icons/icon-180.png"/><link rel="stylesheet" href="/cesium/Widgets/widgets.css"/><script src="/_next/static/chunks/a6dad97d9634a72d.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><div style="font-family:system-ui,&quot;Segoe UI&quot;,Roboto,Helvetica,Arial,sans-serif,&quot;Apple Color Emoji&quot;,&quot;Segoe UI Emoji&quot;;height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center"><div><style>body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}</style><h1 class="next-error-h1" style="display:inline-block;margin:0 20px 0 0;padding:0 23px 0 0;font-size:24px;font-weight:500;vertical-align:top;line-height:49px">404</h1><div style="display:inline-block"><h2 style="font-size:14px;font-weight:400;line-height:49px;margin:0">This page could not be found.</h2></div></div></div><!--$--><!--/$--><script src="/_next/static/chunks/e90d6ead1c1607ac.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[84916,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n3:I[46792,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n4:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"OutletBoundary\"]\n5:\"$Sreact.suspense\"\n7:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"ViewportBoundary\"]\n9:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"MetadataBoundary\"]\nb:I[62713,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n:HL[\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"style\"]\n:HL[\"/cesium/Widgets/widgets.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"zcLL9PhKFl6q-t_qKGCrp\",\"c\":[\"\",\"_not-found\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"/_not-found\",{\"children\":[\"__PAGE__\",{}]}]},\"$undefined\",\"$undefined\",true],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"suppressHydrationWarning\":true,\"children\":[[\"$\",\"head\",null,{\"children\":[\"$\",\"link\",null,{\"rel\":\"stylesheet\",\"href\":\"/cesium/Widgets/widgets.css\"}]}],[\"$\",\"body\",null,{\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:style\",\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:1:props:style\",\"children\":404}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:style\",\"children\":[\"$\",\"h2\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:children:props:style\",\"children\":\"This page could not be found.\"}]}]]}]}]],null,[\"$\",\"$L4\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@6\"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],[\"$\",\"$1\",\"h\",{\"children\":[[\"$\",\"meta\",null,{\"name\":\"robots\",\"content\":\"noindex\"}],[\"$\",\"$L7\",null,{\"children\":\"$L8\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$L9\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.Metadata\",\"children\":\"$La\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$b\",\"$undefined\"],\"S\":true}\n"])</script><script>self.__next_f.push([1,"8:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\n"])</script><script>self.__next_f.push([1,"c:I[7841,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"IconMark\"]\n6:null\n"])</script><script>self.__next_f.push([1,"a:[[\"$\",\"title\",\"0\",{\"children\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun.\"}],[\"$\",\"meta\",\"2\",{\"name\":\"author\",\"content\":\"Jiangyun\"}],[\"$\",\"link\",\"3\",{\"rel\":\"manifest\",\"href\":\"/manifest.json\",\"crossOrigin\":\"$undefined\"}],[\"$\",\"meta\",\"4\",{\"name\":\"keywords\",\"content\":\"submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue\"}],[\"$\",\"meta\",\"5\",{\"name\":\"creator\",\"content\":\"Jiangyun\"}],[\"$\",\"meta\",\"6\",{\"name\":\"theme-color\",\"content\":\"#2A9D8F\"}],[\"$\",\"meta\",\"7\",{\"property\":\"og:title\",\"content\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"8\",{\"property\":\"og:description\",\"content\":\"Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis.\"}],[\"$\",\"meta\",\"9\",{\"property\":\"og:url\",\"content\":\"https://deep-cloud.org\"}],[\"$\",\"meta\",\"10\",{\"property\":\"og:site_name\",\"content\":\"Deep Blue\"}],[\"$\",\"meta\",\"11\",{\"property\":\"og:locale\",\"content\":\"en_US\"}],[\"$\",\"meta\",\"12\",{\"property\":\"og:type\",\"content\":\"website\"}],[\"$\",\"meta\",\"13\",{\"name\":\"twitter:card\",\"content\":\"summary_large_image\"}],[\"$\",\"meta\",\"14\",{\"name\":\"twitter:creator\",\"content\":\"@Jiangyun\"}],[\"$\",\"meta\",\"15\",{\"name\":\"twitter:title\",\"content\":\"Deep Blue | Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"16\",{\"name\":\"twitter:description\",\"content\":\"AI-powered global submarine cable monitoring platform\"}],[\"$\",\"link\",\"17\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.0b3bf435.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"link\",\"18\",{\"rel\":\"icon\",\"href\":\"/favicon.ico\"}],[\"$\",\"link\",\"19\",{\"rel\":\"apple-touch-icon\",\"href\":\"/icons/icon-180.png\"}],[\"$\",\"$Lc\",\"20\",{}]]\n"])</script></body></html>
+[2/2] ❌ 缓存刷新失败！请检查 REVALIDATE_SECRET 是否正确
+
+完成时间: 2026-03-17 21:32:29
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:33:00
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+导入失败: PrismaClientInitializationError: 
+Invalid `prisma.cableEvent.deleteMany()` invocation in
+/home/ubuntu/deep-blue/scripts/import-full.ts:129:27
+
+  126 
+  127 // ═══ 第4步：清空旧数据（重新导入） ═══
+  128 console.log('[4/6] 清空旧数据...');
+→ 129 await prisma.cableEvent.deleteMany(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async main (/home/ubuntu/deep-blue/scripts/import-full.ts:129:3) {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined
+}
+[1/2] ⚠️  数据导入出现错误（见上方日志），但继续执行缓存刷新
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 404
+[2/2] 响应内容: <!DOCTYPE html><!--zcLL9PhKFl6q_t_qKGCrp--><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/_next/static/chunks/a7fd00c0b3fff0f7.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/e90d6ead1c1607ac.js"/><script src="/_next/static/chunks/f56dbb0445c63c1b.js" async=""></script><script src="/_next/static/chunks/ba4f7e9a72eb0632.js" async=""></script><script src="/_next/static/chunks/ff3d1bb9203cb30c.js" async=""></script><script src="/_next/static/chunks/turbopack-dce0872f7520f592.js" async=""></script><script src="/_next/static/chunks/f25eb5ad90cbde7a.js" async=""></script><link rel="preload" href="/cesium/Widgets/widgets.css" as="style"/><meta name="robots" content="noindex"/><title>404: This page could not be found.</title><title>Deep Blue | Global Submarine Cable Intelligence</title><meta name="description" content="Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun."/><meta name="author" content="Jiangyun"/><link rel="manifest" href="/manifest.json"/><meta name="keywords" content="submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue"/><meta name="creator" content="Jiangyun"/><meta name="theme-color" content="#2A9D8F"/><meta property="og:title" content="Deep Blue | Global Submarine Cable Intelligence"/><meta property="og:description" content="Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis."/><meta property="og:url" content="https://deep-cloud.org"/><meta property="og:site_name" content="Deep Blue"/><meta property="og:locale" content="en_US"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:creator" content="@Jiangyun"/><meta name="twitter:title" content="Deep Blue | Submarine Cable Intelligence"/><meta name="twitter:description" content="AI-powered global submarine cable monitoring platform"/><link rel="icon" href="/favicon.ico?favicon.0b3bf435.ico" sizes="256x256" type="image/x-icon"/><link rel="icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/icons/icon-180.png"/><link rel="stylesheet" href="/cesium/Widgets/widgets.css"/><script src="/_next/static/chunks/a6dad97d9634a72d.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><div style="font-family:system-ui,&quot;Segoe UI&quot;,Roboto,Helvetica,Arial,sans-serif,&quot;Apple Color Emoji&quot;,&quot;Segoe UI Emoji&quot;;height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center"><div><style>body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}</style><h1 class="next-error-h1" style="display:inline-block;margin:0 20px 0 0;padding:0 23px 0 0;font-size:24px;font-weight:500;vertical-align:top;line-height:49px">404</h1><div style="display:inline-block"><h2 style="font-size:14px;font-weight:400;line-height:49px;margin:0">This page could not be found.</h2></div></div></div><!--$--><!--/$--><script src="/_next/static/chunks/e90d6ead1c1607ac.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[84916,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n3:I[46792,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n4:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"OutletBoundary\"]\n5:\"$Sreact.suspense\"\n7:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"ViewportBoundary\"]\n9:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"MetadataBoundary\"]\nb:I[62713,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n:HL[\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"style\"]\n:HL[\"/cesium/Widgets/widgets.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"zcLL9PhKFl6q-t_qKGCrp\",\"c\":[\"\",\"_not-found\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"/_not-found\",{\"children\":[\"__PAGE__\",{}]}]},\"$undefined\",\"$undefined\",true],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"suppressHydrationWarning\":true,\"children\":[[\"$\",\"head\",null,{\"children\":[\"$\",\"link\",null,{\"rel\":\"stylesheet\",\"href\":\"/cesium/Widgets/widgets.css\"}]}],[\"$\",\"body\",null,{\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:style\",\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:1:props:style\",\"children\":404}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:style\",\"children\":[\"$\",\"h2\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:children:props:style\",\"children\":\"This page could not be found.\"}]}]]}]}]],null,[\"$\",\"$L4\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@6\"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],[\"$\",\"$1\",\"h\",{\"children\":[[\"$\",\"meta\",null,{\"name\":\"robots\",\"content\":\"noindex\"}],[\"$\",\"$L7\",null,{\"children\":\"$L8\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$L9\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.Metadata\",\"children\":\"$La\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$b\",\"$undefined\"],\"S\":true}\n"])</script><script>self.__next_f.push([1,"8:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\n"])</script><script>self.__next_f.push([1,"c:I[7841,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"IconMark\"]\n6:null\n"])</script><script>self.__next_f.push([1,"a:[[\"$\",\"title\",\"0\",{\"children\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun.\"}],[\"$\",\"meta\",\"2\",{\"name\":\"author\",\"content\":\"Jiangyun\"}],[\"$\",\"link\",\"3\",{\"rel\":\"manifest\",\"href\":\"/manifest.json\",\"crossOrigin\":\"$undefined\"}],[\"$\",\"meta\",\"4\",{\"name\":\"keywords\",\"content\":\"submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue\"}],[\"$\",\"meta\",\"5\",{\"name\":\"creator\",\"content\":\"Jiangyun\"}],[\"$\",\"meta\",\"6\",{\"name\":\"theme-color\",\"content\":\"#2A9D8F\"}],[\"$\",\"meta\",\"7\",{\"property\":\"og:title\",\"content\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"8\",{\"property\":\"og:description\",\"content\":\"Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis.\"}],[\"$\",\"meta\",\"9\",{\"property\":\"og:url\",\"content\":\"https://deep-cloud.org\"}],[\"$\",\"meta\",\"10\",{\"property\":\"og:site_name\",\"content\":\"Deep Blue\"}],[\"$\",\"meta\",\"11\",{\"property\":\"og:locale\",\"content\":\"en_US\"}],[\"$\",\"meta\",\"12\",{\"property\":\"og:type\",\"content\":\"website\"}],[\"$\",\"meta\",\"13\",{\"name\":\"twitter:card\",\"content\":\"summary_large_image\"}],[\"$\",\"meta\",\"14\",{\"name\":\"twitter:creator\",\"content\":\"@Jiangyun\"}],[\"$\",\"meta\",\"15\",{\"name\":\"twitter:title\",\"content\":\"Deep Blue | Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"16\",{\"name\":\"twitter:description\",\"content\":\"AI-powered global submarine cable monitoring platform\"}],[\"$\",\"link\",\"17\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.0b3bf435.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"link\",\"18\",{\"rel\":\"icon\",\"href\":\"/favicon.ico\"}],[\"$\",\"link\",\"19\",{\"rel\":\"apple-touch-icon\",\"href\":\"/icons/icon-180.png\"}],[\"$\",\"$Lc\",\"20\",{}]]\n"])</script></body></html>
+[2/2] ❌ 缓存刷新失败！请检查 REVALIDATE_SECRET 是否正确
+
+完成时间: 2026-03-17 21:33:06
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:37:41
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+导入失败: PrismaClientInitializationError: 
+Invalid `prisma.cableEvent.deleteMany()` invocation in
+/home/ubuntu/deep-blue/scripts/import-full.ts:129:27
+
+  126 
+  127 // ═══ 第4步：清空旧数据（重新导入） ═══
+  128 console.log('[4/6] 清空旧数据...');
+→ 129 await prisma.cableEvent.deleteMany(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async main (/home/ubuntu/deep-blue/scripts/import-full.ts:129:3) {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined
+}
+[1/2] ⚠️  数据导入出现错误（见上方日志），但继续执行缓存刷新
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 404
+[2/2] 响应内容: <!DOCTYPE html><!--zcLL9PhKFl6q_t_qKGCrp--><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/_next/static/chunks/a7fd00c0b3fff0f7.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/e90d6ead1c1607ac.js"/><script src="/_next/static/chunks/f56dbb0445c63c1b.js" async=""></script><script src="/_next/static/chunks/ba4f7e9a72eb0632.js" async=""></script><script src="/_next/static/chunks/ff3d1bb9203cb30c.js" async=""></script><script src="/_next/static/chunks/turbopack-dce0872f7520f592.js" async=""></script><script src="/_next/static/chunks/f25eb5ad90cbde7a.js" async=""></script><link rel="preload" href="/cesium/Widgets/widgets.css" as="style"/><meta name="robots" content="noindex"/><title>404: This page could not be found.</title><title>Deep Blue | Global Submarine Cable Intelligence</title><meta name="description" content="Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun."/><meta name="author" content="Jiangyun"/><link rel="manifest" href="/manifest.json"/><meta name="keywords" content="submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue"/><meta name="creator" content="Jiangyun"/><meta name="theme-color" content="#2A9D8F"/><meta property="og:title" content="Deep Blue | Global Submarine Cable Intelligence"/><meta property="og:description" content="Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis."/><meta property="og:url" content="https://deep-cloud.org"/><meta property="og:site_name" content="Deep Blue"/><meta property="og:locale" content="en_US"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:creator" content="@Jiangyun"/><meta name="twitter:title" content="Deep Blue | Submarine Cable Intelligence"/><meta name="twitter:description" content="AI-powered global submarine cable monitoring platform"/><link rel="icon" href="/favicon.ico?favicon.0b3bf435.ico" sizes="256x256" type="image/x-icon"/><link rel="icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/icons/icon-180.png"/><link rel="stylesheet" href="/cesium/Widgets/widgets.css"/><script src="/_next/static/chunks/a6dad97d9634a72d.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><div style="font-family:system-ui,&quot;Segoe UI&quot;,Roboto,Helvetica,Arial,sans-serif,&quot;Apple Color Emoji&quot;,&quot;Segoe UI Emoji&quot;;height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center"><div><style>body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}</style><h1 class="next-error-h1" style="display:inline-block;margin:0 20px 0 0;padding:0 23px 0 0;font-size:24px;font-weight:500;vertical-align:top;line-height:49px">404</h1><div style="display:inline-block"><h2 style="font-size:14px;font-weight:400;line-height:49px;margin:0">This page could not be found.</h2></div></div></div><!--$--><!--/$--><script src="/_next/static/chunks/e90d6ead1c1607ac.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[84916,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n3:I[46792,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n4:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"OutletBoundary\"]\n5:\"$Sreact.suspense\"\n7:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"ViewportBoundary\"]\n9:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"MetadataBoundary\"]\nb:I[62713,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n:HL[\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"style\"]\n:HL[\"/cesium/Widgets/widgets.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"zcLL9PhKFl6q-t_qKGCrp\",\"c\":[\"\",\"_not-found\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"/_not-found\",{\"children\":[\"__PAGE__\",{}]}]},\"$undefined\",\"$undefined\",true],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"suppressHydrationWarning\":true,\"children\":[[\"$\",\"head\",null,{\"children\":[\"$\",\"link\",null,{\"rel\":\"stylesheet\",\"href\":\"/cesium/Widgets/widgets.css\"}]}],[\"$\",\"body\",null,{\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:style\",\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:1:props:style\",\"children\":404}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:style\",\"children\":[\"$\",\"h2\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:children:props:style\",\"children\":\"This page could not be found.\"}]}]]}]}]],null,[\"$\",\"$L4\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@6\"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],[\"$\",\"$1\",\"h\",{\"children\":[[\"$\",\"meta\",null,{\"name\":\"robots\",\"content\":\"noindex\"}],[\"$\",\"$L7\",null,{\"children\":\"$L8\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$L9\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.Metadata\",\"children\":\"$La\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$b\",\"$undefined\"],\"S\":true}\n"])</script><script>self.__next_f.push([1,"8:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\n"])</script><script>self.__next_f.push([1,"c:I[7841,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"IconMark\"]\n6:null\n"])</script><script>self.__next_f.push([1,"a:[[\"$\",\"title\",\"0\",{\"children\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun.\"}],[\"$\",\"meta\",\"2\",{\"name\":\"author\",\"content\":\"Jiangyun\"}],[\"$\",\"link\",\"3\",{\"rel\":\"manifest\",\"href\":\"/manifest.json\",\"crossOrigin\":\"$undefined\"}],[\"$\",\"meta\",\"4\",{\"name\":\"keywords\",\"content\":\"submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue\"}],[\"$\",\"meta\",\"5\",{\"name\":\"creator\",\"content\":\"Jiangyun\"}],[\"$\",\"meta\",\"6\",{\"name\":\"theme-color\",\"content\":\"#2A9D8F\"}],[\"$\",\"meta\",\"7\",{\"property\":\"og:title\",\"content\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"8\",{\"property\":\"og:description\",\"content\":\"Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis.\"}],[\"$\",\"meta\",\"9\",{\"property\":\"og:url\",\"content\":\"https://deep-cloud.org\"}],[\"$\",\"meta\",\"10\",{\"property\":\"og:site_name\",\"content\":\"Deep Blue\"}],[\"$\",\"meta\",\"11\",{\"property\":\"og:locale\",\"content\":\"en_US\"}],[\"$\",\"meta\",\"12\",{\"property\":\"og:type\",\"content\":\"website\"}],[\"$\",\"meta\",\"13\",{\"name\":\"twitter:card\",\"content\":\"summary_large_image\"}],[\"$\",\"meta\",\"14\",{\"name\":\"twitter:creator\",\"content\":\"@Jiangyun\"}],[\"$\",\"meta\",\"15\",{\"name\":\"twitter:title\",\"content\":\"Deep Blue | Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"16\",{\"name\":\"twitter:description\",\"content\":\"AI-powered global submarine cable monitoring platform\"}],[\"$\",\"link\",\"17\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.0b3bf435.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"link\",\"18\",{\"rel\":\"icon\",\"href\":\"/favicon.ico\"}],[\"$\",\"link\",\"19\",{\"rel\":\"apple-touch-icon\",\"href\":\"/icons/icon-180.png\"}],[\"$\",\"$Lc\",\"20\",{}]]\n"])</script></body></html>
+[2/2] ❌ 缓存刷新失败！请检查 REVALIDATE_SECRET 是否正确
+
+完成时间: 2026-03-17 21:37:46
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:37:59
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+导入失败: PrismaClientInitializationError: 
+Invalid `prisma.cableEvent.deleteMany()` invocation in
+/home/ubuntu/deep-blue/scripts/import-full.ts:129:27
+
+  126 
+  127 // ═══ 第4步：清空旧数据（重新导入） ═══
+  128 console.log('[4/6] 清空旧数据...');
+→ 129 await prisma.cableEvent.deleteMany(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at ei.handleRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/home/ubuntu/deep-blue/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async main (/home/ubuntu/deep-blue/scripts/import-full.ts:129:3) {
+  clientVersion: '6.19.2',
+  errorCode: undefined,
+  retryable: undefined
+}
+[1/2] ⚠️  数据导入出现错误（见上方日志），但继续执行缓存刷新
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 404
+[2/2] 响应内容: <!DOCTYPE html><!--zcLL9PhKFl6q_t_qKGCrp--><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/_next/static/chunks/a7fd00c0b3fff0f7.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/e90d6ead1c1607ac.js"/><script src="/_next/static/chunks/f56dbb0445c63c1b.js" async=""></script><script src="/_next/static/chunks/ba4f7e9a72eb0632.js" async=""></script><script src="/_next/static/chunks/ff3d1bb9203cb30c.js" async=""></script><script src="/_next/static/chunks/turbopack-dce0872f7520f592.js" async=""></script><script src="/_next/static/chunks/f25eb5ad90cbde7a.js" async=""></script><link rel="preload" href="/cesium/Widgets/widgets.css" as="style"/><meta name="robots" content="noindex"/><title>404: This page could not be found.</title><title>Deep Blue | Global Submarine Cable Intelligence</title><meta name="description" content="Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun."/><meta name="author" content="Jiangyun"/><link rel="manifest" href="/manifest.json"/><meta name="keywords" content="submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue"/><meta name="creator" content="Jiangyun"/><meta name="theme-color" content="#2A9D8F"/><meta property="og:title" content="Deep Blue | Global Submarine Cable Intelligence"/><meta property="og:description" content="Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis."/><meta property="og:url" content="https://deep-cloud.org"/><meta property="og:site_name" content="Deep Blue"/><meta property="og:locale" content="en_US"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:creator" content="@Jiangyun"/><meta name="twitter:title" content="Deep Blue | Submarine Cable Intelligence"/><meta name="twitter:description" content="AI-powered global submarine cable monitoring platform"/><link rel="icon" href="/favicon.ico?favicon.0b3bf435.ico" sizes="256x256" type="image/x-icon"/><link rel="icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/icons/icon-180.png"/><link rel="stylesheet" href="/cesium/Widgets/widgets.css"/><script src="/_next/static/chunks/a6dad97d9634a72d.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><div style="font-family:system-ui,&quot;Segoe UI&quot;,Roboto,Helvetica,Arial,sans-serif,&quot;Apple Color Emoji&quot;,&quot;Segoe UI Emoji&quot;;height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center"><div><style>body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}</style><h1 class="next-error-h1" style="display:inline-block;margin:0 20px 0 0;padding:0 23px 0 0;font-size:24px;font-weight:500;vertical-align:top;line-height:49px">404</h1><div style="display:inline-block"><h2 style="font-size:14px;font-weight:400;line-height:49px;margin:0">This page could not be found.</h2></div></div></div><!--$--><!--/$--><script src="/_next/static/chunks/e90d6ead1c1607ac.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[84916,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n3:I[46792,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n4:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"OutletBoundary\"]\n5:\"$Sreact.suspense\"\n7:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"ViewportBoundary\"]\n9:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"MetadataBoundary\"]\nb:I[62713,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n:HL[\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"style\"]\n:HL[\"/cesium/Widgets/widgets.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"zcLL9PhKFl6q-t_qKGCrp\",\"c\":[\"\",\"_not-found\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"/_not-found\",{\"children\":[\"__PAGE__\",{}]}]},\"$undefined\",\"$undefined\",true],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"suppressHydrationWarning\":true,\"children\":[[\"$\",\"head\",null,{\"children\":[\"$\",\"link\",null,{\"rel\":\"stylesheet\",\"href\":\"/cesium/Widgets/widgets.css\"}]}],[\"$\",\"body\",null,{\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:style\",\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:1:props:style\",\"children\":404}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:style\",\"children\":[\"$\",\"h2\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:children:props:style\",\"children\":\"This page could not be found.\"}]}]]}]}]],null,[\"$\",\"$L4\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@6\"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],[\"$\",\"$1\",\"h\",{\"children\":[[\"$\",\"meta\",null,{\"name\":\"robots\",\"content\":\"noindex\"}],[\"$\",\"$L7\",null,{\"children\":\"$L8\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$L9\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.Metadata\",\"children\":\"$La\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$b\",\"$undefined\"],\"S\":true}\n"])</script><script>self.__next_f.push([1,"8:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\n"])</script><script>self.__next_f.push([1,"c:I[7841,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"IconMark\"]\n6:null\n"])</script><script>self.__next_f.push([1,"a:[[\"$\",\"title\",\"0\",{\"children\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun.\"}],[\"$\",\"meta\",\"2\",{\"name\":\"author\",\"content\":\"Jiangyun\"}],[\"$\",\"link\",\"3\",{\"rel\":\"manifest\",\"href\":\"/manifest.json\",\"crossOrigin\":\"$undefined\"}],[\"$\",\"meta\",\"4\",{\"name\":\"keywords\",\"content\":\"submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue\"}],[\"$\",\"meta\",\"5\",{\"name\":\"creator\",\"content\":\"Jiangyun\"}],[\"$\",\"meta\",\"6\",{\"name\":\"theme-color\",\"content\":\"#2A9D8F\"}],[\"$\",\"meta\",\"7\",{\"property\":\"og:title\",\"content\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"8\",{\"property\":\"og:description\",\"content\":\"Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis.\"}],[\"$\",\"meta\",\"9\",{\"property\":\"og:url\",\"content\":\"https://deep-cloud.org\"}],[\"$\",\"meta\",\"10\",{\"property\":\"og:site_name\",\"content\":\"Deep Blue\"}],[\"$\",\"meta\",\"11\",{\"property\":\"og:locale\",\"content\":\"en_US\"}],[\"$\",\"meta\",\"12\",{\"property\":\"og:type\",\"content\":\"website\"}],[\"$\",\"meta\",\"13\",{\"name\":\"twitter:card\",\"content\":\"summary_large_image\"}],[\"$\",\"meta\",\"14\",{\"name\":\"twitter:creator\",\"content\":\"@Jiangyun\"}],[\"$\",\"meta\",\"15\",{\"name\":\"twitter:title\",\"content\":\"Deep Blue | Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"16\",{\"name\":\"twitter:description\",\"content\":\"AI-powered global submarine cable monitoring platform\"}],[\"$\",\"link\",\"17\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.0b3bf435.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"link\",\"18\",{\"rel\":\"icon\",\"href\":\"/favicon.ico\"}],[\"$\",\"link\",\"19\",{\"rel\":\"apple-touch-icon\",\"href\":\"/icons/icon-180.png\"}],[\"$\",\"$Lc\",\"20\",{}]]\n"])</script></body></html>
+[2/2] ❌ 缓存刷新失败！请检查 REVALIDATE_SECRET 是否正确
+
+完成时间: 2026-03-17 21:38:04
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:40:19
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+  旧数据已清空
+
+[5/6] 逐条获取海缆详情并导入（这可能需要5-10分钟）...
+  已获取 50 / 690 条...
+  已获取 100 / 690 条...
+  已获取 150 / 690 条...
+  已获取 200 / 690 条...
+  已获取 250 / 690 条...
+  已获取 300 / 690 条...
+  已获取 350 / 690 条...
+  已获取 400 / 690 条...
+  已获取 450 / 690 条...
+  已获取 500 / 690 条...
+  已获取 550 / 690 条...
+  已获取 600 / 690 条...
+  已获取 650 / 690 条...
+  详情获取完成: 成功 690, 失败 0
+
+[6/6] 写入数据库...
+  写入国家...
+  写入 160 个国家
+  写入公司...
+  写入 496 家公司
+  写入登陆站...
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 21:53:16
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+  旧数据已清空
+
+[5/6] 逐条获取海缆详情并导入（这可能需要5-10分钟）...
+  已获取 50 / 690 条...
+  已获取 100 / 690 条...
+  已获取 150 / 690 条...
+  已获取 200 / 690 条...
+  已获取 250 / 690 条...
+  已获取 300 / 690 条...
+  已获取 350 / 690 条...
+  已获取 400 / 690 条...
+  已获取 450 / 690 条...
+  已获取 500 / 690 条...
+  已获取 550 / 690 条...
+  已获取 600 / 690 条...
+  已获取 650 / 690 条...
+  详情获取完成: 成功 690, 失败 0
+
+[6/6] 写入数据库...
+  写入国家...
+  写入 160 个国家
+  写入公司...
+  写入 496 家公司
+  写入登陆站...
+  写入 1907 个登陆站
+  写入海缆及关联...
+  写入 690 条海缆（含关联）
+
+╔══════════════════════════════════════════╗
+║  导入完成！                               ║
+║  海缆:      690 条                      ║
+║  登陆站:   1907 个                      ║
+║  公司:      496 家                      ║
+║  国家:      160 个                      ║
+╚══════════════════════════════════════════╝
+[1/2] ✅ 数据导入完成
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 404
+[2/2] 响应内容: <!DOCTYPE html><!--zcLL9PhKFl6q_t_qKGCrp--><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/_next/static/chunks/a7fd00c0b3fff0f7.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/e90d6ead1c1607ac.js"/><script src="/_next/static/chunks/f56dbb0445c63c1b.js" async=""></script><script src="/_next/static/chunks/ba4f7e9a72eb0632.js" async=""></script><script src="/_next/static/chunks/ff3d1bb9203cb30c.js" async=""></script><script src="/_next/static/chunks/turbopack-dce0872f7520f592.js" async=""></script><script src="/_next/static/chunks/f25eb5ad90cbde7a.js" async=""></script><link rel="preload" href="/cesium/Widgets/widgets.css" as="style"/><meta name="robots" content="noindex"/><title>404: This page could not be found.</title><title>Deep Blue | Global Submarine Cable Intelligence</title><meta name="description" content="Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun."/><meta name="author" content="Jiangyun"/><link rel="manifest" href="/manifest.json"/><meta name="keywords" content="submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue"/><meta name="creator" content="Jiangyun"/><meta name="theme-color" content="#2A9D8F"/><meta property="og:title" content="Deep Blue | Global Submarine Cable Intelligence"/><meta property="og:description" content="Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis."/><meta property="og:url" content="https://deep-cloud.org"/><meta property="og:site_name" content="Deep Blue"/><meta property="og:locale" content="en_US"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:creator" content="@Jiangyun"/><meta name="twitter:title" content="Deep Blue | Submarine Cable Intelligence"/><meta name="twitter:description" content="AI-powered global submarine cable monitoring platform"/><link rel="icon" href="/favicon.ico?favicon.0b3bf435.ico" sizes="256x256" type="image/x-icon"/><link rel="icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/icons/icon-180.png"/><link rel="stylesheet" href="/cesium/Widgets/widgets.css"/><script src="/_next/static/chunks/a6dad97d9634a72d.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><div style="font-family:system-ui,&quot;Segoe UI&quot;,Roboto,Helvetica,Arial,sans-serif,&quot;Apple Color Emoji&quot;,&quot;Segoe UI Emoji&quot;;height:100vh;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center"><div><style>body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}</style><h1 class="next-error-h1" style="display:inline-block;margin:0 20px 0 0;padding:0 23px 0 0;font-size:24px;font-weight:500;vertical-align:top;line-height:49px">404</h1><div style="display:inline-block"><h2 style="font-size:14px;font-weight:400;line-height:49px;margin:0">This page could not be found.</h2></div></div></div><!--$--><!--/$--><script src="/_next/static/chunks/e90d6ead1c1607ac.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[84916,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n3:I[46792,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n4:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"OutletBoundary\"]\n5:\"$Sreact.suspense\"\n7:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"ViewportBoundary\"]\n9:I[68559,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"MetadataBoundary\"]\nb:I[62713,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"default\"]\n:HL[\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"style\"]\n:HL[\"/cesium/Widgets/widgets.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"zcLL9PhKFl6q-t_qKGCrp\",\"c\":[\"\",\"_not-found\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"/_not-found\",{\"children\":[\"__PAGE__\",{}]}]},\"$undefined\",\"$undefined\",true],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/a7fd00c0b3fff0f7.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"suppressHydrationWarning\":true,\"children\":[[\"$\",\"head\",null,{\"children\":[\"$\",\"link\",null,{\"rel\":\"stylesheet\",\"href\":\"/cesium/Widgets/widgets.css\"}]}],[\"$\",\"body\",null,{\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[null,[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":\"$undefined\",\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:style\",\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:1:props:style\",\"children\":404}],[\"$\",\"div\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:style\",\"children\":[\"$\",\"h2\",null,{\"style\":\"$0:f:0:1:0:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:children:props:style\",\"children\":\"This page could not be found.\"}]}]]}]}]],null,[\"$\",\"$L4\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@6\"}]}]]}],{},null,false,false]},null,false,false]},null,false,false],[\"$\",\"$1\",\"h\",{\"children\":[[\"$\",\"meta\",null,{\"name\":\"robots\",\"content\":\"noindex\"}],[\"$\",\"$L7\",null,{\"children\":\"$L8\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$L9\",null,{\"children\":[\"$\",\"$5\",null,{\"name\":\"Next.Metadata\",\"children\":\"$La\"}]}]}],null]}],false]],\"m\":\"$undefined\",\"G\":[\"$b\",\"$undefined\"],\"S\":true}\n"])</script><script>self.__next_f.push([1,"8:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\n"])</script><script>self.__next_f.push([1,"c:I[7841,[\"/_next/static/chunks/f25eb5ad90cbde7a.js\"],\"IconMark\"]\n6:null\n"])</script><script>self.__next_f.push([1,"a:[[\"$\",\"title\",\"0\",{\"children\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Real-time submarine cable monitoring with AI-powered news analysis, earthquake impact assessment, geopolitical risk scoring, and network topology visualization. Built by Jiangyun.\"}],[\"$\",\"meta\",\"2\",{\"name\":\"author\",\"content\":\"Jiangyun\"}],[\"$\",\"link\",\"3\",{\"rel\":\"manifest\",\"href\":\"/manifest.json\",\"crossOrigin\":\"$undefined\"}],[\"$\",\"meta\",\"4\",{\"name\":\"keywords\",\"content\":\"submarine cable, undersea cable, ocean infrastructure, cable monitoring, geopolitical risk, 海底光缆, 海缆监测, Deep Blue\"}],[\"$\",\"meta\",\"5\",{\"name\":\"creator\",\"content\":\"Jiangyun\"}],[\"$\",\"meta\",\"6\",{\"name\":\"theme-color\",\"content\":\"#2A9D8F\"}],[\"$\",\"meta\",\"7\",{\"property\":\"og:title\",\"content\":\"Deep Blue | Global Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"8\",{\"property\":\"og:description\",\"content\":\"Monitor 690+ submarine cables worldwide with AI-powered intelligence, real-time earthquake alerts, and geopolitical risk analysis.\"}],[\"$\",\"meta\",\"9\",{\"property\":\"og:url\",\"content\":\"https://deep-cloud.org\"}],[\"$\",\"meta\",\"10\",{\"property\":\"og:site_name\",\"content\":\"Deep Blue\"}],[\"$\",\"meta\",\"11\",{\"property\":\"og:locale\",\"content\":\"en_US\"}],[\"$\",\"meta\",\"12\",{\"property\":\"og:type\",\"content\":\"website\"}],[\"$\",\"meta\",\"13\",{\"name\":\"twitter:card\",\"content\":\"summary_large_image\"}],[\"$\",\"meta\",\"14\",{\"name\":\"twitter:creator\",\"content\":\"@Jiangyun\"}],[\"$\",\"meta\",\"15\",{\"name\":\"twitter:title\",\"content\":\"Deep Blue | Submarine Cable Intelligence\"}],[\"$\",\"meta\",\"16\",{\"name\":\"twitter:description\",\"content\":\"AI-powered global submarine cable monitoring platform\"}],[\"$\",\"link\",\"17\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.0b3bf435.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"link\",\"18\",{\"rel\":\"icon\",\"href\":\"/favicon.ico\"}],[\"$\",\"link\",\"19\",{\"rel\":\"apple-touch-icon\",\"href\":\"/icons/icon-180.png\"}],[\"$\",\"$Lc\",\"20\",{}]]\n"])</script></body></html>
+[2/2] ❌ 缓存刷新失败！请检查 REVALIDATE_SECRET 是否正确
+
+完成时间: 2026-03-17 22:19:00
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 22:42:44
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+
+========================================
+  Deep Blue 夜间更新 2026-03-17 22:43:15
+========================================
+[1/2] 开始从 TeleGeography 导入数据...
+╔══════════════════════════════════════════╗
+║  Deep Blue 完整数据导入 v2               ║
+╚══════════════════════════════════════════╝
+
+[1/6] 下载海缆列表...
+  找到 690 条海缆
+
+[2/6] 下载GeoJSON路由数据...
+  找到 690 条路由
+
+[3/6] 下载登陆站坐标数据...
+  找到 1907 个登陆站坐标
+
+[4/6] 清空旧数据...
+  旧数据已清空
+
+[5/6] 逐条获取海缆详情并导入（这可能需要5-10分钟）...
+  已获取 50 / 690 条...
+  已获取 100 / 690 条...
+  已获取 150 / 690 条...
+  已获取 200 / 690 条...
+  已获取 250 / 690 条...
+  已获取 300 / 690 条...
+  已获取 350 / 690 条...
+  已获取 400 / 690 条...
+  已获取 450 / 690 条...
+  已获取 500 / 690 条...
+  已获取 550 / 690 条...
+  已获取 600 / 690 条...
+  已获取 650 / 690 条...
+  详情获取完成: 成功 690, 失败 0
+
+[6/6] 写入数据库...
+  写入国家...
+  写入 160 个国家
+  写入公司...
+  写入 496 家公司
+  写入登陆站...
+  写入 1907 个登陆站
+  写入海缆及关联...
+  写入 690 条海缆（含关联）
+
+╔══════════════════════════════════════════╗
+║  导入完成！                               ║
+║  海缆:      690 条                      ║
+║  登陆站:   1907 个                      ║
+║  公司:      496 家                      ║
+║  国家:      160 个                      ║
+╚══════════════════════════════════════════╝
+[1/2] ✅ 数据导入完成
+[2/2] 触发 Vercel 缓存全量刷新...
+[2/2] HTTP 状态: 200
+[2/2] 响应内容: {"success":true,"type":"full","redisEntriesCleared":0,"pathsRevalidated":["/","/topology","/compare","/simulate"],"timestamp":"2026-03-17T15:09:25.707Z"}
+[2/2] ✅ 缓存刷新成功
+
+完成时间: 2026-03-17 23:09:25
