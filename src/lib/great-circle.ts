@@ -1,58 +1,39 @@
 /**
- * great-circle.ts — v2 (Ocean Corridor Routing)
+ * great-circle.ts — v3 (Global Offshore Waypoint Mesh)
  *
- * 为无路由的 SN 海缆生成近似路由 GeoJSON，路由走海洋走廊避免穿越陆地。
+ * 为无路由的 SN 海缆生成近似路由 GeoJSON。
  *
- * 核心思路（模拟 TG 路由逻辑）：
- * ─────────────────────────────
- * TG 的路由基于实际铺缆路径，沿海岸线和海底地形走。我们无法复制这个精度，
- * 但可以用"海洋走廊路由"模拟出合理路径：
- *
- * 1. 将每个登陆站按经纬度归入一个"海域区"（如南海、阿拉伯海、地中海等）
- * 2. 海域区之间通过预定义的"走廊航点"相连（如马六甲海峡、苏伊士运河、好望角等）
- * 3. 用图搜索算法（BFS）找到两个海域区之间的最短海洋路径
- * 4. 沿路径上的航点之间生成大圆弧插值点
- *
- * 这样生成的路由不会穿越陆地，且看起来像合理的海缆铺设路径。
+ * 核心原理：
+ * 在全球主要海岸线外 50-100km 处放置约 200 个航点，
+ * 相邻航点之间用边连成"海缆高速公路网"。
+ * 每条边都经过验证在海上，不穿越陆地。
  *
  * 路径：src/lib/great-circle.ts
  */
-
-// ============================================================
-// 1. 球面数学
-// ============================================================
 
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 const EARTH_RADIUS_KM = 6371;
 
-/** 两点间的大圆距离（km） */
 export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const dLat = (lat2 - lat1) * DEG2RAD;
   const dLon = (lon2 - lon1) * DEG2RAD;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
+  const a = Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1 * DEG2RAD) * Math.cos(lat2 * DEG2RAD) * Math.sin(dLon / 2) ** 2;
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
 }
 
-/** 沿大圆弧在两点之间插值，返回 [lon, lat][] */
 export function interpolateGreatCircle(
-  lat1: number, lon1: number,
-  lat2: number, lon2: number,
-  numPoints: number,
+  lat1: number, lon1: number, lat2: number, lon2: number, numPoints: number,
 ): [number, number][] {
   if (numPoints < 2) numPoints = 2;
   const phi1 = lat1 * DEG2RAD, lam1 = lon1 * DEG2RAD;
   const phi2 = lat2 * DEG2RAD, lam2 = lon2 * DEG2RAD;
-
   const d = 2 * Math.asin(Math.sqrt(
     Math.sin((phi2 - phi1) / 2) ** 2 +
     Math.cos(phi1) * Math.cos(phi2) * Math.sin((lam2 - lam1) / 2) ** 2
   ));
-
   if (d < 1e-10) return [[lon1, lat1], [lon2, lat2]];
-
   const points: [number, number][] = [];
   for (let i = 0; i < numPoints; i++) {
     const f = i / (numPoints - 1);
@@ -70,348 +51,281 @@ export function interpolateGreatCircle(
 }
 
 // ============================================================
-// 2. 海域区（Ocean Zone）定义
+// 2. 全球海洋航点网格
 // ============================================================
-// 每个海域区代表一个不需要穿越陆地就能互达的水域
-// 站点按经纬度归入最近的海域区
 
-export type OceanZone =
-  | 'NORTH_SEA'           // 北海/波罗的海（北欧）
-  | 'MED_WEST'            // 西地中海
-  | 'MED_EAST'            // 东地中海
-  | 'RED_SEA'             // 红海 + 亚丁湾
-  | 'PERSIAN_GULF'        // 波斯湾 + 阿曼湾
-  | 'ARABIAN_SEA'         // 阿拉伯海（印度西海岸、东非）
-  | 'BAY_OF_BENGAL'       // 孟加拉湾（印度东海岸、缅甸、安达曼海）
-  | 'SOUTH_CHINA_SEA'     // 南海
-  | 'EAST_CHINA_SEA'      // 东海 + 黄海 + 日本海
-  | 'WEST_PACIFIC'        // 西太平洋（日本东岸、关岛、菲律宾海）
-  | 'CENTRAL_PACIFIC'     // 中太平洋（夏威夷一带）
-  | 'EAST_PACIFIC'        // 东太平洋（美洲西海岸）
-  | 'NORTH_ATLANTIC_WEST' // 北大西洋西部（美洲东海岸）
-  | 'NORTH_ATLANTIC_EAST' // 北大西洋东部（欧洲/非洲大西洋沿岸）
-  | 'SOUTH_ATLANTIC'      // 南大西洋
-  | 'WEST_AFRICA'         // 西非沿海
-  | 'EAST_AFRICA'         // 东非沿海
-  | 'OCEANIA'             // 澳洲/新西兰/太平洋岛屿
-  | 'CARIBBEAN'           // 加勒比海
-  | 'SOUTH_AMERICA_EAST'  // 南美东海岸
-  | 'SOUTH_AMERICA_WEST'; // 南美西海岸
+interface WaypointNode { id: string; lat: number; lon: number; }
 
-/** 海域区分类规则：按经纬度范围判断 */
-export function classifyZone(lat: number, lon: number): OceanZone {
-  // ── 地中海 & 黑海 ──
-  if (lat >= 30 && lat <= 47 && lon >= -6 && lon <= 15) return 'MED_WEST';
-  if (lat >= 30 && lat <= 47 && lon > 15 && lon <= 42) return 'MED_EAST';
-
-  // ── 红海 ──
-  if (lat >= 12 && lat <= 32 && lon >= 32 && lon <= 44) return 'RED_SEA';
-
-  // ── 波斯湾 ──
-  if (lat >= 23 && lat <= 31 && lon >= 47 && lon <= 58) return 'PERSIAN_GULF';
-
-  // ── 北海/波罗的海 ──
-  if (lat >= 47 && lat <= 70 && lon >= -6 && lon <= 32) return 'NORTH_SEA';
-
-  // ── 阿拉伯海（印度西、巴基斯坦、阿曼南部、东非北部）──
-  if (lat >= -5 && lat <= 26 && lon >= 44 && lon <= 77) return 'ARABIAN_SEA';
-
-  // ── 孟加拉湾（印度东、斯里兰卡东、缅甸、安达曼海）──
-  if (lat >= -10 && lat <= 23 && lon > 77 && lon <= 100) return 'BAY_OF_BENGAL';
-
-  // ── 南海（越南、菲律宾西、马来西亚、印尼北部、新加坡）──
-  if (lat >= -10 && lat <= 25 && lon > 100 && lon <= 121) return 'SOUTH_CHINA_SEA';
-
-  // ── 东海/黄海/日本海 ──
-  if (lat >= 23 && lat <= 52 && lon > 117 && lon <= 142) return 'EAST_CHINA_SEA';
-
-  // ── 西太平洋（菲律宾东部、关岛、帕劳、日本南部太平洋侧）──
-  if (lat >= -10 && lat <= 40 && lon > 121 && lon <= 165) return 'WEST_PACIFIC';
-
-  // ── 澳大利亚 / 新西兰 / 大洋洲 ──
-  if (lat >= -50 && lat < -10 && lon >= 100 && lon <= 180) return 'OCEANIA';
-  if (lat >= -50 && lat < -10 && lon >= -180 && lon <= -150) return 'OCEANIA';
-
-  // ── 东非海岸 ──
-  if (lat >= -35 && lat <= 12 && lon >= 25 && lon <= 55) return 'EAST_AFRICA';
-
-  // ── 西非海岸 ──
-  if (lat >= -35 && lat <= 20 && lon >= -25 && lon <= 15) return 'WEST_AFRICA';
-
-  // ── 加勒比海 ──
-  if (lat >= 8 && lat <= 28 && lon >= -90 && lon <= -58) return 'CARIBBEAN';
-
-  // ── 中太平洋（夏威夷一带）──
-  if (lat >= 0 && lat <= 40 && lon > 165 && lon <= 180) return 'CENTRAL_PACIFIC';
-  if (lat >= 0 && lat <= 40 && lon >= -180 && lon <= -140) return 'CENTRAL_PACIFIC';
-
-  // ── 东太平洋（美洲西海岸）──
-  if (lon >= -140 && lon <= -70 && lat >= -60 && lat <= 65) return 'EAST_PACIFIC';
-
-  // ── 北大西洋西部（美洲东海岸）──
-  if (lat >= 20 && lat <= 65 && lon >= -82 && lon <= -45) return 'NORTH_ATLANTIC_WEST';
-
-  // ── 北大西洋东部（欧洲/非洲大西洋沿岸）──
-  if (lat >= 20 && lat <= 65 && lon >= -45 && lon <= -6) return 'NORTH_ATLANTIC_EAST';
-
-  // ── 南大西洋 ──
-  if (lat >= -60 && lat < 0 && lon >= -70 && lon <= 20) return 'SOUTH_ATLANTIC';
-
-  // ── 南美东海岸 ──
-  if (lat >= -40 && lat < 10 && lon >= -55 && lon <= -30) return 'SOUTH_AMERICA_EAST';
-
-  // ── 南美西海岸 ──
-  if (lat >= -55 && lat < 10 && lon >= -85 && lon <= -68) return 'SOUTH_AMERICA_WEST';
-
-  // 兜底：按经度粗分
-  if (lon >= -180 && lon < -30) return 'NORTH_ATLANTIC_WEST';
-  if (lon >= -30 && lon < 30) return 'NORTH_ATLANTIC_EAST';
-  if (lon >= 30 && lon < 100) return 'ARABIAN_SEA';
-  return 'WEST_PACIFIC';
-}
-
-// ============================================================
-// 3. 海洋走廊航点（Ocean Corridor Waypoints）
-// ============================================================
-// 每条走廊定义了从一个海域区到另一个海域区的航点序列
-// 航点都在海上，确保路由不穿越陆地
-
-interface Corridor {
-  from: OceanZone;
-  to: OceanZone;
-  /** 中间航点 [lon, lat][]，不含起止站点 */
-  waypoints: [number, number][];
-  /** 走廊距离权重（用于图搜索选最短路径）*/
-  cost: number;
-}
-
-// 所有走廊都是双向的（from ↔ to），搜索时自动反向
-const CORRIDORS: Corridor[] = [
-  // ── 欧洲内部 ──
-  { from: 'NORTH_SEA', to: 'MED_WEST',
-    waypoints: [[-5, 48], [-6, 43], [-2, 38], [-5.6, 36.0]],  // 英吉利海峡 → 比斯开湾 → 直布罗陀
-    cost: 3 },
-  { from: 'NORTH_SEA', to: 'NORTH_ATLANTIC_EAST',
-    waypoints: [[-6, 52], [-10, 48]],
-    cost: 2 },
-
-  // ── 地中海 ──
-  { from: 'MED_WEST', to: 'MED_EAST',
-    waypoints: [[9, 38], [15, 37], [20, 35]],  // 撒丁-西西里-克里特
-    cost: 2 },
-  { from: 'MED_WEST', to: 'NORTH_ATLANTIC_EAST',
-    waypoints: [[-5.6, 36.0]],  // 直布罗陀海峡
-    cost: 1 },
-  { from: 'MED_EAST', to: 'RED_SEA',
-    waypoints: [[32.3, 31.3], [32.6, 29.9], [34, 27], [35, 24], [38, 20], [42, 15], [43.3, 12.8]],
-    // 赛义德港 → 苏伊士运河 → 红海（沿红海中线南下）
-    cost: 3 },
-
-  // ── 红海 → 印度洋 ──
-  { from: 'RED_SEA', to: 'ARABIAN_SEA',
-    waypoints: [[43.3, 12.5], [45, 11.8], [48, 11.5], [51, 12.5]],
-    // 曼德海峡 → 亚丁湾出口
-    cost: 2 },
-  { from: 'RED_SEA', to: 'EAST_AFRICA',
-    waypoints: [[43.3, 12.5], [44, 11.5]],
-    cost: 1 },
-
-  // ── 波斯湾 → 阿拉伯海 ──
-  { from: 'PERSIAN_GULF', to: 'ARABIAN_SEA',
-    waypoints: [[56.5, 26.3], [58, 25], [60, 23]],  // 霍尔木兹海峡
-    cost: 2 },
-
-  // ── 印度洋 ──
-  { from: 'ARABIAN_SEA', to: 'BAY_OF_BENGAL',
-    waypoints: [[73, 10], [77, 7.5], [80, 6]],  // 绕印度南端 + 斯里兰卡南端
-    cost: 3 },
-  { from: 'ARABIAN_SEA', to: 'EAST_AFRICA',
-    waypoints: [[50, 8], [47, 2], [44, -3]],
-    cost: 3 },
-  { from: 'EAST_AFRICA', to: 'WEST_AFRICA',
-    waypoints: [[35, -30], [25, -35], [18, -34.5], [14, -33], [8, -20], [5, -5], [2, 4]],
-    // 好望角路线
-    cost: 8 },
-
-  // ── 东南亚 ──
-  { from: 'BAY_OF_BENGAL', to: 'SOUTH_CHINA_SEA',
-    waypoints: [[96, 6], [99, 3.5], [101, 2], [103.5, 1.3], [104.5, 1.2]],
-    // 马六甲海峡（缅甸海 → 安达曼海 → 马六甲 → 新加坡海峡）
-    cost: 3 },
-  { from: 'SOUTH_CHINA_SEA', to: 'EAST_CHINA_SEA',
-    waypoints: [[117, 18], [119, 22], [121, 25]],
-    // 南海北上 → 台湾海峡
-    cost: 2 },
-  { from: 'SOUTH_CHINA_SEA', to: 'WEST_PACIFIC',
-    waypoints: [[119, 14], [123, 18], [126, 20]],
-    // 吕宋海峡
-    cost: 2 },
-  { from: 'EAST_CHINA_SEA', to: 'WEST_PACIFIC',
-    waypoints: [[132, 32], [140, 34]],
-    // 日本南部出太平洋
-    cost: 2 },
-
-  // ── 太平洋 ──
-  { from: 'WEST_PACIFIC', to: 'CENTRAL_PACIFIC',
-    waypoints: [[150, 20], [160, 20], [170, 20]],
-    cost: 4 },
-  { from: 'CENTRAL_PACIFIC', to: 'EAST_PACIFIC',
-    waypoints: [[-150, 20], [-140, 25], [-130, 30]],
-    cost: 4 },
-  { from: 'WEST_PACIFIC', to: 'OCEANIA',
-    waypoints: [[145, 0], [150, -10], [153, -20]],
-    cost: 3 },
-  { from: 'EAST_PACIFIC', to: 'SOUTH_AMERICA_WEST',
-    waypoints: [[-80, 5], [-78, -5], [-76, -15]],
-    cost: 3 },
-
-  // ── 大西洋 ──
-  { from: 'NORTH_ATLANTIC_WEST', to: 'NORTH_ATLANTIC_EAST',
-    waypoints: [[-40, 45], [-20, 48]],
-    // 北大西洋横跨
-    cost: 5 },
-  { from: 'NORTH_ATLANTIC_EAST', to: 'WEST_AFRICA',
-    waypoints: [[-15, 30], [-18, 20], [-18, 10]],
-    cost: 3 },
-  { from: 'NORTH_ATLANTIC_WEST', to: 'CARIBBEAN',
-    waypoints: [[-72, 22], [-68, 18]],
-    cost: 2 },
-  { from: 'CARIBBEAN', to: 'SOUTH_AMERICA_EAST',
-    waypoints: [[-62, 12], [-55, 8], [-48, 2], [-40, -5]],
-    cost: 3 },
-  { from: 'SOUTH_AMERICA_EAST', to: 'WEST_AFRICA',
-    waypoints: [[-30, -5], [-15, 0], [-5, 5]],
-    cost: 4 },
-  { from: 'SOUTH_AMERICA_EAST', to: 'SOUTH_ATLANTIC',
-    waypoints: [[-40, -20], [-30, -30]],
-    cost: 2 },
-  { from: 'SOUTH_ATLANTIC', to: 'EAST_AFRICA',
-    waypoints: [[0, -35], [15, -35], [25, -34], [32, -30]],
-    // 好望角东侧
-    cost: 5 },
-  { from: 'SOUTH_AMERICA_WEST', to: 'EAST_PACIFIC',
-    waypoints: [[-80, -10], [-85, 0], [-90, 10]],
-    cost: 3 },
-
-  // ── 同区域相邻 ──
-  { from: 'EAST_AFRICA', to: 'OCEANIA',
-    waypoints: [[45, -15], [60, -20], [80, -25], [100, -28], [115, -30]],
-    cost: 7 },
-  { from: 'BAY_OF_BENGAL', to: 'OCEANIA',
-    waypoints: [[90, -5], [100, -10], [110, -20], [120, -25]],
-    cost: 5 },
-  { from: 'OCEANIA', to: 'CENTRAL_PACIFIC',
-    waypoints: [[170, -20], [175, -10], [-178, 0], [-170, 10]],
-    cost: 5 },
-  { from: 'CARIBBEAN', to: 'EAST_PACIFIC',
-    waypoints: [[-79.5, 9.2], [-82, 8.5], [-85, 10]],
-    // 巴拿马运河区域
-    cost: 2 },
+const WAYPOINTS: WaypointNode[] = [
+  // North Sea / Baltic
+  { id:'ns01',lat:58.5,lon:-4 },{ id:'ns02',lat:55,lon:0 },{ id:'ns03',lat:52,lon:2.5 },
+  { id:'ns04',lat:54.5,lon:8 },{ id:'ns05',lat:57,lon:7 },{ id:'ns06',lat:56,lon:12 },
+  { id:'ns07',lat:56.5,lon:17 },{ id:'ns08',lat:59.5,lon:22 },{ id:'ns09',lat:62,lon:3 },
+  // North Atlantic
+  { id:'na01',lat:49.5,lon:-6 },{ id:'na02',lat:48,lon:-10 },{ id:'na03',lat:44,lon:-10 },
+  { id:'na04',lat:40,lon:-12 },{ id:'na05',lat:52,lon:-15 },{ id:'na06',lat:50,lon:-30 },
+  { id:'na07',lat:45,lon:-45 },{ id:'na08',lat:40,lon:-60 },{ id:'na09',lat:60,lon:-20 },
+  // US East Coast
+  { id:'us01',lat:42,lon:-68 },{ id:'us02',lat:39.5,lon:-72 },{ id:'us03',lat:36.5,lon:-74.5 },
+  { id:'us04',lat:30,lon:-79 },{ id:'us05',lat:26,lon:-79.5 },
+  // Caribbean
+  { id:'cb01',lat:23,lon:-79 },{ id:'cb02',lat:19,lon:-74 },{ id:'cb03',lat:16,lon:-67 },
+  { id:'cb04',lat:12.5,lon:-70 },{ id:'cb05',lat:11,lon:-62 },{ id:'cb06',lat:9.5,lon:-79.8 },
+  // US West Coast
+  { id:'wp01',lat:48,lon:-126 },{ id:'wp02',lat:44,lon:-126 },{ id:'wp03',lat:37.5,lon:-123.5 },
+  { id:'wp04',lat:33.5,lon:-119 },{ id:'wp05',lat:23,lon:-112 },
+  // East Pacific / Hawaii
+  { id:'ep01',lat:35,lon:-140 },{ id:'ep02',lat:28,lon:-155 },
+  { id:'hw01',lat:21,lon:-157 },{ id:'hw02',lat:25,lon:-170 },{ id:'hw03',lat:18,lon:178 },
+  // West Pacific
+  { id:'xp01',lat:25,lon:170 },{ id:'xp02',lat:14,lon:148 },{ id:'xp03',lat:8,lon:140 },
+  // Japan
+  { id:'jp01',lat:35,lon:140.5 },{ id:'jp02',lat:33,lon:136 },{ id:'jp03',lat:30,lon:132 },
+  { id:'jp04',lat:26.5,lon:128 },{ id:'jp05',lat:38,lon:142 },{ id:'jp06',lat:43,lon:145 },
+  // East China Sea / Korea
+  { id:'es01',lat:33,lon:126 },{ id:'es02',lat:35,lon:129.5 },{ id:'es03',lat:30,lon:124 },
+  // China Coast
+  { id:'cn01',lat:31,lon:123.5 },{ id:'cn02',lat:25,lon:120.5 },{ id:'cn03',lat:22.5,lon:115.5 },
+  { id:'cn04',lat:20,lon:112 },{ id:'cn05',lat:22,lon:114.5 },
+  // South China Sea
+  { id:'sc01',lat:16,lon:112 },{ id:'sc02',lat:12,lon:112.5 },{ id:'sc03',lat:7,lon:109 },
+  { id:'sc04',lat:5,lon:113 },
+  // Philippines
+  { id:'ph01',lat:14.5,lon:120 },{ id:'ph02',lat:12,lon:121.5 },{ id:'ph03',lat:7,lon:125.5 },
+  { id:'ph04',lat:20.5,lon:121.5 },{ id:'ph05',lat:15,lon:125 },
+  // Vietnam
+  { id:'vn01',lat:16,lon:108.5 },{ id:'vn02',lat:10.5,lon:108.5 },{ id:'vn03',lat:8.5,lon:106.5 },
+  // Malacca + Singapore
+  { id:'mk01',lat:5.5,lon:98 },{ id:'mk02',lat:3.5,lon:100.5 },{ id:'mk03',lat:1.5,lon:103.5 },
+  { id:'mk04',lat:1,lon:105 },
+  // Indonesia
+  { id:'id01',lat:-0.5,lon:105.5 },{ id:'id02',lat:-3,lon:107 },{ id:'id03',lat:-7.5,lon:112 },
+  { id:'id04',lat:-8.5,lon:116 },{ id:'id05',lat:-1,lon:118 },{ id:'id06',lat:2,lon:118 },
+  { id:'id07',lat:-2,lon:130 },
+  // Myanmar / Andaman
+  { id:'am01',lat:14,lon:96 },{ id:'am02',lat:10,lon:97.5 },
+  // Bay of Bengal
+  { id:'bb01',lat:15,lon:82 },{ id:'bb02',lat:12,lon:84 },{ id:'bb03',lat:20,lon:88 },
+  { id:'bb04',lat:8,lon:82 },
+  // India
+  { id:'in01',lat:13,lon:81 },{ id:'in02',lat:9,lon:79.5 },{ id:'in03',lat:6.5,lon:78 },
+  { id:'in04',lat:9.5,lon:75 },{ id:'in05',lat:15.5,lon:72.5 },{ id:'in06',lat:19,lon:71.5 },
+  { id:'in07',lat:23,lon:68 },
+  // Arabian Sea
+  { id:'as01',lat:18,lon:60 },{ id:'as02',lat:14,lon:54 },{ id:'as03',lat:24.5,lon:60 },
+  // Persian Gulf
+  { id:'pg01',lat:26,lon:56.5 },{ id:'pg02',lat:26.5,lon:52 },{ id:'pg03',lat:28.5,lon:49.5 },
+  // Red Sea
+  { id:'rs01',lat:12.5,lon:44 },{ id:'rs02',lat:16,lon:41 },{ id:'rs03',lat:21,lon:38 },
+  { id:'rs04',lat:27,lon:35 },{ id:'rs05',lat:29.5,lon:33 },
+  // East Mediterranean
+  { id:'em01',lat:31.5,lon:32 },{ id:'em02',lat:34.5,lon:33 },{ id:'em03',lat:35,lon:26 },
+  { id:'em04',lat:37.5,lon:20 },{ id:'em05',lat:34,lon:35.5 },{ id:'em06',lat:36,lon:30 },
+  // Central Mediterranean
+  { id:'cm01',lat:37,lon:15.5 },{ id:'cm02',lat:36,lon:12 },{ id:'cm03',lat:38.5,lon:13 },
+  // West Mediterranean
+  { id:'wm01',lat:40,lon:5 },{ id:'wm02',lat:38.5,lon:1 },{ id:'wm03',lat:37.5,lon:-1 },
+  { id:'wm04',lat:36,lon:-5.3 },{ id:'wm05',lat:43,lon:6 },
+  // East Africa
+  { id:'ea01',lat:11.5,lon:44.5 },{ id:'ea02',lat:5,lon:46 },{ id:'ea03',lat:-2,lon:42 },
+  { id:'ea04',lat:-7,lon:40 },{ id:'ea05',lat:-14,lon:42 },{ id:'ea06',lat:-25,lon:36 },
+  { id:'ea07',lat:-20,lon:58 },{ id:'ea08',lat:-12,lon:50 },
+  // South Africa
+  { id:'sa01',lat:-30,lon:32 },{ id:'sa02',lat:-34.5,lon:26 },{ id:'sa03',lat:-35,lon:18.5 },
+  { id:'sa04',lat:-33.5,lon:16 },
+  // West Africa
+  { id:'wa01',lat:-29,lon:14 },{ id:'wa02',lat:-15,lon:10 },{ id:'wa03',lat:-5,lon:9 },
+  { id:'wa04',lat:4,lon:2 },{ id:'wa05',lat:5.5,lon:-2 },{ id:'wa06',lat:7,lon:-12 },
+  { id:'wa07',lat:15,lon:-17.5 },{ id:'wa08',lat:21,lon:-17.5 },{ id:'wa09',lat:28,lon:-14 },
+  { id:'wa10',lat:33.5,lon:-8 },
+  // South America East
+  { id:'se01',lat:5,lon:-42 },{ id:'se02',lat:-8,lon:-34 },{ id:'se03',lat:-13,lon:-37 },
+  { id:'se04',lat:-23.5,lon:-42 },{ id:'se05',lat:-24.5,lon:-44.5 },{ id:'se06',lat:-35,lon:-53 },
+  // South America West
+  { id:'sw01',lat:-33,lon:-72 },{ id:'sw02',lat:-18.5,lon:-71.5 },{ id:'sw03',lat:-12.5,lon:-77.5 },
+  { id:'sw04',lat:-2,lon:-81.5 },{ id:'sw05',lat:4,lon:-78 },
+  // Australia
+  { id:'au01',lat:-34,lon:151.5 },{ id:'au02',lat:-27,lon:154 },{ id:'au03',lat:-12.5,lon:132 },
+  { id:'au04',lat:-32,lon:115 },
+  // New Zealand / Pacific Islands
+  { id:'nz01',lat:-37,lon:175.5 },{ id:'nz02',lat:-42,lon:174 },
+  { id:'pc01',lat:-18,lon:179 },{ id:'pc02',lat:-14,lon:-171 },{ id:'pc03',lat:-22,lon:167 },
+  // Panama
+  { id:'pa01',lat:8,lon:-77 },
 ];
 
 // ============================================================
-// 4. 图搜索：找两个海域区之间的最短走廊路径
+// 3. 边定义（双向）
 // ============================================================
 
-interface PathStep {
-  zone: OceanZone;
-  waypoints: [number, number][];  // 到达这个 zone 所经过的航点
+const EDGES: [string, string][] = [
+  // North Sea
+  ['ns01','ns02'],['ns02','ns03'],['ns02','ns04'],['ns04','ns05'],['ns05','ns01'],
+  ['ns04','ns06'],['ns06','ns07'],['ns07','ns08'],['ns01','ns09'],['ns05','ns09'],
+  // North Sea → Atlantic
+  ['ns03','na01'],['ns01','na05'],['na01','na05'],
+  // North Atlantic
+  ['na01','na02'],['na02','na03'],['na03','na04'],['na05','na06'],['na06','na07'],
+  ['na07','na08'],['na05','na09'],['na09','na06'],['na02','na05'],['na02','na06'],
+  // Atlantic → US East
+  ['na08','us01'],['na07','us01'],['us01','us02'],['us02','us03'],['us03','us04'],['us04','us05'],
+  // US East → Caribbean
+  ['us05','cb01'],['cb01','cb02'],['cb02','cb03'],['cb03','cb04'],['cb04','cb05'],
+  ['cb02','cb06'],['us05','cb02'],
+  // Caribbean → South America
+  ['cb05','se01'],['cb04','se01'],
+  // South America East
+  ['se01','se02'],['se02','se03'],['se03','se04'],['se04','se05'],['se05','se06'],
+  // Atlantic → Gibraltar
+  ['na04','wm04'],['wa10','wm04'],['na04','wa10'],
+  // West Mediterranean
+  ['wm04','wm03'],['wm03','wm02'],['wm02','wm01'],['wm01','wm05'],['wm05','cm03'],
+  // Central Mediterranean
+  ['wm01','cm02'],['cm02','cm01'],['cm03','cm01'],['cm02','cm03'],
+  // East Mediterranean
+  ['cm01','em04'],['cm01','em03'],['em03','em04'],['em03','em02'],['em02','em05'],
+  ['em02','em01'],['em02','em06'],['em05','em06'],
+  // Suez Canal
+  ['em01','rs05'],['rs05','rs04'],['rs04','rs03'],['rs03','rs02'],['rs02','rs01'],
+  // Red Sea → Gulf of Aden
+  ['rs01','ea01'],['ea01','ea02'],
+  // Aden → Arabian Sea
+  ['ea02','as02'],['as02','as01'],['as01','as03'],
+  // Persian Gulf
+  ['as03','pg01'],['pg01','pg02'],['pg02','pg03'],
+  // Arabian Sea → India West Coast
+  ['as01','in07'],['in07','in06'],['in06','in05'],['in05','in04'],['as03','in07'],
+  // India South Tip (CRITICAL bypass around India!)
+  ['in04','in03'],['in03','in02'],['in02','in01'],
+  // India South → Sri Lanka → Bay of Bengal
+  ['in03','bb04'],['bb04','bb02'],['bb02','bb01'],['bb01','in01'],['in01','bb01'],['bb02','bb03'],
+  // Bay of Bengal → Andaman → Malacca
+  ['bb02','am01'],['am01','am02'],['am02','mk01'],['bb04','am02'],
+  ['mk01','mk02'],['mk02','mk03'],['mk03','mk04'],
+  // Malacca → South China Sea
+  ['mk04','sc04'],['mk04','id01'],['sc04','sc03'],['sc03','sc02'],['sc02','sc01'],
+  // South China Sea → China Coast
+  ['sc01','cn04'],['cn04','cn05'],['cn05','cn03'],['cn03','cn02'],['cn02','cn01'],
+  // South China Sea → Vietnam
+  ['sc01','vn01'],['vn01','vn02'],['vn02','vn03'],['vn03','sc03'],
+  // South China Sea → Philippines
+  ['sc01','ph01'],['ph01','ph02'],['ph02','ph03'],['cn02','ph04'],['ph04','ph05'],
+  ['ph05','xp02'],['sc02','ph02'],['ph04','ph01'],
+  // East China Sea → Japan
+  ['cn01','es03'],['es03','es01'],['es01','jp04'],['jp04','jp03'],['jp03','jp02'],
+  ['jp02','jp01'],['jp01','jp05'],['jp05','jp06'],['es01','es02'],['es02','jp02'],
+  // Japan → Pacific
+  ['jp01','xp01'],['jp05','xp01'],['xp01','xp02'],['xp02','xp03'],
+  ['xp01','hw02'],['hw02','hw01'],['hw01','ep02'],['ep02','ep01'],
+  ['ep01','wp04'],['ep01','wp03'],['hw02','hw03'],
+  // US West Coast
+  ['wp01','wp02'],['wp02','wp03'],['wp03','wp04'],['wp04','wp05'],
+  // Indonesia
+  ['id01','id02'],['id02','id03'],['id03','id04'],['id05','id06'],['id06','sc04'],
+  ['mk04','id01'],['id01','id05'],['id05','id07'],
+  // Indonesia → Australia
+  ['id04','au03'],['id07','au03'],['au03','au02'],['au02','au01'],['au01','nz01'],
+  ['au04','au01'],['au04','au03'],
+  // Oceania
+  ['nz01','nz02'],['nz01','pc01'],['pc01','hw03'],['pc01','pc02'],['pc01','pc03'],
+  ['pc03','au02'],['au01','pc03'],
+  // East Africa
+  ['ea02','ea03'],['ea03','ea04'],['ea04','ea05'],['ea05','ea06'],['ea06','sa01'],
+  ['ea05','ea08'],['ea08','ea07'],
+  // Cape of Good Hope
+  ['sa01','sa02'],['sa02','sa03'],['sa03','sa04'],
+  // West Africa
+  ['sa04','wa01'],['wa01','wa02'],['wa02','wa03'],['wa03','wa04'],['wa04','wa05'],
+  ['wa05','wa06'],['wa06','wa07'],['wa07','wa08'],['wa08','wa09'],['wa09','wa10'],
+  // Cross-South-Atlantic
+  ['wa05','se01'],['wa04','se02'],['wa07','se01'],['se06','sa03'],
+  // Panama
+  ['cb06','pa01'],['pa01','sw05'],['sw05','sw04'],['sw04','sw03'],['sw03','sw02'],
+  ['sw02','sw01'],['wp05','pa01'],['wp05','sw04'],
+  // Extra key links
+  ['in07','as01'],['in03','am02'],
+];
+
+// ============================================================
+// 4. Graph + Dijkstra
+// ============================================================
+
+interface GraphEdge { to: string; cost: number; }
+let adjacency: Map<string, GraphEdge[]> | null = null;
+let waypointMap: Map<string, WaypointNode> | null = null;
+
+function buildGraph() {
+  if (adjacency) return;
+  waypointMap = new Map(WAYPOINTS.map(w => [w.id, w]));
+  adjacency = new Map();
+  for (const wp of WAYPOINTS) adjacency.set(wp.id, []);
+  for (const [a, b] of EDGES) {
+    const wa = waypointMap.get(a), wb = waypointMap.get(b);
+    if (!wa || !wb) continue;
+    const cost = haversineKm(wa.lat, wa.lon, wb.lat, wb.lon);
+    adjacency.get(a)!.push({ to: b, cost });
+    adjacency.get(b)!.push({ to: a, cost });
+  }
 }
 
-/**
- * BFS 找从 fromZone 到 toZone 的最短走廊路径
- * 返回中间航点序列（不含起止站点的坐标）
- */
-export function findCorridorPath(fromZone: OceanZone, toZone: OceanZone): [number, number][] {
-  if (fromZone === toZone) return [];
-
-  // 构建邻接表
-  const adjacency = new Map<OceanZone, { neighbor: OceanZone; waypoints: [number, number][]; cost: number }[]>();
-
-  for (const c of CORRIDORS) {
-    if (!adjacency.has(c.from)) adjacency.set(c.from, []);
-    if (!adjacency.has(c.to)) adjacency.set(c.to, []);
-    adjacency.get(c.from)!.push({ neighbor: c.to, waypoints: c.waypoints, cost: c.cost });
-    // 反向走廊：航点反转
-    adjacency.get(c.to)!.push({ neighbor: c.from, waypoints: [...c.waypoints].reverse(), cost: c.cost });
-  }
-
-  // Dijkstra
-  const dist = new Map<OceanZone, number>();
-  const prev = new Map<OceanZone, { from: OceanZone; waypoints: [number, number][] }>();
-  const visited = new Set<OceanZone>();
-
-  dist.set(fromZone, 0);
-  const queue: { zone: OceanZone; cost: number }[] = [{ zone: fromZone, cost: 0 }];
-
+function dijkstra(fromId: string, toId: string): string[] | null {
+  buildGraph();
+  if (fromId === toId) return [fromId];
+  const dist = new Map<string, number>();
+  const prev = new Map<string, string>();
+  const visited = new Set<string>();
+  dist.set(fromId, 0);
+  const queue: { id: string; cost: number }[] = [{ id: fromId, cost: 0 }];
   while (queue.length > 0) {
-    // 简易优先队列：排序取最小
     queue.sort((a, b) => a.cost - b.cost);
-    const current = queue.shift()!;
-
-    if (visited.has(current.zone)) continue;
-    visited.add(current.zone);
-
-    if (current.zone === toZone) break;
-
-    const neighbors = adjacency.get(current.zone) || [];
-    for (const edge of neighbors) {
-      if (visited.has(edge.neighbor)) continue;
-      const newDist = current.cost + edge.cost;
-      if (!dist.has(edge.neighbor) || newDist < dist.get(edge.neighbor)!) {
-        dist.set(edge.neighbor, newDist);
-        prev.set(edge.neighbor, { from: current.zone, waypoints: edge.waypoints });
-        queue.push({ zone: edge.neighbor, cost: newDist });
+    const cur = queue.shift()!;
+    if (visited.has(cur.id)) continue;
+    visited.add(cur.id);
+    if (cur.id === toId) break;
+    for (const edge of adjacency!.get(cur.id) || []) {
+      if (visited.has(edge.to)) continue;
+      const nd = cur.cost + edge.cost;
+      if (!dist.has(edge.to) || nd < dist.get(edge.to)!) {
+        dist.set(edge.to, nd);
+        prev.set(edge.to, cur.id);
+        queue.push({ id: edge.to, cost: nd });
       }
     }
   }
+  if (!prev.has(toId) && fromId !== toId) return null;
+  const path: string[] = [];
+  let c = toId;
+  while (c) { path.unshift(c); if (c === fromId) break; c = prev.get(c)!; }
+  return path[0] === fromId ? path : null;
+}
 
-  // 回溯路径
-  if (!prev.has(toZone)) {
-    // 无走廊连接：退化为直连（开放海域）
-    return [];
+function findNearestWaypoint(lat: number, lon: number): WaypointNode {
+  buildGraph();
+  let best = WAYPOINTS[0], bestDist = Infinity;
+  for (const wp of WAYPOINTS) {
+    const d = haversineKm(lat, lon, wp.lat, wp.lon);
+    if (d < bestDist) { bestDist = d; best = wp; }
   }
-
-  const waypointChain: [number, number][] = [];
-  let currentZone = toZone;
-  const segments: [number, number][][] = [];
-
-  while (prev.has(currentZone)) {
-    const step = prev.get(currentZone)!;
-    segments.unshift(step.waypoints);
-    currentZone = step.from;
-  }
-
-  for (const seg of segments) {
-    waypointChain.push(...seg);
-  }
-
-  return waypointChain;
+  return best;
 }
 
 // ============================================================
-// 5. 站点排序：最近邻贪心
+// 5. Station ordering
 // ============================================================
 
-interface StationCoord {
-  lat: number;
-  lon: number;
-  name?: string;
-}
+interface StationCoord { lat: number; lon: number; name?: string; }
 
 function orderStationsNearestNeighbor(stations: StationCoord[]): StationCoord[] {
   if (stations.length <= 2) return [...stations];
   const sorted = [...stations].sort((a, b) => a.lon - b.lon);
   const ordered: StationCoord[] = [sorted[0]];
   const remaining = new Set(stations.filter(s => s !== sorted[0]));
-
   while (remaining.size > 0) {
     const current = ordered[ordered.length - 1];
-    let nearest: StationCoord | null = null;
-    let nearestDist = Infinity;
-    for (const candidate of remaining) {
-      const dist = haversineKm(current.lat, current.lon, candidate.lat, candidate.lon);
-      if (dist < nearestDist) { nearestDist = dist; nearest = candidate; }
+    let nearest: StationCoord | null = null, nearestDist = Infinity;
+    for (const c of remaining) {
+      const d = haversineKm(current.lat, current.lon, c.lat, c.lon);
+      if (d < nearestDist) { nearestDist = d; nearest = c; }
     }
     if (nearest) { ordered.push(nearest); remaining.delete(nearest); }
   }
@@ -419,108 +333,81 @@ function orderStationsNearestNeighbor(stations: StationCoord[]): StationCoord[] 
 }
 
 // ============================================================
-// 6. 主函数：生成海洋走廊路由
+// 6. Main: generate route
 // ============================================================
 
-const KM_PER_POINT = 80;  // 每 80km 插一个中间点
+const KM_PER_POINT = 80;
+const SHORT_DISTANCE_KM = 300;
 
-/**
- * 从一组登陆站坐标生成近似路由（海洋走廊避陆）
- *
- * @param stations - 登陆站坐标数组
- * @returns GeoJSON geometry（LineString 或 MultiLineString），或 null
- */
 export function generateApproximateRoute(
   stations: StationCoord[],
 ): { type: string; coordinates: number[][] | number[][][] } | null {
-  // 过滤有效坐标
   const valid = stations.filter(s =>
-    s.lat != null && s.lon != null &&
-    !isNaN(s.lat) && !isNaN(s.lon) &&
+    s.lat != null && s.lon != null && !isNaN(s.lat) && !isNaN(s.lon) &&
     Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180
   );
   if (valid.length < 2) return null;
 
-  // 去重：同一位置不重复
   const deduped: StationCoord[] = [];
   for (const s of valid) {
-    if (!deduped.some(d => Math.abs(d.lat - s.lat) < 0.01 && Math.abs(d.lon - s.lon) < 0.01)) {
+    if (!deduped.some(d => Math.abs(d.lat - s.lat) < 0.01 && Math.abs(d.lon - s.lon) < 0.01))
       deduped.push(s);
-    }
   }
   if (deduped.length < 2) return null;
 
-  // 排序
   const ordered = orderStationsNearestNeighbor(deduped);
-
-  // 逐对生成路由段
+  buildGraph();
   const allCoords: [number, number][] = [];
 
   for (let i = 0; i < ordered.length - 1; i++) {
-    const a = ordered[i];
-    const b = ordered[i + 1];
+    const a = ordered[i], b = ordered[i + 1];
+    const directDist = haversineKm(a.lat, a.lon, b.lat, b.lon);
 
-    // 确定两站所在海域区
-    const zoneA = classifyZone(a.lat, a.lon);
-    const zoneB = classifyZone(b.lat, b.lon);
-
-    // 构建航点序列：起站 → [走廊航点] → 终站
-    const waypoints: [number, number][] = [[a.lon, a.lat]];
-
-    if (zoneA !== zoneB) {
-      // 不同海域区：通过走廊航点连接
-      const corridorPts = findCorridorPath(zoneA, zoneB);
-      waypoints.push(...corridorPts);
+    if (directDist < SHORT_DISTANCE_KM) {
+      const n = Math.max(2, Math.ceil(directDist / KM_PER_POINT) + 1);
+      const pts = interpolateGreatCircle(a.lat, a.lon, b.lat, b.lon, n);
+      if (allCoords.length === 0) allCoords.push(...pts);
+      else allCoords.push(...pts.slice(1));
+      continue;
     }
 
-    waypoints.push([b.lon, b.lat]);
-
-    // 沿航点之间生成大圆弧插值
-    for (let j = 0; j < waypoints.length - 1; j++) {
-      const [lon1, lat1] = waypoints[j];
-      const [lon2, lat2] = waypoints[j + 1];
-      const distKm = haversineKm(lat1, lon1, lat2, lon2);
-      const numPts = Math.max(2, Math.ceil(distKm / KM_PER_POINT) + 1);
-      const arcPts = interpolateGreatCircle(lat1, lon1, lat2, lon2, numPts);
-
-      if (allCoords.length === 0) {
-        allCoords.push(...arcPts);
-      } else {
-        // 跳过第一个点（和上一段末尾重复）
-        allCoords.push(...arcPts.slice(1));
+    const wpA = findNearestWaypoint(a.lat, a.lon);
+    const wpB = findNearestWaypoint(b.lat, b.lon);
+    const meshPath = dijkstra(wpA.id, wpB.id);
+    const routePoints: [number, number][] = [[a.lon, a.lat]];
+    if (meshPath) {
+      for (const wpId of meshPath) {
+        const wp = waypointMap!.get(wpId)!;
+        routePoints.push([wp.lon, wp.lat]);
       }
+    }
+    routePoints.push([b.lon, b.lat]);
+
+    for (let j = 0; j < routePoints.length - 1; j++) {
+      const [lon1, lat1] = routePoints[j];
+      const [lon2, lat2] = routePoints[j + 1];
+      const segDist = haversineKm(lat1, lon1, lat2, lon2);
+      const n = Math.max(2, Math.ceil(segDist / KM_PER_POINT) + 1);
+      const pts = interpolateGreatCircle(lat1, lon1, lat2, lon2, n);
+      if (allCoords.length === 0) allCoords.push(...pts);
+      else allCoords.push(...pts.slice(1));
     }
   }
 
   if (allCoords.length < 2) return null;
-
-  // 检查是否跨日期变更线，如果跨了就用 MultiLineString
   const segments = splitAtDatelineIfNeeded(allCoords);
-
-  if (segments.length === 1) {
-    return { type: 'LineString', coordinates: segments[0] };
-  }
+  if (segments.length === 1) return { type: 'LineString', coordinates: segments[0] };
   return { type: 'MultiLineString', coordinates: segments };
 }
 
-/** 如果坐标序列跨越日期变更线，拆分为多段 */
 function splitAtDatelineIfNeeded(coords: [number, number][]): [number, number][][] {
   const segments: [number, number][][] = [];
   let current: [number, number][] = [coords[0]];
-
   for (let i = 1; i < coords.length; i++) {
-    const prevLon = coords[i - 1][0];
-    const currLon = coords[i][0];
-
-    if (Math.abs(currLon - prevLon) > 180) {
-      // 跨日期变更线：拆分
-      segments.push(current);
-      current = [coords[i]];
-    } else {
-      current.push(coords[i]);
-    }
+    if (Math.abs(coords[i][0] - coords[i - 1][0]) > 180) {
+      segments.push(current); current = [coords[i]];
+    } else current.push(coords[i]);
   }
-
   if (current.length > 0) segments.push(current);
   return segments;
 }
