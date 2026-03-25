@@ -147,9 +147,18 @@ const WAYPOINTS: WaypointNode[] = [
   // South America West
   { id:'sw01',lat:-33,lon:-72 },{ id:'sw02',lat:-18.5,lon:-71.5 },{ id:'sw03',lat:-12.5,lon:-77.5 },
   { id:'sw04',lat:-2,lon:-81.5 },{ id:'sw05',lat:4,lon:-78 },
-  // Australia
-  { id:'au01',lat:-34,lon:151.5 },{ id:'au02',lat:-27,lon:154 },{ id:'au03',lat:-12.5,lon:132 },
-  { id:'au04',lat:-32,lon:115 },{ id:'au05',lat:-17,lon:148 },
+  // Australia (dense coastal waypoints to avoid inland crossings)
+  { id:'au01',lat:-34,lon:151.5 },  // Sydney
+  { id:'au02',lat:-27,lon:154 },    // Brisbane
+  { id:'au03',lat:-12.5,lon:132 },  // Darwin
+  { id:'au04',lat:-32,lon:115 },    // Perth
+  { id:'au05',lat:-17,lon:148 },    // Cairns coast (Great Barrier Reef)
+  { id:'au06',lat:-10,lon:142 },    // Torres Strait (north of Cape York, IN SEA)
+  { id:'au07',lat:-14,lon:146 },    // Coral Sea (east of Cape York)
+  { id:'au08',lat:-21,lon:151 },    // Mackay coast
+  { id:'au09',lat:-18,lon:122 },    // Broome / Kimberley coast
+  { id:'au10',lat:-35,lon:137 },    // Adelaide / Spencer Gulf
+  { id:'au11',lat:-39,lon:146 },    // Bass Strait (south of mainland)
   // New Zealand / Pacific Islands
   { id:'nz01',lat:-37,lon:175.5 },{ id:'nz02',lat:-42,lon:174 },
   { id:'nz03',lat:-39,lon:179 },  // East of NZ - routes around islands
@@ -229,12 +238,20 @@ const EDGES: [string, string][] = [
   // Indonesia
   ['id01','id02'],['id02','id03'],['id03','id04'],['id05','id06'],['id06','sc04'],
   ['mk04','id01'],['id01','id05'],['id05','id07'],
-  // Indonesia → Australia (via Cairns coast au05 to avoid inland crossing)
-  ['id04','au03'],['id07','au03'],['au03','au05'],['au05','au02'],['au02','au01'],['au01','nz01'],
-  ['au04','au01'],['au04','au03'],
+  // Indonesia → Australia → NZ (dense coastal chain around Australia)
+  // North coast: Indonesia connects to Darwin and Torres Strait
+  ['id04','au03'],['id07','au03'],['id07','au06'],
+  // Clockwise from Darwin: Darwin→Broome→Perth (west coast)
+  ['au03','au09'],['au09','au04'],
+  // Perth→Adelaide→Bass Strait→Sydney (south coast)
+  ['au04','au10'],['au10','au11'],['au11','au01'],
+  // Darwin→Torres Strait→Cape York east→Cairns→Mackay→Brisbane→Sydney (east coast via sea)
+  ['au03','au06'],['au06','au07'],['au07','au05'],['au05','au08'],['au08','au02'],['au02','au01'],
+  // Australia → New Zealand
+  ['au01','nz01'],['au02','pc03'],
   // Oceania (route around NZ via nz03 east of islands)
   ['nz01','nz03'],['nz03','nz02'],['nz03','pc01'],['nz01','pc01'],['pc01','hw03'],['pc01','pc02'],['pc01','pc03'],
-  ['pc03','au02'],['au01','pc03'],
+  ['pc03','au02'],
   // East Africa
   ['ea02','ea03'],['ea03','ea04'],['ea04','ea05'],['ea05','ea06'],['ea06','sa01'],
   ['ea05','ea08'],['ea08','ea07'],
