@@ -50,6 +50,23 @@ function getCableColor(mode: string, status: string, vendorName: string | null, 
 }
 
 export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
+
+  // v9: Helper — 恢复海缆正常材质（区分虚线近似路由和实线真实路由）
+  function restoreCableMaterial(Cesium: any, entity: any, meta: any, cm: string) {
+    const colorArr = getCableColor(cm, meta.status, meta.vendor, meta.owners, meta.rfsYear);
+    try {
+      if (meta.isApprox) {
+        entity.polyline.material = new Cesium.PolylineDashMaterialProperty({
+          color: new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3] * 0.7),
+          dashLength: 16,
+        });
+        entity.polyline.width = new Cesium.ConstantProperty(1.2);
+      } else {
+        entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
+        entity.polyline.width = new Cesium.ConstantProperty(1.5);
+      }
+    } catch (e) {}
+  }
   const containerRef   = useRef<HTMLDivElement>(null);
   const viewerRef      = useRef<any>(null);
   const cesiumRef      = useRef<any>(null);
@@ -192,9 +209,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
               const meta = entityMetaRef.current.get(sibling);
               if (!meta) continue;
               try {
-                const colorArr = getCableColor(useMapStore.getState().colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
-                sibling.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
-                sibling.polyline.width = new Cesium.ConstantProperty(1.5);
+                restoreCableMaterial(Cesium, sibling, meta, useMapStore.getState().colorMode);
               } catch (e) {}
             }
           }
@@ -251,8 +266,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
     for (const entity of allEntitiesRef.current) {
       const meta = entityMetaRef.current.get(entity);
       if (!meta || !entity.polyline) continue;
-      const colorArr = getCableColor(colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
-      try { entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]); entity.polyline.width = new Cesium.ConstantProperty(1.5); } catch (e) {}
+      try { restoreCableMaterial(Cesium, entity, meta, colorMode); } catch (e) {}
     }
   }, [colorMode]);
 
@@ -270,9 +284,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       const visible       = statusMatch && yearMatch && vendorMatch && operatorMatch;
       try {
         if (visible) {
-          const colorArr = getCableColor(colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
-          entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
-          entity.polyline.width = new Cesium.ConstantProperty(1.5);
+          restoreCableMaterial(Cesium, entity, meta, colorMode);
           (entity as any).show = true;
         } else {
           (entity as any).show = false;
@@ -305,9 +317,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
           entity.polyline.width = new Cesium.ConstantProperty(0.5);
         }
       } else {
-        const colorArr = getCableColor(colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
-        entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]);
-        entity.polyline.width = new Cesium.ConstantProperty(1.5);
+        restoreCableMaterial(Cesium, entity, meta, colorMode);
       }
     }
   }, [searchHighlightSlugs, searchHoverSlug, colorMode]);
@@ -330,8 +340,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       for (const entity of allEntitiesRef.current) {
         const meta = entityMetaRef.current.get(entity);
         if (!meta || !entity.polyline) continue;
-        const colorArr = getCableColor(colorMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
-        try { entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]); entity.polyline.width = new Cesium.ConstantProperty(1.5); } catch (e) {}
+        restoreCableMaterial(Cesium, entity, meta, colorMode);
       }
       return;
     }
@@ -478,8 +487,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
         const currentMode = useMapStore.getState().colorMode;
         for (const entity of allEntitiesRef.current) {
           const meta = entityMetaRef.current.get(entity); if (!meta) continue;
-          const colorArr = getCableColor(currentMode, meta.status, meta.vendor, meta.owners, meta.rfsYear);
-          try { entity.polyline.material = new Cesium.Color(colorArr[0], colorArr[1], colorArr[2], colorArr[3]); entity.polyline.width = new Cesium.ConstantProperty(1.5); } catch (e) {}
+          restoreCableMaterial(cesiumRef.current, entity, meta, currentMode);
         }
       }, 8000);
       clearFlyTo();

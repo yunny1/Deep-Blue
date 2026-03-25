@@ -29,25 +29,28 @@ model Cable {
   riskScores           RiskScore[]
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // --- 同步追踪字段 (v8) ---
+  lastSyncedAt         DateTime? @map("last_synced_at")
+  statusChangedAt      DateTime? @map("status_changed_at")
+  previousStatus       String?   @map("previous_status")
+  firstSeenAt          DateTime? @map("first_seen_at")
+
+  // --- 去重系统字段 ---
+  dataSource           String?   @map("data_source")
+  externalId           String?   @map("external_id")
+  canonicalName        String?   @map("canonical_name")
+  canonicalBase        String?   @map("canonical_base")
+  canonicalSuffix      String?   @map("canonical_suffix")
+  reviewStatus         String?   @map("review_status")
+  possibleDuplicateOf  String?   @map("possible_duplicate_of")
+  mergedInto           String?   @map("merged_into")
+  mergedAt             DateTime? @map("merged_at")
+
+  // --- 近似路由标记 (v9) ---
+  isApproximateRoute   Boolean   @default(false) @map("is_approximate_route")
+
   @@map("cables")
-lastSyncedAt       DateTime? @map("last_synced_at")         // 上次被上游确认的时间
-  statusChangedAt    DateTime? @map("status_changed_at")      // 状态变更时间
-  previousStatus     String?   @map("previous_status")        // 变更前的状态
-  firstSeenAt        DateTime? @map("first_seen_at")          // 首次入库时间（新增标记用）
-
-
-// --- 去重系统字段 ---
-  dataSource          String?   @map("data_source")
-  externalId          String?   @map("external_id")
-  canonicalName       String?   @map("canonical_name")
-  canonicalBase       String?   @map("canonical_base")
-  canonicalSuffix     String?   @map("canonical_suffix")
-  reviewStatus        String?   @map("review_status")
-  possibleDuplicateOf String?   @map("possible_duplicate_of")
-  mergedInto          String?   @map("merged_into")
-  mergedAt            DateTime? @map("merged_at")
-isApproximateRoute Boolean @default(false) @map("is_approximate_route")
-
 }
 
 model LandingStation {

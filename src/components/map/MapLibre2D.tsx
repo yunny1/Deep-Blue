@@ -112,13 +112,14 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
             map.addLayer({
               id: layerId, type: 'line', source: sourceId,
               layout: {
-                ...(isApprox ? { 'line-cap': 'round' as const } : {}),
+                'line-cap': isApprox ? 'butt' : 'round',
+                'line-join': 'round',
               },
               paint: {
                 'line-color': color,
-                'line-width': isApprox ? 1.2 : 1.5,
-                'line-opacity': visible ? (isApprox ? 0.5 : 0.7) : 0,
-                ...(isApprox ? { 'line-dasharray': [3, 3] } : {}),
+                'line-width': isApprox ? 1.5 : 1.5,
+                'line-opacity': visible ? (isApprox ? 0.55 : 0.7) : 0,
+                ...(isApprox ? { 'line-dasharray': [6, 4] } : {}),
               },
             });
 
