@@ -1,195 +1,74 @@
-/**
- * GET /api/brics/sovereignty
- *
- * 计算 BRICS 成员国 11×11 数字主权矩阵
- */
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import {
-  BRICS_MEMBERS,
-  BRICS_COUNTRY_META,
-  isBRICSCountry,
-} from '@/lib/brics-constants';
+import { BRICS_MEMBERS, BRICS_COUNTRY_META, isBRICSCountry } from '@/lib/brics-constants';
 
 export const revalidate = 3600;
-
 type ConnStatus = 'direct' | 'indirect' | 'transit' | 'none' | 'landlocked';
-
-interface MatrixCell {
-  from: string;
-  to: string;
-  status: ConnStatus;
-  directCableCount: number;
-  directCables: string[];
-}
-
-// 内陆国：BRICS 成员中无海岸线的国家
-const LANDLOCKED_MEMBERS = new Set(['ET']);
-
-// v8: 排除已合并 + 已移除 + 待审核
-const ACTIVE_FILTER = {
-  mergedInto: null,
-  status: { notIn: ['PENDING_REVIEW', 'REMOVED'] as string[] },
-};
+const LANDLOCKED = new Set(['ET']);
+const ACTIVE_FILTER = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED'] as string[] } };
 
 export async function GET() {
   try {
-    // ── 1. 获取所有海缆及其国家代码 ─────────────────
-    //    Cable → CableLandingStation → LandingStation.countryCode
     const cablesRaw = await prisma.cable.findMany({
       where: ACTIVE_FILTER,
-      select: {
-        slug: true,
-        name: true,
-        landingStations: {
-          select: {
-            landingStation: {
-              select: { countryCode: true },
-            },
-          },
-        },
-      },
+      select: { slug: true, name: true, landingStations: { select: { landingStation: { select: { countryCode: true } } } } },
     });
-
-    // 每条海缆的去重国家列表
-    const cableCountries = cablesRaw.map((c) => ({
-      slug: c.slug,
-      name: c.name,
-      countries: [
-        ...new Set(
-          c.landingStations
-            .map((cls) => cls.landingStation.countryCode?.toUpperCase())
-            .filter(Boolean) as string[]
-        ),
-      ],
+    const cableCountries = cablesRaw.map(c => ({
+      slug: c.slug, name: c.name,
+      countries: [...new Set(c.landingStations.map(cls => cls.landingStation.countryCode?.toUpperCase()).filter(Boolean) as string[])],
     }));
 
-    // ── 2. 构建国家级别的邻接表（海缆图）──────────
-    const adjacency: Record<string, Set<string>> = {};
-    const directCablesMap: Record<string, Record<string, string[]>> = {};
-
+    const adj: Record<string, Set<string>> = {};
+    const dcMap: Record<string, Record<string, string[]>> = {};
     for (const cable of cableCountries) {
-      const countries = cable.countries;
-      for (let i = 0; i < countries.length; i++) {
-        for (let j = i + 1; j < countries.length; j++) {
-          const a = countries[i];
-          const b = countries[j];
-
-          if (!adjacency[a]) adjacency[a] = new Set();
-          if (!adjacency[b]) adjacency[b] = new Set();
-          adjacency[a].add(b);
-          adjacency[b].add(a);
-
-          if (!directCablesMap[a]) directCablesMap[a] = {};
-          if (!directCablesMap[a][b]) directCablesMap[a][b] = [];
-          directCablesMap[a][b].push(cable.slug);
-
-          if (!directCablesMap[b]) directCablesMap[b] = {};
-          if (!directCablesMap[b][a]) directCablesMap[b][a] = [];
-          directCablesMap[b][a].push(cable.slug);
-        }
+      const cc = cable.countries;
+      for (let i = 0; i < cc.length; i++) for (let j = i + 1; j < cc.length; j++) {
+        const [a, b] = [cc[i], cc[j]];
+        if (!adj[a]) adj[a] = new Set(); if (!adj[b]) adj[b] = new Set();
+        adj[a].add(b); adj[b].add(a);
+        if (!dcMap[a]) dcMap[a] = {}; if (!dcMap[a][b]) dcMap[a][b] = [];
+        dcMap[a][b].push(cable.slug);
+        if (!dcMap[b]) dcMap[b] = {}; if (!dcMap[b][a]) dcMap[b][a] = [];
+        dcMap[b][a].push(cable.slug);
       }
     }
 
-    // ── 3. BFS：仅经过 BRICS 国家的路径
-    function canReachViaBRICS(from: string, to: string): boolean {
-      if (!adjacency[from]) return false;
-      const visited = new Set<string>([from]);
-      const queue = [from];
-      while (queue.length > 0) {
-        const current = queue.shift()!;
-        for (const neighbor of adjacency[current] ?? []) {
-          if (neighbor === to) return true;
-          if (!visited.has(neighbor) && isBRICSCountry(neighbor)) {
-            visited.add(neighbor);
-            queue.push(neighbor);
-          }
+    function bfs(from: string, to: string, bricsOnly: boolean): boolean {
+      if (!adj[from]) return false;
+      const vis = new Set([from]); const q = [from];
+      while (q.length) { const cur = q.shift()!;
+        for (const nb of adj[cur] ?? []) {
+          if (nb === to) return true;
+          if (!vis.has(nb) && (!bricsOnly || isBRICSCountry(nb))) { vis.add(nb); q.push(nb); }
         }
       }
       return false;
     }
 
-    // ── 4. BFS：任意路径可达
-    function canReachViaAny(from: string, to: string): boolean {
-      if (!adjacency[from]) return false;
-      const visited = new Set<string>([from]);
-      const queue = [from];
-      while (queue.length > 0) {
-        const current = queue.shift()!;
-        for (const neighbor of adjacency[current] ?? []) {
-          if (neighbor === to) return true;
-          if (!visited.has(neighbor)) {
-            visited.add(neighbor);
-            queue.push(neighbor);
-          }
-        }
-      }
-      return false;
-    }
-
-    // ── 5. 构建 11×11 矩阵 ────────────────────────────
-    const matrix: MatrixCell[] = [];
     const members = [...BRICS_MEMBERS];
-
-    for (let i = 0; i < members.length; i++) {
-      for (let j = 0; j < members.length; j++) {
-        if (i === j) continue;
-
-        const from = members[i];
-        const to = members[j];
-
-        if (LANDLOCKED_MEMBERS.has(from) || LANDLOCKED_MEMBERS.has(to)) {
-          matrix.push({ from, to, status: 'landlocked', directCableCount: 0, directCables: [] });
-          continue;
-        }
-
-        const cables = directCablesMap[from]?.[to] ?? [];
-
-        let status: ConnStatus;
-        if (cables.length > 0) {
-          status = 'direct';
-        } else if (canReachViaBRICS(from, to)) {
-          status = 'indirect';
-        } else if (canReachViaAny(from, to)) {
-          status = 'transit';
-        } else {
-          status = 'none';
-        }
-
-        matrix.push({ from, to, status, directCableCount: cables.length, directCables: cables.slice(0, 10) });
-      }
+    const matrix: { from: string; to: string; status: ConnStatus; directCableCount: number; directCables: string[] }[] = [];
+    for (let i = 0; i < members.length; i++) for (let j = 0; j < members.length; j++) {
+      if (i === j) continue;
+      const [f, t] = [members[i], members[j]];
+      if (LANDLOCKED.has(f) || LANDLOCKED.has(t)) { matrix.push({ from: f, to: t, status: 'landlocked', directCableCount: 0, directCables: [] }); continue; }
+      const cables = dcMap[f]?.[t] ?? [];
+      const status: ConnStatus = cables.length > 0 ? 'direct' : bfs(f, t, true) ? 'indirect' : bfs(f, t, false) ? 'transit' : 'none';
+      matrix.push({ from: f, to: t, status, directCableCount: cables.length, directCables: cables.slice(0, 10) });
     }
 
-    // ── 6. 汇总统计 ────────────────────────────────────
-    const pairCount = (members.length * (members.length - 1)) / 2;
-    const uniquePairs: Record<ConnStatus, number> = {
-      direct: 0, indirect: 0, transit: 0, none: 0, landlocked: 0,
-    };
-
-    for (let i = 0; i < members.length; i++) {
-      for (let j = i + 1; j < members.length; j++) {
-        const cell = matrix.find(
-          (m) => m.from === members[i] && m.to === members[j]
-        );
-        if (cell) uniquePairs[cell.status]++;
-      }
+    const up: Record<ConnStatus, number> = { direct: 0, indirect: 0, transit: 0, none: 0, landlocked: 0 };
+    for (let i = 0; i < members.length; i++) for (let j = i + 1; j < members.length; j++) {
+      const c = matrix.find(m => m.from === members[i] && m.to === members[j]);
+      if (c) up[c.status]++;
     }
 
     return NextResponse.json({
-      members: members.map((code) => ({
-        code,
-        name: BRICS_COUNTRY_META[code]?.name ?? code,
-        nameZh: BRICS_COUNTRY_META[code]?.nameZh ?? code,
-      })),
+      members: members.map(code => ({ code, name: BRICS_COUNTRY_META[code]?.name ?? code, nameZh: BRICS_COUNTRY_META[code]?.nameZh ?? code })),
       matrix,
-      summary: { totalPairs: pairCount, ...uniquePairs },
+      summary: { totalPairs: (members.length * (members.length - 1)) / 2, ...up },
     });
   } catch (error) {
-    console.error('[BRICS Sovereignty API]', error);
-    return NextResponse.json(
-      { error: 'Failed to compute sovereignty matrix' },
-      { status: 500 }
-    );
+    console.error('[BRICS Sovereignty]', error);
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
