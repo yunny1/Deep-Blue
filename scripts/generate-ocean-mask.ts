@@ -28,8 +28,9 @@ import * as path from 'path';
 // ============================================================
 
 const NE_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson';
-const GRID_COLS = 360;   // 1° 分辨率
-const GRID_ROWS = 180;
+const RESOLUTION = 0.25;  // degrees per cell
+const GRID_COLS = Math.round(360 / RESOLUTION);   // 1440
+const GRID_ROWS = Math.round(180 / RESOLUTION);   // 720
 const OUTPUT_PATH = path.resolve(__dirname, '../src/lib/ocean-mask.ts');
 
 // ============================================================
@@ -69,38 +70,47 @@ function pointInFeature(lon: number, lat: number, geometry: any): boolean {
 // 格式：[lat, lon] — 这些格子即使被多边形覆盖也强制标记为海洋
 
 const FORCED_OCEAN: [number, number][] = [
-  // 苏伊士运河
-  [30, 32], [31, 32], [29, 32], [30, 33], [31, 33],
+  // 苏伊士运河 (精细覆盖)
+  [30.5, 32.3], [30.2, 32.4], [30.0, 32.5], [29.8, 32.6], [29.6, 32.6],
+  [31.0, 32.0], [31.2, 32.0], [30.8, 32.2], [30.5, 32.5], [30.0, 32.3],
+  [29.9, 32.5], [29.5, 32.7], [29.3, 32.8],
   // 巴拿马运河
-  [9, -80], [9, -79], [8, -79], [8, -80],
-  // 马六甲海峡
-  [2, 102], [3, 101], [4, 100], [5, 99], [1, 103], [1, 104],
+  [9.2, -79.8], [9.1, -79.6], [9.0, -79.5], [9.3, -79.9], [8.9, -79.4],
+  // 马六甲海峡 (精细覆盖)
+  [1.3, 103.5], [1.5, 103.8], [1.8, 103.0], [2.0, 102.5], [2.5, 102.0],
+  [3.0, 101.0], [3.5, 100.5], [4.0, 100.0], [4.5, 99.5], [5.0, 99.0],
+  [5.5, 98.5], [6.0, 98.0], [1.2, 104.0], [1.0, 104.5],
   // 新加坡海峡
-  [1, 104], [1, 105],
+  [1.2, 103.8], [1.1, 104.0], [1.0, 104.2], [1.0, 104.5], [1.0, 105.0],
   // 霍尔木兹海峡
-  [26, 56], [26, 57],
+  [26.5, 56.0], [26.5, 56.5], [26.0, 56.5], [26.2, 56.2],
   // 曼德海峡
-  [13, 43], [12, 43], [12, 44],
+  [12.5, 43.5], [12.8, 43.3], [12.2, 43.8], [12.0, 43.5],
   // 托雷斯海峡
-  [-10, 142], [-10, 143],
+  [-10.0, 142.0], [-10.0, 142.5], [-10.2, 142.2], [-10.5, 142.5],
   // 巴斯海峡
-  [-39, 146], [-39, 147], [-39, 148],
+  [-39.0, 146.0], [-39.0, 147.0], [-39.0, 148.0], [-38.5, 146.5],
   // 台湾海峡
-  [24, 119], [25, 119], [24, 120], [25, 120],
+  [24.0, 119.5], [24.5, 119.5], [25.0, 119.5], [24.0, 120.0], [25.0, 120.0],
+  [23.5, 119.5], [23.5, 120.0],
   // 英吉利海峡
-  [50, 0], [50, 1], [51, 1], [50, -1],
+  [50.5, 0.0], [50.5, 0.5], [50.5, 1.0], [50.0, 0.0], [50.0, -0.5],
+  [51.0, 1.5],
   // 直布罗陀海峡
-  [36, -6], [36, -5], [35, -6], [35, -5],
+  [36.0, -5.5], [35.8, -5.5], [36.0, -5.0], [35.5, -5.5],
   // 龙目海峡 / 巽他海峡
-  [-8, 115], [-8, 116], [-6, 105], [-6, 106],
+  [-8.2, 115.5], [-8.5, 115.5], [-6.0, 105.5], [-6.2, 105.8],
   // 朝鲜海峡 / 对马海峡
-  [34, 129], [34, 130], [35, 129],
+  [34.0, 129.5], [34.5, 129.5], [34.0, 130.0],
   // 卡特加特海峡
-  [57, 11], [57, 12], [56, 11],
-  // 博斯普鲁斯 / 达达尼尔
-  [41, 29], [40, 26],
-  // 莫桑比克海峡入口
-  [-12, 44], [-13, 45], [-14, 44],
+  [57.0, 11.0], [57.5, 11.5], [56.5, 11.0], [56.0, 12.0],
+  // 莫桑比克海峡
+  [-12.0, 44.0], [-13.0, 45.0], [-15.0, 43.0], [-16.0, 42.0],
+  // 红海（沿中线加密）
+  [28.0, 34.0], [27.0, 34.5], [26.0, 35.0], [25.0, 36.0],
+  [24.0, 36.5], [23.0, 37.0], [22.0, 37.5], [21.0, 38.0],
+  [20.0, 38.5], [19.0, 39.5], [18.0, 40.0], [17.0, 40.5],
+  [16.0, 41.0], [15.0, 41.5], [14.0, 42.0], [13.0, 43.0],
 ];
 
 // ============================================================
@@ -163,9 +173,9 @@ async function main() {
   let landCount = 0;
 
   for (let row = 0; row < GRID_ROWS; row++) {
-    const lat = 90 - row - 0.5;  // 格子中心纬度
+    const lat = 90 - (row + 0.5) * RESOLUTION;  // 格子中心纬度
     for (let col = 0; col < GRID_COLS; col++) {
-      const lon = -180 + col + 0.5;  // 格子中心经度
+      const lon = -180 + (col + 0.5) * RESOLUTION;  // 格子中心经度
       const idx = row * GRID_COLS + col;
 
       for (const feature of geojson.features) {
@@ -176,8 +186,8 @@ async function main() {
         }
       }
     }
-    if ((row + 1) % 30 === 0) {
-      console.log(`  Row ${row + 1}/${GRID_ROWS} (lat ${lat.toFixed(0)}°)`);
+    if ((row + 1) % 120 === 0) {
+      console.log(`  Row ${row + 1}/${GRID_ROWS} (lat ${lat.toFixed(1)}°)`);
     }
   }
 
@@ -186,8 +196,8 @@ async function main() {
   // 强制标记关键水道为海洋
   let forcedCount = 0;
   for (const [lat, lon] of FORCED_OCEAN) {
-    const row = Math.floor(90 - lat);
-    const col = Math.floor(lon + 180);
+    const row = Math.floor((90 - lat) / RESOLUTION);
+    const col = Math.floor((lon + 180) / RESOLUTION);
     if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
       const idx = row * GRID_COLS + col;
       if (grid[idx] === 1) {
@@ -228,20 +238,20 @@ async function main() {
   const tsContent = `/**
  * ocean-mask.ts — 自动生成，请勿手动编辑
  * 
- * 全球海洋/陆地网格（1° 分辨率）
+ * 全球海洋/陆地网格（${RESOLUTION}° 分辨率）
  * 来源：Natural Earth 110m land polygons
  * 生成时间：${new Date().toISOString()}
  * 
  * 网格规格：
- * - 360 列 × 180 行 = 64,800 格子
- * - row 0 = 90°N, row 179 = 89°S
- * - col 0 = 180°W, col 359 = 179°E
+ * - ${GRID_COLS} 列 × ${GRID_ROWS} 行 = ${GRID_COLS * GRID_ROWS} 格子
+ * - 分辨率：${RESOLUTION}°（每格约 ${Math.round(RESOLUTION * 111)} km at equator）
+ * - row 0 = 90°N, col 0 = 180°W
  * - 每个格子 1 bit: 0=海洋, 1=陆地
- * - 打包为 hex 字符串（每 8 格子 = 2 hex chars）
  */
 
 export const OCEAN_MASK_COLS = ${GRID_COLS};
 export const OCEAN_MASK_ROWS = ${GRID_ROWS};
+export const OCEAN_MASK_RESOLUTION = ${RESOLUTION};
 
 /** 
  * Packed hex string: ${bytes.length} bytes = ${hexString.length} hex chars
@@ -251,8 +261,8 @@ export const OCEAN_MASK_HEX = '${hexString}';
 
 /** 检查给定经纬度是否为陆地 */
 export function isLand(lat: number, lon: number): boolean {
-  const row = Math.floor(90 - lat);
-  const col = Math.floor(lon + 180);
+  const row = Math.floor((90 - lat) / ${RESOLUTION});
+  const col = Math.floor((lon + 180) / ${RESOLUTION});
   if (row < 0 || row >= ${GRID_ROWS} || col < 0 || col >= ${GRID_COLS}) return false;
   const bitIndex = row * ${GRID_COLS} + col;
   const byteIndex = Math.floor(bitIndex / 8);
