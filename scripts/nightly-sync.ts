@@ -331,6 +331,12 @@ async function mergeTier2IntoExisting(cableId: string, snDetail: SNDetail) {
 
   await prisma.cable.update({ where: { id: cableId }, data: updates }).catch(() => {});
 
+  // v9: 已人工验证登陆站的海缆，跳过 SN 站点更新（防止垃圾站名覆盖正确数据）
+  if ((existing as any).reviewStatus === 'STATIONS_VERIFIED') {
+    log('INFO', `  [${existing.name}] 登陆站已人工验证，跳过 SN 站点更新`);
+    return;
+  }
+
   // 追加 SN 独有的登陆站（取并集）
   const existingStationNames = existing.landingStations.map(ls => ls.landingStation.name);
   const snOnlyStations = snDetail.landingPoints.filter(lp => {
@@ -406,6 +412,15 @@ async function upsertTier2Cable(
   // v8: 检测状态变更
   const statusChangeFields = await detectStatusChange(cableId, status);
 
+  // v9: 检查是否已人工验证登陆站（不覆盖 reviewStatus）
+  const existingRecord = await prisma.cable.findUnique({
+    where: { id: cableId },
+    select: { reviewStatus: true },
+  });
+  const isStationsVerified = existingRecord?.reviewStatus === 'STATIONS_VERIFIED';
+  // 如果已验证，保留原 reviewStatus，不用传入的 reviewStatus 覆盖
+  const finalReviewStatus = isStationsVerified ? 'STATIONS_VERIFIED' : (reviewStatus || null);
+
   try {
     await prisma.cable.upsert({
       where: { id: cableId },
@@ -413,7 +428,7 @@ async function upsertTier2Cable(
         name: ref.name, slug: slugify(ref.name), status,
         lengthKm: snDetail.lengthKm, rfsDate,
         dataSource: 'SUBMARINE_NETWORKS',
-        reviewStatus: reviewStatus || null,
+        reviewStatus: finalReviewStatus,
         possibleDuplicateOf: possibleDuplicateOf || null,
         lastSyncedAt: SYNC_TIMESTAMP,
         ...statusChangeFields,
@@ -430,6 +445,12 @@ async function upsertTier2Cable(
     });
   } catch (e: any) {
     log("WARN", `Tier2 upsert 跳过 ${ref.name}: ${String(e.message).slice(0,80)}`);
+    return;
+  }
+
+  // v9: 已人工验证登陆站的海缆，跳过站点写入
+  if (isStationsVerified) {
+    log('INFO', `  [${ref.name}] 登陆站已人工验证，跳过站点写入`);
     return;
   }
 
