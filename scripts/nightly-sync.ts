@@ -1,12 +1,13 @@
 // scripts/nightly-sync.ts
-// Deep Blue 夜间数据同步脚本 v8
+// Deep Blue 夜间数据同步脚本 v9
 //
-// v8 变更：同步追踪 + 孤儿清理 + 状态变更检测
-//   - 每次同步记录 lastSyncedAt，同步后清理上游不再收录的孤儿记录
-//   - 检测状态变更并记录 statusChangedAt + previousStatus
-//   - 新增海缆记录 firstSeenAt，前端可用于"新增"红色小星星
-//   - 数据库总数 = 上游确认的海缆数（不再只增不减）
+// v9 变更：Qwen AI 智能去重（第三层）
+//   - SyncDedupGuard 升级 v2：模糊匹配 65-85 分的 REVIEW 对自动调 Qwen AI 判断
+//   - AI 判断 MERGE → 自动合并, SKIP → 独立入库, UNCERTAIN/失败 → 降级为 PENDING_REVIEW
+//   - guard.check() 变为 async（内部调 Qwen API，30s 超时），AI 不可用时行为与 v8 一致
+//   - 新增 AI 去重统计指标（aiCalls, aiMerged, aiSkipped, aiFailed）
 //
+// v8 保留：同步追踪 + 孤儿清理 + 状态变更检测
 // v7 保留：去重守门模块 (SyncDedupGuard) + dataSource 标记
 //
 // 核心架构（依据 PRD v2.0）：
@@ -647,8 +648,8 @@ async function main() {
   SYNC_TIMESTAMP = new Date();
 
   console.log('\n╔══════════════════════════════════════════════════════════════╗');
-  console.log('║  Deep Blue 夜间同步 v8 — 同步追踪 + 孤儿清理              ║');
-  console.log('║  TG先写(覆盖) → SN去重检查 → 孤儿清理 → 缓存刷新        ║');
+  console.log('║  Deep Blue 夜间同步 v9 — AI 智能去重 + 同步追踪            ║');
+  console.log('║  TG先写(覆盖) → SN去重(AI增强) → 缓存刷新               ║');
   console.log(`║  ${SYNC_TIMESTAMP.toISOString()}                            ║`);
   console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
@@ -658,6 +659,8 @@ async function main() {
   const stats = {
     tgWritten: 0, tgConflictsResolved: 0,
     snMatched: 0, snPendingReview: 0, snNewAdded: 0, snSkipped: 0,
+    // v9: AI 去重统计
+    snAiMerged: 0, snAiSkipped: 0, snAiFallback: 0,
     orphansRemoved: 0,
     stationsNullCoord: 0, dlqTotal: 0,
   };
@@ -700,8 +703,8 @@ async function main() {
   log('OK', `[Tier 1] 完成：写入 ${stats.tgWritten} 条`);
 
   // ── 步骤三：初始化去重守门 ───────────────────────────────────
-  log('INFO', '\n[Dedup] 初始化去重守门...');
-  const guard = new SyncDedupGuard(prisma);
+  log('INFO', '\n[Dedup] 初始化去重守门（AI 增强）...');
+  const guard = new SyncDedupGuard(prisma, { enableAI: true });
   await guard.init();
 
   // ── 步骤四：Tier 2 — SN 通过去重守门检查后入库 ────────────────
@@ -716,35 +719,51 @@ async function main() {
       snDetail.landingPoints.map(lp => lp.name.toLowerCase().split(',')[0].trim()).filter(Boolean)
     );
 
-    const decision = guard.check(ref.name, stationNames, snDetail.rfsYear);
+    // v9: guard.check() 现在是 async（内部可能调 Qwen AI）
+    const decision = await guard.check(ref.name, stationNames, snDetail.rfsYear);
 
     switch (decision.action) {
       case 'MERGE': {
         await mergeTier2IntoExisting(decision.existingId!, snDetail);
         stats.snMatched++;
-        log('OK', `  [合并] "${ref.name}" → "${decision.existingName}" (${decision.score}分)`);
+        // v9: 区分 AI 合并和确定性合并
+        if (decision.confidence === 'AI_CONFIRMED') {
+          stats.snAiMerged++;
+          log('OK', `  [AI合并] "${ref.name}" → "${decision.existingName}" (AI=${decision.score}分) ${decision.detail}`);
+        } else {
+          log('OK', `  [合并] "${ref.name}" → "${decision.existingName}" (${decision.score}分)`);
+        }
         break;
       }
 
       case 'REVIEW': {
+        // v9: 到这里说明 AI 也无法确认（UNCERTAIN 或 API 失败），保持 PENDING_REVIEW
         const wiki = await checkWikipedia(ref.name);
         await delay(300);
         const status = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
         await upsertTier2Cable(ref, snDetail, status, 'PENDING_REVIEW', decision.existingId);
         guard.addToIndex(`sn-${ref.slug}`, ref.name, stationNames, snDetail.rfsYear);
         stats.snPendingReview++;
-        log('WARN', `  [待审核] "${ref.name}" ↔ "${decision.existingName}" (${decision.score}分)`);
+        stats.snAiFallback++;
+        log('WARN', `  [待审核] "${ref.name}" ↔ "${decision.existingName}" (${decision.score}分, AI降级)`);
         break;
       }
 
       case 'CREATE': {
+        // v9: 区分 AI 排除和无匹配
+        if (decision.confidence === 'AI_REJECTED') {
+          stats.snAiSkipped++;
+          log('OK', `  [AI独立] "${ref.name}" — AI确认非重复: ${decision.detail}`);
+        }
         const wiki = await checkWikipedia(ref.name);
         await delay(300);
         const status = snDetail.isRetired ? 'DECOMMISSIONED' : 'IN_SERVICE';
         await upsertTier2Cable(ref, snDetail, status);
         guard.addToIndex(`sn-${ref.slug}`, ref.name, stationNames, snDetail.rfsYear);
         stats.snNewAdded++;
-        log('OK', `  [新缆] ${ref.name} (${status}, ${snDetail.landingPoints.length} 站${wiki.exists ? ', Wiki✓' : ''})`);
+        if (decision.confidence !== 'AI_REJECTED') {
+          log('OK', `  [新缆] ${ref.name} (${status}, ${snDetail.landingPoints.length} 站${wiki.exists ? ', Wiki✓' : ''})`);
+        }
         break;
       }
     }
@@ -780,6 +799,7 @@ async function main() {
   console.log(`║  同步完成！耗时 ${elapsed}s`);
   console.log(`║  [Tier1-TG]  写入: ${stats.tgWritten} 条`);
   console.log(`║  [Tier2-SN]  合并到已有: ${stats.snMatched} | 待审: ${stats.snPendingReview} | 新增: ${stats.snNewAdded} | 跳过: ${stats.snSkipped}`);
+  console.log(`║  [AI去重]    AI判断中: 合并=${stats.snAiMerged} | 排除=${stats.snAiSkipped} | 降级待审=${stats.snAiFallback}`);
   console.log(`║  [孤儿清理]  标记REMOVED: ${stats.orphansRemoved} 条`);
   console.log(`║  [活跃海缆]  当前总数: ${activeCableCount} 条`);
   console.log(`║  坐标待补全的登陆站: ${stats.stationsNullCoord} 个`);
@@ -799,7 +819,7 @@ async function main() {
       { ex: 30 * 24 * 3600 }
     );
     await redis.set('sync:report:latest', JSON.stringify({ ...stats, activeCableCount, runAt: new Date().toISOString() }), { ex: 7 * 24 * 3600 });
-    // v8: 清除所有前端缓存
+    // v9: 清除所有前端缓存
     await Promise.all([
       redis.del('cables:geojson:full'),
       redis.del('cables:geo:details'),
