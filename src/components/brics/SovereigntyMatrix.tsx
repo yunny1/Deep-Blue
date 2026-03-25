@@ -45,7 +45,7 @@ export default function SovereigntyMatrix() {
         <div style={{ display:'inline-block', minWidth:'fit-content' }}>
           {/* Col headers */}
           <div style={{ display:'flex', marginLeft:hw }}>
-            {members.map(m => <div key={m.code} style={{ width:cs, textAlign:'center', fontSize:10, fontWeight:600, color: hlCol === m.code ? C.gold : 'rgba(255,255,255,0.4)', paddingBottom:8, transition:'color 0.15s' }}>{m.code}</div>)}
+            {members.map(m => <div key={m.code} style={{ width:cs, textAlign:'center', fontSize:10, fontWeight:600, color: hlCol === m.code ? C.gold : 'rgba(255,255,255,0.4)', paddingBottom:8, transition:'color 0.15s' }}>{isZh ? m.nameZh : m.code}</div>)}
           </div>
           {/* Rows */}
           {members.map(rm => (
