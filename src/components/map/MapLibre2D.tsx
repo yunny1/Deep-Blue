@@ -101,13 +101,25 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
               type: 'geojson',
               data: {
                 type: 'Feature',
-                properties: { name: cable.name, slug: cable.slug, status: cable.status, lengthKm: cable.lengthKm, fiberPairs: cable.fiberPairs, vendor: vendorName, owners: ownerNames.join(','), rfsYear },
+                properties: { name: cable.name, slug: cable.slug, status: cable.status, lengthKm: cable.lengthKm, fiberPairs: cable.fiberPairs, vendor: vendorName, owners: ownerNames.join(','), rfsYear, isApproximateRoute: cable.isApproximateRoute || false },
                 geometry: cable.routeGeojson,
               },
             });
+
+            // v9: 近似路由用虚线渲染，真实路由用实线
+            const isApprox = cable.isApproximateRoute || false;
+
             map.addLayer({
               id: layerId, type: 'line', source: sourceId,
-              paint: { 'line-color': color, 'line-width': 1.5, 'line-opacity': visible ? 0.7 : 0 },
+              layout: {
+                ...(isApprox ? { 'line-cap': 'round' as const } : {}),
+              },
+              paint: {
+                'line-color': color,
+                'line-width': isApprox ? 1.2 : 1.5,
+                'line-opacity': visible ? (isApprox ? 0.5 : 0.7) : 0,
+                ...(isApprox ? { 'line-dasharray': [3, 3] } : {}),
+              },
             });
 
             map.on('mouseenter', layerId, (e) => {
@@ -124,9 +136,10 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
               map.getCanvas().style.cursor = '';
               const cm = useMapStore.getState().colorMode;
               const c  = getCableHexColor(cm, cable.status, vendorName, ownerNames, rfsYear);
-              map.setPaintProperty(layerId, 'line-width', 1.5);
+              const isApproxRestore = cable.isApproximateRoute || false;
+              map.setPaintProperty(layerId, 'line-width', isApproxRestore ? 1.2 : 1.5);
               map.setPaintProperty(layerId, 'line-color', c);
-              map.setPaintProperty(layerId, 'line-opacity', 0.7);
+              map.setPaintProperty(layerId, 'line-opacity', isApproxRestore ? 0.5 : 0.7);
               if (onHover) onHover(null, { x: 0, y: 0 });
             });
             map.on('click', layerId, () => { if (onClick) onClick(cable.slug); });
@@ -164,9 +177,11 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
     for (const cable of cablesDataRef.current) {
       if (!cable.routeGeojson) continue;
       const layerId = `cable-layer-${cable.slug}`;
+      const isApproxFilter = cable.isApproximateRoute || false;
       try {
         if (map.getLayer(layerId)) {
-          map.setPaintProperty(layerId, 'line-opacity', isCableVisible(cable) ? 0.7 : 0);
+          const vis = isCableVisible(cable);
+          map.setPaintProperty(layerId, 'line-opacity', vis ? (isApproxFilter ? 0.5 : 0.7) : 0);
         }
       } catch (e) {}
     }

@@ -287,6 +287,127 @@ export const COUNTRY_CODE_MAP: Record<string, string> = {
   'Argentina': 'AR',
   'Chile': 'CL',
   'Falkland Islands': 'FK',
+
+  // ── 非标准国家名（带冠词、缩写、别名）───────────────────────────
+  'the United States': 'US', 'the US': 'US', 'the USA': 'US',
+  'the United States of America': 'US',
+  'the United Kingdom': 'GB', 'the UK': 'GB',
+  'the Netherlands': 'NL',
+  'the Philippines': 'PH',
+  'the Maldives': 'MV',
+  'the Bahamas': 'BS',
+  'the Gambia': 'GM',
+  'the UAE': 'AE',
+  'the DRC': 'CD',
+  'Republic of China (Taiwan)': 'TW',
+
+  // ── 常见城市/州/地区 → 国家映射 ─────────────────────────────────
+  // 中东
+  'Jeddah': 'SA', 'Riyadh': 'SA', 'Dammam': 'SA', 'Yanbu': 'SA',
+  'Jebel Ali': 'AE', 'Fujairah': 'AE', 'Dubai': 'AE', 'Abu Dhabi': 'AE',
+  'Muscat': 'OM', 'Salalah': 'OM',
+  'Doha': 'QA',
+  'Manama': 'BH',
+  'Kuwait City': 'KW',
+
+  // 东南亚
+  'Sihanoukville': 'KH', 'Phnom Penh': 'KH',
+  'Ho Chi Minh City': 'VN', 'Da Nang': 'VN', 'Vung Tau': 'VN', 'Quy Nhon': 'VN',
+  'Changi': 'SG', 'Tuas': 'SG',
+  'Kuantan': 'MY', 'Penang': 'MY', 'Mersing': 'MY', 'Kota Kinabalu': 'MY',
+  'Kuala Lumpur': 'MY', 'Johor Bahru': 'MY', 'Cherating': 'MY',
+  'Jakarta': 'ID', 'Surabaya': 'ID', 'Batam': 'ID', 'Manado': 'ID',
+  'Dumai': 'ID', 'Jayapura': 'ID', 'Makassar': 'ID',
+  'Manila': 'PH', 'Subic Bay': 'PH', 'Davao': 'PH', 'Cebu': 'PH',
+  'Bangkok': 'TH', 'Pattaya': 'TH', 'Songkhla': 'TH', 'Satun': 'TH',
+  'Sattahip': 'TH',
+  'Yangon': 'MM', 'Myeik': 'MM',
+
+  // 东亚
+  'Tokyo': 'JP', 'Osaka': 'JP', 'Okinawa': 'JP', 'Chikura': 'JP',
+  'Kitaibaraki': 'JP', 'Maruyama': 'JP', 'Shima': 'JP', 'Minamiboso': 'JP',
+  'Busan': 'KR', 'Seoul': 'KR', 'Geoje': 'KR', 'Incheon': 'KR',
+  'Keoje': 'KR', 'Taean': 'KR',
+
+  // 南亚
+  'Mumbai': 'IN', 'Chennai': 'IN', 'Cochin': 'IN', 'Kochi': 'IN',
+  'Tuticorin': 'IN', 'Trivandrum': 'IN', 'Thoothukudi': 'IN',
+  'Colombo': 'LK', 'Matara': 'LK', 'Mount Lavinia': 'LK',
+  'Karachi': 'PK',
+  'Dhaka': 'BD', 'Cox\'s Bazar': 'BD', 'Kuakata': 'BD',
+  'Male': 'MV', 'Hulhumale': 'MV',
+
+  // 欧洲
+  'Marseille': 'FR', 'Brest': 'FR', 'Bordeaux': 'FR', 'Calais': 'FR',
+  'Saint-Hilaire-de-Riez': 'FR', 'Penmarch': 'FR', 'La Seyne-sur-Mer': 'FR',
+  'Barcelona': 'ES', 'Bilbao': 'ES', 'Conil': 'ES', 'Estepona': 'ES',
+  'Lisbon': 'PT', 'Seixal': 'PT', 'Sesimbra': 'PT', 'Carcavelos': 'PT',
+  'Genoa': 'IT', 'Palermo': 'IT', 'Catania': 'IT', 'Mazara del Vallo': 'IT',
+  'Amsterdam': 'NL', 'Katwijk': 'NL', 'Beverwijk': 'NL',
+  'Zeebrugge': 'BE', 'Ostend': 'BE',
+  'Hamburg': 'DE', 'Rostock': 'DE', 'Sylt': 'DE', 'Norden': 'DE',
+  'Bude': 'GB', 'Porthcurno': 'GB', 'Skewjack': 'GB', 'Highbridge': 'GB',
+  'Lowestoft': 'GB', 'Whitesands Bay': 'GB', 'Southport': 'GB',
+  'Oxwich Bay': 'GB', 'Blackpool': 'GB', 'Brighton': 'GB',
+  'Blaabjerg': 'DK', 'Lyngby': 'DK', 'Gedser': 'DK',
+  'Gothenburg': 'SE', 'Malmö': 'SE',
+  'Oslo': 'NO', 'Kristiansand': 'NO', 'Stavanger': 'NO',
+  'Helsinki': 'FI', 'Hanko': 'FI',
+  'Tallinn': 'EE',
+  'Riga': 'LV',
+  'Klaipeda': 'LT',
+
+  // 北美
+  'California': 'US', 'Oregon': 'US', 'Virginia': 'US', 'New Jersey': 'US',
+  'New York': 'US', 'Florida': 'US', 'Texas': 'US', 'Hawaii': 'US',
+  'Long Island': 'US', 'Wall Township': 'US', 'Tuckerton': 'US',
+  'Myrtle Beach': 'US', 'Virginia Beach': 'US', 'Miami': 'US',
+  'Los Angeles': 'US', 'San Francisco': 'US', 'Seattle': 'US',
+  'Hillsboro': 'US', 'Hermosa Beach': 'US', 'Manhattan Beach': 'US',
+  'Atlantic City': 'US', 'Lynn': 'US', 'Manahawkin': 'US',
+  'Halifax': 'CA', 'Vancouver': 'CA',
+  'Cancun': 'MX', 'Tulum': 'MX', 'Mazatlan': 'MX', 'Tijuana': 'MX',
+
+  // 南美
+  'Fortaleza': 'BR', 'Rio de Janeiro': 'BR', 'Santos': 'BR',
+  'Sao Paulo': 'BR', 'Recife': 'BR', 'Salvador': 'BR', 'Praia Grande': 'BR',
+  'Barranquilla': 'CO', 'Cartagena': 'CO', 'Buenaventura': 'CO',
+  'Valparaiso': 'CL', 'Arica': 'CL', 'Lurin': 'PE', 'Lima': 'PE',
+  'Buenos Aires': 'AR', 'Las Toninas': 'AR',
+  'Montevideo': 'UY',
+
+  // 非洲
+  'Mombasa': 'KE', 'Malindi': 'KE',
+  'Dar es Salaam': 'TZ',
+  'Maputo': 'MZ', 'Nacala': 'MZ',
+  'Cape Town': 'ZA', 'Durban': 'ZA', 'Mtunzini': 'ZA', 'Yzerfontein': 'ZA',
+  'Melkbosstrand': 'ZA',
+  'Luanda': 'AO',
+  'Lagos': 'NG', 'Apapa': 'NG', 'Lekki': 'NG',
+  'Accra': 'GH', 'Tema': 'GH',
+  'Abidjan': 'CI',
+  'Dakar': 'SN',
+  'Nouakchott': 'MR',
+  'Casablanca': 'MA', 'Tangier': 'MA', 'Asilah': 'MA',
+  'Alexandria': 'EG', 'Suez': 'EG', 'Abu Talat': 'EG', 'Zafarana': 'EG',
+  'Tripoli': 'LY',
+  'Tunis': 'TN', 'Bizerte': 'TN', 'Kelibia': 'TN',
+  'Algiers': 'DZ', 'Annaba': 'DZ', 'Oran': 'DZ',
+  'Djibouti City': 'DJ',
+  'Mogadishu': 'SO',
+  'Port Louis': 'MU',
+  'Toamasina': 'MG', 'Antananarivo': 'MG',
+
+  // 大洋洲
+  'Sydney': 'AU', 'Perth': 'AU', 'Adelaide': 'AU', 'Darwin': 'AU',
+  'Maroochydore': 'AU',
+  'Auckland': 'NZ', 'Takapuna': 'NZ', 'Mangawhai': 'NZ',
+  'Port Moresby': 'PG', 'Madang': 'PG',
+  'Suva': 'FJ',
+  'Apia': 'WS',
+  'Nuku\'alofa': 'TO',
+  'Noumea': 'NC',
+  'Papeete': 'PF',
 };
 
 /**

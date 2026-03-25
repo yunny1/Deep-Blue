@@ -14,6 +14,7 @@ interface Cable {
   id: string; name: string; slug: string; status: string;
   lengthKm: number | null; fiberPairs: number | null;
   rfsDate: string | null; routeGeojson: any;
+  isApproximateRoute?: boolean;  // v9: 大圆弧近似路由
   vendor: { name: string } | null;
   owners: Array<{ company: { name: string } }>;
 }
@@ -52,7 +53,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   const containerRef   = useRef<HTMLDivElement>(null);
   const viewerRef      = useRef<any>(null);
   const cesiumRef      = useRef<any>(null);
-  const entityMetaRef  = useRef<Map<any, { slug: string; status: string; vendor: string | null; owners: string[]; rfsYear: number | null }>>(new Map());
+  const entityMetaRef  = useRef<Map<any, { slug: string; status: string; vendor: string | null; owners: string[]; rfsYear: number | null; isApprox: boolean }>>(new Map());
   const entitiesMapRef = useRef<Map<string, any[]>>(new Map());
   const allEntitiesRef = useRef<any[]>([]);
   // 地震扩散圆实体引用（用于清除）
@@ -137,20 +138,32 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
               const positions: number[] = [];
               for (const coord of line) { positions.push(coord[0], coord[1]); }
               if (positions.length >= 4) {
+                // v9: 近似路由用虚线材质，真实路由用实线
+                const isApprox = cable.isApproximateRoute || false;
+                const material = isApprox
+                  ? new Cesium.PolylineDashMaterialProperty({
+                      color: new Cesium.Color(color.red, color.green, color.blue, color.alpha * 0.7),
+                      dashLength: 16,
+                    })
+                  : color;
+
                 const entity = viewer.entities.add({
                   name: cable.name,
                   polyline: {
                     positions: Cesium.Cartesian3.fromDegreesArray(positions),
-                    width: 1.5, material: color, clampToGround: false,
+                    width: isApprox ? 1.2 : 1.5,
+                    material,
+                    clampToGround: false,
                   },
                   properties: new Cesium.PropertyBag({
                     cableId: cable.id, cableSlug: cable.slug, status: cable.status,
                     lengthKm: cable.lengthKm, fiberPairs: cable.fiberPairs,
+                    isApproximateRoute: isApprox,
                   }),
                 });
                 cableEntities.push(entity);
                 allEntities.push(entity);
-                entityMeta.set(entity, { slug: cable.slug, status: cable.status, vendor: vendorName, owners: ownerNames, rfsYear });
+                entityMeta.set(entity, { slug: cable.slug, status: cable.status, vendor: vendorName, owners: ownerNames, rfsYear, isApprox: cable.isApproximateRoute || false });
               }
             }
             if (cableEntities.length > 0) entitiesMap.set(cable.slug, cableEntities);

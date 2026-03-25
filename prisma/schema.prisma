@@ -46,6 +46,7 @@ lastSyncedAt       DateTime? @map("last_synced_at")         // 上次被上游�
   possibleDuplicateOf String?   @map("possible_duplicate_of")
   mergedInto          String?   @map("merged_into")
   mergedAt            DateTime? @map("merged_at")
+isApproximateRoute Boolean @default(false) @map("is_approximate_route")
 
 }
 

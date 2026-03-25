@@ -1,5 +1,6 @@
 // src/app/api/cables/route.ts
-// 海缆数据 API v3 — Redis 缓存优先
+// 海缆数据 API v4 — Redis 缓存优先
+// v9: 新增 isApproximateRoute 标记（大圆弧近似路由用虚线渲染）
 // v8: 排除 REMOVED + mergedInto，返回 isNew / statusChanged 标记
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
         firstSeenAt: true,          // v8: 用于 isNew 标记
         statusChangedAt: true,      // v8: 用于 statusChanged 标记
         previousStatus: true,       // v8: 变更前的状态
+        isApproximateRoute: true,   // v9: 大圆弧近似路由标记
         ...(includeGeo ? { routeGeojson: true } : {}),
         ...(includeDetails ? {
           vendor: { select: { name: true } },
@@ -99,6 +101,8 @@ export async function GET(request: NextRequest) {
       isNew: c.firstSeenAt ? (now - new Date(c.firstSeenAt).getTime()) < SEVEN_DAYS_MS : false,
       // v8: 7天内状态变更 → 变更标记
       statusChanged: c.statusChangedAt ? (now - new Date(c.statusChangedAt).getTime()) < SEVEN_DAYS_MS : false,
+      // v9: 近似路由标记（前端用虚线渲染）
+      isApproximateRoute: (c as any).isApproximateRoute ?? false,
     }));
 
     const payload = { total: cablesWithFlags.length, cables: cablesWithFlags, generatedAt: new Date().toISOString() };
