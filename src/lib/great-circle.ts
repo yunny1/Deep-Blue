@@ -104,6 +104,8 @@ const WAYPOINTS: WaypointNode[] = [
   { id:'id07',lat:-2,lon:130 },
   // Myanmar / Andaman
   { id:'am01',lat:14,lon:96 },{ id:'am02',lat:10,lon:97.5 },
+  // Gulf of Thailand (connects Andaman → South China Sea without going through Malacca)
+  { id:'gt01',lat:8,lon:102 },
   // Bay of Bengal
   { id:'bb01',lat:15,lon:82 },{ id:'bb02',lat:12,lon:84 },{ id:'bb03',lat:20,lon:88 },
   { id:'bb04',lat:8,lon:82 },
@@ -118,6 +120,7 @@ const WAYPOINTS: WaypointNode[] = [
   // Red Sea
   { id:'rs01',lat:12.5,lon:44 },{ id:'rs02',lat:16,lon:41 },{ id:'rs03',lat:21,lon:38 },
   { id:'rs04',lat:27,lon:35 },{ id:'rs05',lat:29.5,lon:33 },
+  { id:'su01',lat:30.5,lon:32.5 },  // Suez Canal midpoint - avoids Sinai crossing
   // East Mediterranean
   { id:'em01',lat:31.5,lon:32 },{ id:'em02',lat:34.5,lon:33 },{ id:'em03',lat:35,lon:26 },
   { id:'em04',lat:37.5,lon:20 },{ id:'em05',lat:34,lon:35.5 },{ id:'em06',lat:36,lon:30 },
@@ -146,9 +149,10 @@ const WAYPOINTS: WaypointNode[] = [
   { id:'sw04',lat:-2,lon:-81.5 },{ id:'sw05',lat:4,lon:-78 },
   // Australia
   { id:'au01',lat:-34,lon:151.5 },{ id:'au02',lat:-27,lon:154 },{ id:'au03',lat:-12.5,lon:132 },
-  { id:'au04',lat:-32,lon:115 },
+  { id:'au04',lat:-32,lon:115 },{ id:'au05',lat:-17,lon:148 },
   // New Zealand / Pacific Islands
   { id:'nz01',lat:-37,lon:175.5 },{ id:'nz02',lat:-42,lon:174 },
+  { id:'nz03',lat:-39,lon:179 },  // East of NZ - routes around islands
   { id:'pc01',lat:-18,lon:179 },{ id:'pc02',lat:-14,lon:-171 },{ id:'pc03',lat:-22,lon:167 },
   // Panama
   { id:'pa01',lat:8,lon:-77 },
@@ -185,8 +189,8 @@ const EDGES: [string, string][] = [
   // East Mediterranean
   ['cm01','em04'],['cm01','em03'],['em03','em04'],['em03','em02'],['em02','em05'],
   ['em02','em01'],['em02','em06'],['em05','em06'],
-  // Suez Canal
-  ['em01','rs05'],['rs05','rs04'],['rs04','rs03'],['rs03','rs02'],['rs02','rs01'],
+  // Suez Canal (via su01 midpoint to avoid Sinai land crossing)
+  ['em01','su01'],['su01','rs05'],['rs05','rs04'],['rs04','rs03'],['rs03','rs02'],['rs02','rs01'],
   // Red Sea → Gulf of Aden
   ['rs01','ea01'],['ea01','ea02'],
   // Aden → Arabian Sea
@@ -201,6 +205,8 @@ const EDGES: [string, string][] = [
   ['in03','bb04'],['bb04','bb02'],['bb02','bb01'],['bb01','in01'],['in01','bb01'],['bb02','bb03'],
   // Bay of Bengal → Andaman → Malacca
   ['bb02','am01'],['am01','am02'],['am02','mk01'],['bb04','am02'],
+  // Gulf of Thailand shortcut (Andaman → Vietnam without Malacca detour)
+  ['am02','gt01'],['gt01','vn03'],['gt01','mk02'],
   ['mk01','mk02'],['mk02','mk03'],['mk03','mk04'],
   // Malacca → South China Sea
   ['mk04','sc04'],['mk04','id01'],['sc04','sc03'],['sc03','sc02'],['sc02','sc01'],
@@ -223,11 +229,11 @@ const EDGES: [string, string][] = [
   // Indonesia
   ['id01','id02'],['id02','id03'],['id03','id04'],['id05','id06'],['id06','sc04'],
   ['mk04','id01'],['id01','id05'],['id05','id07'],
-  // Indonesia → Australia
-  ['id04','au03'],['id07','au03'],['au03','au02'],['au02','au01'],['au01','nz01'],
+  // Indonesia → Australia (via Cairns coast au05 to avoid inland crossing)
+  ['id04','au03'],['id07','au03'],['au03','au05'],['au05','au02'],['au02','au01'],['au01','nz01'],
   ['au04','au01'],['au04','au03'],
-  // Oceania
-  ['nz01','nz02'],['nz01','pc01'],['pc01','hw03'],['pc01','pc02'],['pc01','pc03'],
+  // Oceania (route around NZ via nz03 east of islands)
+  ['nz01','nz03'],['nz03','nz02'],['nz03','pc01'],['nz01','pc01'],['pc01','hw03'],['pc01','pc02'],['pc01','pc03'],
   ['pc03','au02'],['au01','pc03'],
   // East Africa
   ['ea02','ea03'],['ea03','ea04'],['ea04','ea05'],['ea05','ea06'],['ea06','sa01'],
