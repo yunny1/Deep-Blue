@@ -1,25 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { BRICS_MEMBERS, BRICS_COUNTRY_META, normalizeBRICS, isBRICSCountry } from '@/lib/brics-constants';
+import { BRICS_MEMBERS, BRICS_PARTNERS, BRICS_ALL, BRICS_COUNTRY_META, normalizeBRICS, isBRICSCountry } from '@/lib/brics-constants';
 
 export const revalidate = 3600;
 type CS = 'direct'|'indirect'|'transit'|'none'|'landlocked';
-const LL = new Set(['ET']);
+// 内陆国：无海岸线的金砖国家
+const LANDLOCKED = new Set(['ET','BY','BO','KZ','UZ','UG']);
 const AF = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED'] as string[] } };
 
-// 获取国家名称（含非金砖国家，从 countries 表取）
 async function buildNameMap(): Promise<Record<string, { name: string; nameZh: string }>> {
   const map: Record<string, { name: string; nameZh: string }> = {};
-  // 先加入金砖国家元数据
   for (const [code, meta] of Object.entries(BRICS_COUNTRY_META)) {
     map[code] = { name: meta.name, nameZh: meta.nameZh };
   }
-  // 再从数据库补充非金砖国家
   const countries = await prisma.country.findMany({ select: { code: true, nameEn: true, nameZh: true } });
   for (const c of countries) {
-    if (!map[c.code]) {
-      map[c.code] = { name: c.nameEn, nameZh: c.nameZh || c.nameEn };
-    }
+    if (!map[c.code]) map[c.code] = { name: c.nameEn, nameZh: c.nameZh || c.nameEn };
   }
   return map;
 }
@@ -61,13 +57,18 @@ export async function GET() {
       return null;
     }
 
-    const m=[...BRICS_MEMBERS];
-    const mx:{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:{code:string;name:string;nameZh:string}[]}[]=[];
+    // 分析所有金砖国家（成员+伙伴）
+    const allCodes = [...BRICS_ALL];
+    const mx:{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:{code:string;name:string;nameZh:string}[];tier:'member'|'partner'}[]=[];
     const transitNodeCount: Record<string, number> = {};
 
-    for(let i=0;i<m.length;i++)for(let j=0;j<m.length;j++){
-      if(i===j)continue;const[f,t]=[m[i],m[j]];
-      if(LL.has(f)||LL.has(t)){mx.push({from:f,to:t,status:'landlocked',directCableCount:0,directCables:[]});continue;}
+    for(let i=0;i<allCodes.length;i++)for(let j=0;j<allCodes.length;j++){
+      if(i===j)continue;
+      const[f,t]=[allCodes[i],allCodes[j]];
+      if(LANDLOCKED.has(f)||LANDLOCKED.has(t)){
+        mx.push({from:f,to:t,status:'landlocked',directCableCount:0,directCables:[],tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
+        continue;
+      }
       const cbl=dc[f]?.[t]??[];
       let status:CS;let transitPath:string[]|undefined;
       if(cbl.length>0){status='direct';}
@@ -82,27 +83,37 @@ export async function GET() {
           }else{status='none';}
         }
       }
-      const transitPathNames = transitPath?.map(code => ({
-        code, name: nameMap[code]?.name ?? code, nameZh: nameMap[code]?.nameZh ?? code,
-      }));
-      mx.push({from:f,to:t,status,directCableCount:cbl.length,directCables:cbl.slice(0,10),transitPath,transitPathNames});
+      const transitPathNames=transitPath?.map(code=>({code,name:nameMap[code]?.name??code,nameZh:nameMap[code]?.nameZh??code}));
+      mx.push({from:f,to:t,status,directCableCount:cbl.length,directCables:cbl.slice(0,10),transitPath,transitPathNames,tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
     }
 
+    // Summary: 只算成员国之间的（11×10/2=55对）
+    const memberSet=new Set<string>(BRICS_MEMBERS);
     const up:Record<CS,number>={direct:0,indirect:0,transit:0,none:0,landlocked:0};
-    for(let i=0;i<m.length;i++)for(let j=i+1;j<m.length;j++){const c=mx.find(x=>x.from===m[i]&&x.to===m[j]);if(c)up[c.status]++;}
+    for(let i=0;i<BRICS_MEMBERS.length;i++)for(let j=i+1;j<BRICS_MEMBERS.length;j++){
+      const c=mx.find(x=>x.from===BRICS_MEMBERS[i]&&x.to===BRICS_MEMBERS[j]);
+      if(c)up[c.status]++;
+    }
 
-    const transitNodes = Object.entries(transitNodeCount)
-      .map(([code, count]) => ({
-        code, name: nameMap[code]?.name ?? code, nameZh: nameMap[code]?.nameZh ?? code,
-        count, isBRICS: isBRICSCountry(code),
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 15);
+    const transitNodes=Object.entries(transitNodeCount)
+      .map(([code,count])=>({code,name:nameMap[code]?.name??code,nameZh:nameMap[code]?.nameZh??code,count,isBRICS:isBRICSCountry(code)}))
+      .sort((a,b)=>b.count-a.count)
+      .slice(0,20);
+
+    // 返回成员+伙伴所有国家的信息
+    const allMembers=allCodes.map(c=>({
+      code:c,
+      name:nameMap[c]?.name??BRICS_COUNTRY_META[c]?.name??c,
+      nameZh:nameMap[c]?.nameZh??BRICS_COUNTRY_META[c]?.nameZh??c,
+      tier:(BRICS_MEMBERS as readonly string[]).includes(c)?'member':'partner' as 'member'|'partner',
+    }));
 
     return NextResponse.json({
-      members:m.map(c=>({code:c,name:nameMap[c]?.name??c,nameZh:nameMap[c]?.nameZh??c})),
+      members:allMembers.filter(m=>m.tier==='member'),
+      partners:allMembers.filter(m=>m.tier==='partner'),
+      allCountries:allMembers,
       matrix:mx,
-      summary:{totalPairs:(m.length*(m.length-1))/2,...up},
+      summary:{totalPairs:(BRICS_MEMBERS.length*(BRICS_MEMBERS.length-1))/2,...up},
       transitNodes,
     });
   } catch(e){console.error('[BRICS Sovereignty]',e);return NextResponse.json({error:'Failed'},{status:500});}

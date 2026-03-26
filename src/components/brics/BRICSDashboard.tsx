@@ -55,7 +55,7 @@ export default function BRICSDashboard() {
         .bs{animation:fu .6s ease both} .bc{background:rgba(26,45,74,.5);border:1px solid ${C.gold}15;border-radius:14px;backdrop-filter:blur(12px);transition:all .25s} .bc:hover{border-color:${C.gold}35;box-shadow:0 0 24px ${C.gold}10}
       `}</style>
       <div className="bp">
-        <div style={{display:'flex',height:4}}>{FLAGS.map(c=><div key={c} style={{flex:1,background:c}} />)}</div>
+        <div style={{position:'sticky',top:0,zIndex:100,display:'flex',height:4}}>{FLAGS.map(c=><div key={c} style={{flex:1,background:c}} />)}</div>
 
         {/* Hero — 去掉了台湾/港澳注释 */}
         <section className="bs" style={{padding:'48px 32px 28px',maxWidth:1400,margin:'0 auto'}}>
@@ -183,7 +183,7 @@ export default function BRICSDashboard() {
                   <tbody>{sov.transitNodes.map((n,i)=>(
                     <tr key={n.code} style={{borderBottom:'1px solid rgba(255,255,255,.03)',transition:'background .15s'}} onMouseEnter={e=>e.currentTarget.style.background=`${C.gold}06`} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
                       <td style={{padding:'10px 16px',color:'rgba(255,255,255,.3)',fontSize:12}}>{i+1}</td>
-                      <td style={{padding:'10px 16px',color:'#F0E6C8',fontWeight:500}}>{isZh?n.nameZh:n.name} <span style={{color:'rgba(255,255,255,.25)',fontSize:11}}>({n.code})</span></td>
+                      <td style={{padding:'10px 16px',color:'#F0E6C8',fontWeight:500}}>{isZh?(n.nameZh||n.name||n.code):(n.name||n.code)} <span style={{color:'rgba(255,255,255,.25)',fontSize:11}}>({n.code})</span></td>
                       <td style={{padding:'10px 16px'}}>
                         <div style={{display:'flex',alignItems:'center',gap:8}}>
                           <div style={{width:Math.min(120,n.count*8),height:6,borderRadius:3,background:n.isBRICS?C.gold:'#EF4444',opacity:0.7,transition:'width .8s ease'}} />
