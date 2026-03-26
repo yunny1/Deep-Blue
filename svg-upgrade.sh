@@ -1,4 +1,12 @@
-'use client';
+#!/bin/bash
+set -e
+P="/home/ubuntu/deep-blue"
+echo "═══════════════════════════════════════════════════════"
+echo "🎨 SVG 剖面图升级 — 内嵌成本标注"
+echo "═══════════════════════════════════════════════════════"
+
+python3 << 'PYEOF'
+content = r"""'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { BRICS_ALL, BRICS_MEMBERS, BRICS_COUNTRY_META, BRICS_COLORS as C } from '@/lib/brics-constants';
 import { estimateSubseaCapex, formatUsd, SENSITIVITY_ITEMS } from '@/lib/subsea-cost-model';
@@ -299,3 +307,21 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
     </section>
   );
 }
+"""
+
+path = "/home/ubuntu/deep-blue/src/components/brics/BRICSInvestmentPanel.tsx"
+with open(path, 'w') as f:
+    f.write(content)
+print(f"  ✅ BRICSInvestmentPanel.tsx 重写完成 ({len(content)} 字符)")
+PYEOF
+
+echo ""
+echo "═══════════════════════════════════════════════════════"
+echo "✅ SVG 剖面图升级完成！"
+echo ""
+echo "  npm run build"
+echo "  kill -9 \$(lsof -t -i:3000) 2>/dev/null; sleep 1"
+echo "  nohup npx next start -p 3000 > /tmp/deep-blue.log 2>&1 &"
+echo "  git add -A && git commit -m 'feat: SVG cable diagram with inline cost annotations + hover interactivity' && git push origin main"
+echo "  → Cloudflare Purge Everything → Cmd+Shift+R"
+echo "═══════════════════════════════════════════════════════"
