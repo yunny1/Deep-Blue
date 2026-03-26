@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useBRICS } from '@/lib/brics-i18n';
-import { BRICS_MEMBERS, BRICS_COUNTRY_META, BRICS_COLORS as C } from '@/lib/brics-constants';
+import { BRICS_MEMBERS, BRICS_PARTNERS, BRICS_COUNTRY_META, BRICS_COLORS as C } from '@/lib/brics-constants';
 
 interface CableInfo { cat:string; name:string; status:string; lengthKm:number|null; vendor:string|null; owners:string[]; stations:{name:string;country:string|null;city:string|null}[]; fiberPairs:number|null; capacityTbps:number|null; rfsDate:string|null; }
 interface Props { height?:string; selection?:{kind:string;from?:string;to?:string;cables?:string[]}; }
@@ -64,6 +64,15 @@ export default function BRICSMap({ height='560px', selection }:Props) {
         map.addSource('brics-labels',{type:'geojson',data:{type:'FeatureCollection',features:lf}});
         map.addLayer({id:'brics-dots',type:'circle',source:'brics-labels',paint:{'circle-radius':4,'circle-color':C.gold,'circle-opacity':0.7,'circle-stroke-color':C.goldDark,'circle-stroke-width':1}});
         map.addLayer({id:'brics-text',type:'symbol',source:'brics-labels',layout:{'text-field':['get','name'],'text-size':11,'text-offset':[0,1.4],'text-anchor':'top','text-font':['Open Sans Bold','Arial Unicode MS Bold']},paint:{'text-color':C.goldLight,'text-halo-color':C.navy,'text-halo-width':1.5}});
+
+        // BRICS partner nation labels (silver dots)
+        const partnerFeatures: GeoJSON.Feature[] = BRICS_PARTNERS.map(code => {
+          const m = BRICS_COUNTRY_META[code];
+          return { type: 'Feature', properties: { code, name: isZh ? m?.nameZh : m?.name }, geometry: { type: 'Point', coordinates: m?.center ?? [0, 0] } };
+        });
+        map.addSource('partner-labels', { type: 'geojson', data: { type: 'FeatureCollection', features: partnerFeatures } });
+        map.addLayer({ id: 'partner-dots', type: 'circle', source: 'partner-labels', paint: { 'circle-radius': 3.5, 'circle-color': C.silver, 'circle-opacity': 0.6, 'circle-stroke-color': '#6B7280', 'circle-stroke-width': 0.8 } });
+        map.addLayer({ id: 'partner-text', type: 'symbol', source: 'partner-labels', layout: { 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'] }, paint: { 'text-color': '#8B95A5', 'text-halo-color': C.navy, 'text-halo-width': 1.2 } });
 
         // Hover: highlight + detail panel
         // Add wide transparent hitbox layers for easier hover/click
@@ -161,6 +170,7 @@ export default function BRICSMap({ height='560px', selection }:Props) {
           {color:C.domestic,label:tb('map.domestic'),n:stats.domestic,glow:true,tip:tb('map.domesticTip')},
           {color:C.silver,label:tb('map.related'),n:stats.related,glow:false,tip:tb('map.relatedTip')},
           {color:'#2A2F3A',label:tb('map.other'),n:stats.other,glow:false,tip:tb('map.otherTip')},
+          {color:C.silver,label:isZh?'● 伙伴国标注':'● Partner Labels',n:10,glow:false,tip:isZh?'10个金砖伙伴国的地理位置银色标注':'Silver labels showing 10 BRICS partner nation locations'},
         ].map(({color,label,n,glow,tip})=>(
           <div key={label} style={{display:'flex',alignItems:'center',gap:6,cursor:'help',position:'relative'}}
             onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setLegendTip({x:r.left-8,y:r.top,text:tip});}}
