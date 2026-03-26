@@ -6,9 +6,9 @@ import { useBRICS } from '@/lib/brics-i18n';
 import { BRICS_MEMBERS, BRICS_COUNTRY_META, BRICS_COLORS as C } from '@/lib/brics-constants';
 
 interface CableInfo { cat:string; name:string; status:string; lengthKm:number|null; vendor:string|null; owners:string[]; stations:{name:string;country:string|null;city:string|null}[]; fiberPairs:number|null; capacityTbps:number|null; rfsDate:string|null; }
-interface Props { height?:string; }
+interface Props { height?:string; selection?:{kind:string;from?:string;to?:string;cables?:string[]}; }
 
-export default function BRICSMap({ height='560px' }:Props) {
+export default function BRICSMap({ height='560px', selection }:Props) {
   const{tb,isZh}=useBRICS();
   const cRef=useRef<HTMLDivElement>(null);
   const mRef=useRef<maplibregl.Map|null>(null);
@@ -98,6 +98,55 @@ export default function BRICSMap({ height='560px' }:Props) {
   },[isZh]);
 
   const statusColors:Record<string,string>={IN_SERVICE:'#22C55E',UNDER_CONSTRUCTION:'#3B82F6',PLANNED:'#F59E0B',DECOMMISSIONED:'#6B7280'};
+
+  // 矩阵联动：高亮选中的国家对海缆
+  useEffect(()=>{
+    const map=mRef.current;if(!map||!map.loaded())return;
+    if(selection?.kind==='pair'&&selection.cables&&selection.cables.length>0){
+      // 添加高亮层
+      const slugs=new Set(selection.cables);
+      const allSources=['c-int','c-dom','c-rel'];
+      for(const src of allSources){
+        const source=map.getSource(src);
+        if(!source)continue;
+        // 降低非选中海缆的透明度
+      }
+      // 用 filter 高亮特定海缆
+      try{
+        ['l-int','l-dom','l-rel'].forEach(lid=>{
+          if(map.getLayer(lid)){map.setPaintProperty(lid,'line-opacity',0.15);}
+        });
+        ['l-int-glow','l-dom-glow'].forEach(lid=>{
+          if(map.getLayer(lid)){map.setPaintProperty(lid,'line-opacity',0.03);}
+        });
+        // 添加高亮层
+        if(map.getSource('c-highlight')){map.removeLayer('l-highlight-glow');map.removeLayer('l-highlight');map.removeSource('c-highlight');}
+        // 从所有源中收集匹配的 features
+        const features:GeoJSON.Feature[]=[];
+        for(const src of allSources){
+          const source=map.getSource(src) as any;
+          if(!source?._data?.features)continue;
+          source._data.features.forEach((f:any)=>{if(slugs.has(f.properties?.slug))features.push(f);});
+        }
+        if(features.length>0){
+          map.addSource('c-highlight',{type:'geojson',data:{type:'FeatureCollection',features}});
+          map.addLayer({id:'l-highlight-glow',type:'line',source:'c-highlight',paint:{'line-color':'#FFD700','line-width':10,'line-opacity':0.3,'line-blur':4}});
+          map.addLayer({id:'l-highlight',type:'line',source:'c-highlight',paint:{'line-color':'#FFD700','line-width':3,'line-opacity':1}});
+        }
+      }catch(e){console.warn('[BRICSMap] highlight error',e);}
+    }else{
+      // 恢复正常状态
+      const map2=mRef.current;if(!map2||!map2.loaded())return;
+      try{
+        ['l-int'].forEach(lid=>{if(map2.getLayer(lid))map2.setPaintProperty(lid,'line-opacity',0.95);});
+        ['l-dom'].forEach(lid=>{if(map2.getLayer(lid))map2.setPaintProperty(lid,'line-opacity',0.75);});
+        ['l-rel'].forEach(lid=>{if(map2.getLayer(lid))map2.setPaintProperty(lid,'line-opacity',0.4);});
+        ['l-int-glow'].forEach(lid=>{if(map2.getLayer(lid))map2.setPaintProperty(lid,'line-opacity',0.15);});
+        ['l-dom-glow'].forEach(lid=>{if(map2.getLayer(lid))map2.setPaintProperty(lid,'line-opacity',0.1);});
+        if(map2.getSource('c-highlight')){map2.removeLayer('l-highlight-glow');map2.removeLayer('l-highlight');map2.removeSource('c-highlight');}
+      }catch(e){}
+    }
+  },[selection]);
 
   return(
     <div style={{position:'relative',borderRadius:14,overflow:'hidden'}}>
