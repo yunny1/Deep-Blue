@@ -69,7 +69,7 @@ export default function SovereigntyMatrix(){
                 <span style={{
                   position:'absolute',
                   bottom:0,
-                  left:4,
+                  left:'50%',marginLeft:'-2px',
                   fontSize:10,fontWeight:600,whiteSpace:'nowrap',
                   color:hlCol===m.code?C.gold:'rgba(255,255,255,.45)',
                   transition:'color .15s',
@@ -98,7 +98,7 @@ export default function SovereigntyMatrix(){
                       const r=e.currentTarget.getBoundingClientRect();
                       setTip({x:r.right,y:r.top,cell,fn:getName(rm.code),tn:getName(cm.code)});}}
                     onMouseLeave={()=>{setHlRow(null);setHlCol(null);setTip(null);}}>
-                    {self?<span style={{fontSize:9,color:`${C.gold}25`}}>{rm.code}</span>
+                    {self?<span style={{fontSize:9,color:`${C.gold}25`}}>{isZh?rm.nameZh.slice(0,1):rm.code}</span>
                     :cfg?<>
                       <span style={{width:10,height:10,borderRadius:'50%',background:cfg.bg,opacity:.85}} />
                       {cell&&cell.directCableCount>0&&<span style={{position:'absolute',bottom:3,right:5,fontSize:8,color:'rgba(255,255,255,.35)',fontFeatureSettings:'"tnum"'}}>{cell.directCableCount}</span>}
