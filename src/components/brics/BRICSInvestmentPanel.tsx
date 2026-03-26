@@ -223,13 +223,13 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
         <div style={{fontSize:10,fontWeight:700,color:'rgba(212,175,55,.5)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:14}}>{isZh?'敏感性分析':'Sensitivity Analysis'}</div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>
           <span style={{fontSize:9,color:'rgba(255,255,255,.18)',width:80,textAlign:'right'}}>{isZh?'← 成本降低':'← Cost ↓'}</span>
-          <div style={{flex:1,maxWidth:440,height:1,background:'rgba(212,175,55,.08)',margin:'0 12px'}}/>
+          <div style={{flex:1,maxWidth:600,height:1,background:'rgba(212,175,55,.08)',margin:'0 12px'}}/>
           <span style={{fontSize:9,color:'rgba(255,255,255,.18)',width:80}}>{isZh?'成本增加 →':'Cost ↑ →'}</span>
         </div>
         {SENSITIVITY_ITEMS.map(si=>{const sec=secMap[si.param]||'all';const on=hl===sec;return(
           <div key={si.param} onMouseEnter={()=>setHl(sec)} onMouseLeave={()=>setHl(null)} style={{display:'flex',alignItems:'center',gap:8,marginBottom:7,cursor:'pointer',padding:'3px 0',transition:'all .2s'}}>
             <div style={{width:75,fontSize:10,color:on?'#F0E6C8':'rgba(255,255,255,.4)',textAlign:'right',flexShrink:0,fontWeight:on?600:400,transition:'all .2s'}}>{isZh?si.labelZh:si.label}</div>
-            <div style={{flex:1,maxWidth:440,display:'flex',alignItems:'center',position:'relative',height:22}}>
+            <div style={{flex:1,display:'flex',alignItems:'center',position:'relative',height:22,margin:'0 auto',maxWidth:600}}>
               <div style={{position:'absolute',left:'50%',top:1,bottom:1,width:1,background:'rgba(212,175,55,.1)'}}/>
               <div style={{position:'absolute',right:'50%',top:3,height:16,borderRadius:'4px 0 0 4px',width:`${si.capexImpact*2.8}%`,background:'linear-gradient(270deg,rgba(239,68,68,.6),rgba(239,68,68,.15))',opacity:on?1:.45,transition:'all .3s',boxShadow:on?'0 0 10px rgba(239,68,68,.15)':'none'}}/>
               <div style={{position:'absolute',left:'50%',top:3,height:16,borderRadius:'0 4px 4px 0',width:`${si.capexImpact*2.8}%`,background:`linear-gradient(90deg,rgba(212,175,55,.6),rgba(212,175,55,.15))`,opacity:on?1:.45,transition:'all .3s',boxShadow:on?'0 0 10px rgba(212,175,55,.15)':'none'}}/>
