@@ -1,3 +1,15 @@
+#!/bin/bash
+set -e
+P="/home/ubuntu/deep-blue"
+echo "🔧 V3.2 修复..."
+
+# ━━━ 1. 翻译：删掉港澳台括号内容 ━━━
+sed -i "s|所有登陆站均在金砖国家（含港澳台归入中国），且涉及两个以上国家的海缆|所有登陆站均在金砖国家，且连接两个及以上不同金砖国家的海缆|" "$P/src/lib/brics-i18n.ts"
+sed -i "s|Cables where all landing stations are in BRICS nations (TW/HK/MO counted as China) and span 2+ countries|Cables where all landing stations are in BRICS nations and connect 2 or more different BRICS countries|" "$P/src/lib/brics-i18n.ts"
+echo "  ✅ 1/2 i18n fixed"
+
+# ━━━ 2. 矩阵：完整重写（列头45°旋转居中 + 图例tooltip固定右侧）━━━
+cat > "$P/src/components/brics/SovereigntyMatrix.tsx" << 'MEOF'
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useBRICS } from '@/lib/brics-i18n';
@@ -200,3 +212,12 @@ function ETip({ tip, tb }: { tip: { x: number; y: number; cell: Cell; fn: string
     </div>
   );
 }
+MEOF
+echo "  ✅ 2/2 SovereigntyMatrix.tsx"
+
+echo ""
+echo "═══════════════════════════════════════════════════════"
+echo "✅ V3.2 完成"
+echo "  npm run build"
+echo "  kill \$(lsof -t -i:3000) && sleep 1 && nohup npx next start -p 3000 > /tmp/deep-blue.log 2>&1 &"
+echo "═══════════════════════════════════════════════════════"

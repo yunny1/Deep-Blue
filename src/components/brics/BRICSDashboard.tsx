@@ -6,6 +6,8 @@ import SovereigntyMatrix from './SovereigntyMatrix';
 import BRICSMap from './BRICSMap';
 
 const FLAGS = ['#0066B3','#D32F2F','#FFC107','#388E3C','#F57C00'];
+const LANDLOCKED = new Set(['ET']);
+
 interface OV {
   global:{totalCables:number;totalStations:number};
   brics:{relatedCables:number;internalCables:number;domesticCables:number;externalCables:number;memberInternalCables:number;stations:number;sovereigntyIndex:number;
@@ -13,7 +15,7 @@ interface OV {
 }
 interface SovD { matrix:{from:string;to:string;status:string;directCableCount:number;directCables:string[]}[];summary:Record<string,number>; }
 
-function AN({n}:{n:number}){const[v,setV]=useState(0);useEffect(()=>{let t0=Date.now();const tick=()=>{const p=Math.min((Date.now()-t0)/1200,1);setV(Math.round(n*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(tick);};requestAnimationFrame(tick);},[n]);return<>{v.toLocaleString()}</>;}
+function AN({n}:{n:number}){const[v,setV]=useState(0);useEffect(()=>{const t0=Date.now();const tick=()=>{const p=Math.min((Date.now()-t0)/1200,1);setV(Math.round(n*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(tick);};requestAnimationFrame(tick);},[n]);return<>{v.toLocaleString()}</>;}
 
 export default function BRICSDashboard() {
   const{tb,isZh}=useBRICS();
@@ -26,7 +28,20 @@ export default function BRICSDashboard() {
     .then(([o,s])=>{setOv(o);setSov(s);}).catch(console.error).finally(()=>setLoading(false));
   },[]);
 
-  const gapPairs = sov?.matrix.filter(m=>m.from<m.to&&(m.status==='none'||m.status==='transit')).sort((a,b)=>(a.status==='none'?0:1)-(b.status==='none'?0:1)).slice(0,12)??[];
+  // 缺口分析：排除内陆国，优先显示非俄罗斯的缺口
+  const gapPairs = sov?.matrix
+    .filter(m => m.from < m.to && (m.status === 'none' || m.status === 'transit') && !LANDLOCKED.has(m.from) && !LANDLOCKED.has(m.to))
+    .sort((a, b) => {
+      // 优先级：none > transit
+      if (a.status !== b.status) return a.status === 'none' ? -1 : 1;
+      // 同优先级内：非俄罗斯对优先
+      const aHasRU = a.from === 'RU' || a.to === 'RU';
+      const bHasRU = b.from === 'RU' || b.to === 'RU';
+      if (aHasRU !== bHasRU) return aHasRU ? 1 : -1;
+      return 0;
+    })
+    .slice(0, 15) ?? [];
+
   const cPct=ov?((ov.brics.relatedCables/ov.global.totalCables)*100).toFixed(1):'0';
   const sPct=ov?((ov.brics.stations/ov.global.totalStations)*100).toFixed(1):'0';
 
@@ -42,7 +57,7 @@ export default function BRICSDashboard() {
       <div className="bp">
         <div style={{display:'flex',height:4}}>{FLAGS.map(c=><div key={c} style={{flex:1,background:c}} />)}</div>
 
-        {/* Hero */}
+        {/* Hero — 去掉了台湾/港澳注释 */}
         <section className="bs" style={{padding:'48px 32px 28px',maxWidth:1400,margin:'0 auto'}}>
           <div style={{display:'flex',flexWrap:'wrap',gap:12,marginBottom:20}}>
             <a href="/" style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 12px',background:`${C.gold}10`,border:`1px solid ${C.gold}25`,borderRadius:20,textDecoration:'none'}}>
@@ -58,7 +73,6 @@ export default function BRICSDashboard() {
             {isZh?'海缆战略仪表盘':'Submarine Cable Strategic Dashboard'}
           </h1>
           <p style={{fontSize:15,color:'rgba(255,255,255,.4)',maxWidth:750,lineHeight:1.7,margin:0}}>{tb('subtitle')}</p>
-          <p style={{fontSize:11,color:'rgba(255,255,255,.25)',marginTop:8,fontStyle:'italic'}}>{tb('note.china')}</p>
         </section>
 
         {/* Stats */}
@@ -67,26 +81,24 @@ export default function BRICSDashboard() {
           {ov?(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))',gap:12}}>
             <SC l={tb('stats.cables')} v={ov.brics.relatedCables} s={tb('stats.globalPct',{pct:cPct,n:ov.global.totalCables})} p={parseFloat(cPct)} c={C.gold} />
             <SC l={tb('stats.stations')} v={ov.brics.stations} s={tb('stats.stationPct',{pct:sPct,n:ov.global.totalStations})} p={parseFloat(sPct)} c={C.gold} />
-            <SC l={tb('stats.internal')} v={ov.brics.internalCables} s={tb('stats.internalDesc',{n:ov.brics.memberInternalCables})} c={C.goldLight} />
+            <SC l={tb('stats.internal')} v={ov.brics.internalCables} s={tb('stats.internalDesc')} c={C.goldLight} />
             <SC l={tb('stats.domestic')} v={ov.brics.domesticCables} s={tb('stats.domesticDesc')} c={C.domestic} />
             <SC l={tb('stats.sovereignty')} v={ov.brics.sovereigntyIndex} s={tb('stats.sovDesc')} p={ov.brics.sovereigntyIndex} c={ov.brics.sovereigntyIndex>=50?'#22C55E':ov.brics.sovereigntyIndex>=25?'#F59E0B':'#EF4444'} />
           </div>):<LB h={150} />}
         </section>
 
-        {/* Status chart */}
+        {/* Status chart — 去掉"其他"和合计公式 */}
         {ov && (
           <section className="bs" style={{padding:'0 32px 40px',maxWidth:1400,margin:'0 auto',animationDelay:'.15s'}}>
             <SH t={tb('chart.title')} />
             <div className="bc" style={{padding:20}}>
               <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
-                {/* By status */}
                 <div style={{flex:1,minWidth:260}}>
                   <div style={{fontSize:11,color:'rgba(255,255,255,.4)',marginBottom:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.06em'}}>{isZh?'按状态':'By Status'}</div>
                   {[
                     {l:tb('chart.statusActive'),v:ov.brics.statusBreakdown.active,c:'#22C55E'},
                     {l:tb('chart.statusBuilding'),v:ov.brics.statusBreakdown.underConstruction,c:'#3B82F6'},
                     {l:tb('chart.statusPlanned'),v:ov.brics.statusBreakdown.planned,c:'#F59E0B'},
-                    {l:tb('chart.statusOther'),v:ov.brics.statusBreakdown.other,c:'#6B7280'},
                   ].map(b=>(
                     <div key={b.l} style={{marginBottom:8}}>
                       <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:3}}>
@@ -99,7 +111,6 @@ export default function BRICSDashboard() {
                     </div>
                   ))}
                 </div>
-                {/* By category */}
                 <div style={{flex:1,minWidth:260}}>
                   <div style={{fontSize:11,color:'rgba(255,255,255,.4)',marginBottom:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.06em'}}>{isZh?'按类别':'By Category'}</div>
                   {[
@@ -117,9 +128,6 @@ export default function BRICSDashboard() {
                       </div>
                     </div>
                   ))}
-                  <div style={{marginTop:8,fontSize:11,color:'rgba(255,255,255,.25)'}}>
-                    {isZh?'合计':'Total'}: {ov.brics.relatedCables} = {ov.brics.internalCables} + {ov.brics.domesticCables} + {ov.brics.externalCables}
-                  </div>
                 </div>
               </div>
             </div>
@@ -138,7 +146,7 @@ export default function BRICSDashboard() {
           <SovereigntyMatrix />
         </section>
 
-        {/* Gap */}
+        {/* Gap — 过滤内陆国，非俄罗斯优先 */}
         <section className="bs" style={{padding:'0 32px 48px',maxWidth:1400,margin:'0 auto',animationDelay:'.4s'}}>
           <SH t={tb('gap.title')} s={tb('gap.subtitle')} />
           {gapPairs.length>0?(
