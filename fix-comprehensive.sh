@@ -1,4 +1,60 @@
-'use client';
+#!/bin/bash
+set -e
+P="/home/ubuntu/deep-blue"
+echo "═══════════════════════════════════════════════════════"
+echo "🔧 综合修复 — 6 个问题"
+echo "═══════════════════════════════════════════════════════"
+
+# ━━━ Fix 1: method.classify / method.matrix 从 Dashboard + i18n 彻底删除 ━━━
+echo ""
+echo ">>> Fix 1: 删除 method.classify / method.matrix"
+python3 << 'PYEOF'
+import re
+
+# Dashboard
+path = "/home/ubuntu/deep-blue/src/components/brics/BRICSDashboard.tsx"
+with open(path, 'r') as f:
+    c = f.read()
+before = len(c)
+
+# 删除包含 method.classify 或 method.matrix 的整行（包括 JSX 标签行）
+lines = c.split('\n')
+new_lines = []
+skip_count = 0
+for line in lines:
+    if 'method.classify' in line or 'method.matrix' in line:
+        skip_count += 1
+        continue
+    new_lines.append(line)
+
+c = '\n'.join(new_lines)
+with open(path, 'w') as f:
+    f.write(c)
+print(f"  Dashboard: 删除了 {skip_count} 行包含 method.classify/matrix 的内容")
+
+# i18n — 也确认删除（可能之前已删除但确认一下）
+path2 = "/home/ubuntu/deep-blue/src/lib/brics-i18n.ts"
+with open(path2, 'r') as f:
+    c2 = f.read()
+lines2 = c2.split('\n')
+new_lines2 = []
+skip2 = 0
+for line in lines2:
+    if 'method.classify' in line or 'method.matrix' in line:
+        skip2 += 1
+        continue
+    new_lines2.append(line)
+c2 = '\n'.join(new_lines2)
+with open(path2, 'w') as f:
+    f.write(c2)
+print(f"  i18n: 删除了 {skip2} 行")
+PYEOF
+
+# ━━━ Fix 2-4: SVG 重写 — 修复重叠 + 敏感性映射 + 去掉三档卡片区域 ━━━
+echo ""
+echo ">>> Fix 2-4: SVG 剖面图修复 + 敏感性映射修正"
+python3 << 'PYEOF'
+content = r"""'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { BRICS_ALL, BRICS_MEMBERS, BRICS_COUNTRY_META, BRICS_COLORS as C } from '@/lib/brics-constants';
 import { estimateSubseaCapex, formatUsd, SENSITIVITY_ITEMS } from '@/lib/subsea-cost-model';
@@ -303,3 +359,46 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
     </section>
   );
 }
+"""
+
+path = "/home/ubuntu/deep-blue/src/components/brics/BRICSInvestmentPanel.tsx"
+with open(path, 'w') as f:
+    f.write(content)
+print(f"  ✅ BRICSInvestmentPanel.tsx 重写完成 ({len(content)} 字符)")
+PYEOF
+
+# ━━━ Fix 5: 地图图例 — 删掉伙伴国标注那一条 ━━━
+echo ""
+echo ">>> Fix 5: 删除地图图例中的伙伴国标注项"
+python3 << 'PYEOF'
+import re
+
+path = "/home/ubuntu/deep-blue/src/components/brics/BRICSMap.tsx"
+with open(path, 'r') as f:
+    c = f.read()
+
+# 删除包含 "伙伴国标注" 或 "Partner Nations" 或 "Partner Labels" 的图例项
+# 匹配 ,\n{color:'#60A5FA',...Partner...} 这一段
+c = re.sub(r",\s*\{color:'#60A5FA'[^}]*(?:伙伴国|Partner)[^}]*\}", "", c)
+
+with open(path, 'w') as f:
+    f.write(c)
+print("  ✅ 删除了地图图例中的伙伴国标注项")
+PYEOF
+
+echo ""
+echo "═══════════════════════════════════════════════════════"
+echo "✅ 综合修复完成！"
+echo ""
+echo "  npm run build"
+echo "  kill -9 \$(lsof -t -i:3000) 2>/dev/null; sleep 1"
+echo "  nohup npx next start -p 3000 > /tmp/deep-blue.log 2>&1 &"
+echo ""
+echo "  git add -A && git commit -m 'fix: method keys, SVG overlap, sensitivity mapping, partner legend' && git push origin main"
+echo "  → Cloudflare Purge Everything → Cmd+Shift+R"
+echo ""
+echo "═══ 数据一致性诊断（build 后执行） ═══"
+echo "  sleep 4 && curl -s http://localhost:3000/api/brics/overview | python3 -c \""
+echo "import sys,json; d=json.load(sys.stdin); b=d['brics']"
+echo "print(f'Overview: related={b[\\\"relatedCables\\\"]}, internal={b[\\\"internalCables\\\"]}, domestic={b[\\\"domesticCables\\\"]}, external={b[\\\"externalCables\\\"]}')\"" 
+echo "═══════════════════════════════════════════════════════"
