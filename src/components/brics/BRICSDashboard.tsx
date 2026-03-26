@@ -202,6 +202,32 @@ export default function BRICSDashboard() {
           </section>
         )}
 
+        {/* 成员国海缆排行 */}
+        {ov && (
+          <section className="bs" style={{padding:'0 32px 40px',maxWidth:1400,margin:'0 auto',animationDelay:'.5s'}}>
+            <SH t={isZh?'成员国海缆实力':'Member State Cable Strength'} s={isZh?'各成员国涉及的海缆数量排行':'Number of cables connected to each member state'} />
+            <div className="bc" style={{padding:20}}>
+              <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {Object.entries(ov.brics.memberCableCounts)
+                  .sort(([,a],[,b])=>(b as number)-(a as number))
+                  .map(([code,count])=>{
+                    const meta=BRICS_COUNTRY_META[code];
+                    const maxCount=Math.max(...Object.values(ov.brics.memberCableCounts));
+                    return(
+                      <div key={code} style={{display:'flex',alignItems:'center',gap:12}}>
+                        <div style={{width:90,fontSize:12,color:'#F0E6C8',fontWeight:500,textAlign:'right',flexShrink:0}}>{isZh?meta?.nameZh:meta?.name}</div>
+                        <div style={{flex:1,height:8,borderRadius:4,background:'rgba(255,255,255,.04)',overflow:'hidden'}}>
+                          <div style={{width:`${maxCount>0?((count as number)/maxCount)*100:0}%`,height:'100%',borderRadius:4,background:`linear-gradient(90deg,${C.gold},${C.gold}88)`,transition:'width 1s ease'}} />
+                        </div>
+                        <div style={{width:36,fontSize:12,color:'#F0E6C8',fontWeight:600,fontFeatureSettings:'"tnum"',textAlign:'right'}}>{count as number}</div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </section>
+        )}
+
         <footer style={{padding:'20px 32px 12px',borderTop:`1px solid ${C.gold}10`,maxWidth:1400,margin:'0 auto'}}>
           <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'rgba(255,255,255,.2)',marginBottom:12}}>
             <span>{tb('footer.source')}</span><span>{tb('footer.update')}</span>

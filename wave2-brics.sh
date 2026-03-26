@@ -1,3 +1,124 @@
+#!/bin/bash
+set -e
+P="/home/ubuntu/deep-blue"
+echo "🚀 BRICS Wave 2 升级（含 Wave 1 修复）..."
+
+# ━━━ 1. Sovereignty API: transitNodes 返回所有国家的中英文名 + transitPath 也返回名称 ━━━
+cat > "$P/src/app/api/brics/sovereignty/route.ts" << 'EOF1'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { BRICS_MEMBERS, BRICS_COUNTRY_META, normalizeBRICS, isBRICSCountry } from '@/lib/brics-constants';
+
+export const revalidate = 3600;
+type CS = 'direct'|'indirect'|'transit'|'none'|'landlocked';
+const LL = new Set(['ET']);
+const AF = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED'] as string[] } };
+
+// 获取国家名称（含非金砖国家，从 countries 表取）
+async function buildNameMap(): Promise<Record<string, { name: string; nameZh: string }>> {
+  const map: Record<string, { name: string; nameZh: string }> = {};
+  // 先加入金砖国家元数据
+  for (const [code, meta] of Object.entries(BRICS_COUNTRY_META)) {
+    map[code] = { name: meta.name, nameZh: meta.nameZh };
+  }
+  // 再从数据库补充非金砖国家
+  const countries = await prisma.country.findMany({ select: { code: true, nameEn: true, nameZh: true } });
+  for (const c of countries) {
+    if (!map[c.code]) {
+      map[c.code] = { name: c.nameEn, nameZh: c.nameZh || c.nameEn };
+    }
+  }
+  return map;
+}
+
+export async function GET() {
+  try {
+    const [raw, nameMap] = await Promise.all([
+      prisma.cable.findMany({
+        where: AF,
+        select: { slug:true, name:true, landingStations: { select: { landingStation: { select: { countryCode:true } } } } },
+      }),
+      buildNameMap(),
+    ]);
+
+    const ccs = raw.map(c => ({
+      slug: c.slug, name: c.name,
+      countries: [...new Set(c.landingStations.map(cls => normalizeBRICS(cls.landingStation.countryCode ?? '')).filter(Boolean))],
+    }));
+
+    const adj: Record<string, Set<string>> = {};
+    const dc: Record<string, Record<string, string[]>> = {};
+    for (const cb of ccs) { const cc = cb.countries;
+      for (let i=0;i<cc.length;i++) for (let j=i+1;j<cc.length;j++) {
+        const [a,b] = [cc[i],cc[j]];
+        (adj[a]??=new Set()).add(b); (adj[b]??=new Set()).add(a);
+        ((dc[a]??={})[b]??=[]).push(cb.slug); ((dc[b]??={})[a]??=[]).push(cb.slug);
+      }
+    }
+
+    function bfsPath(from:string,to:string,bricsOnly:boolean): string[]|null {
+      if(!adj[from])return null;
+      const vis=new Set([from]);const q:string[][]=[[from]];
+      while(q.length){const path=q.shift()!;const cur=path[path.length-1];
+        for(const nb of adj[cur]??[]){
+          if(nb===to)return[...path,nb];
+          if(!vis.has(nb)&&(!bricsOnly||isBRICSCountry(nb))){vis.add(nb);q.push([...path,nb]);}
+        }
+      }
+      return null;
+    }
+
+    const m=[...BRICS_MEMBERS];
+    const mx:{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:{code:string;name:string;nameZh:string}[]}[]=[];
+    const transitNodeCount: Record<string, number> = {};
+
+    for(let i=0;i<m.length;i++)for(let j=0;j<m.length;j++){
+      if(i===j)continue;const[f,t]=[m[i],m[j]];
+      if(LL.has(f)||LL.has(t)){mx.push({from:f,to:t,status:'landlocked',directCableCount:0,directCables:[]});continue;}
+      const cbl=dc[f]?.[t]??[];
+      let status:CS;let transitPath:string[]|undefined;
+      if(cbl.length>0){status='direct';}
+      else{
+        const bricsPath=bfsPath(f,t,true);
+        if(bricsPath){status='indirect';transitPath=bricsPath;
+          for(let k=1;k<bricsPath.length-1;k++){transitNodeCount[bricsPath[k]]=(transitNodeCount[bricsPath[k]]||0)+1;}
+        }else{
+          const anyPath=bfsPath(f,t,false);
+          if(anyPath){status='transit';transitPath=anyPath;
+            for(let k=1;k<anyPath.length-1;k++){transitNodeCount[anyPath[k]]=(transitNodeCount[anyPath[k]]||0)+1;}
+          }else{status='none';}
+        }
+      }
+      const transitPathNames = transitPath?.map(code => ({
+        code, name: nameMap[code]?.name ?? code, nameZh: nameMap[code]?.nameZh ?? code,
+      }));
+      mx.push({from:f,to:t,status,directCableCount:cbl.length,directCables:cbl.slice(0,10),transitPath,transitPathNames});
+    }
+
+    const up:Record<CS,number>={direct:0,indirect:0,transit:0,none:0,landlocked:0};
+    for(let i=0;i<m.length;i++)for(let j=i+1;j<m.length;j++){const c=mx.find(x=>x.from===m[i]&&x.to===m[j]);if(c)up[c.status]++;}
+
+    const transitNodes = Object.entries(transitNodeCount)
+      .map(([code, count]) => ({
+        code, name: nameMap[code]?.name ?? code, nameZh: nameMap[code]?.nameZh ?? code,
+        count, isBRICS: isBRICSCountry(code),
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 15);
+
+    return NextResponse.json({
+      members:m.map(c=>({code:c,name:nameMap[c]?.name??c,nameZh:nameMap[c]?.nameZh??c})),
+      matrix:mx,
+      summary:{totalPairs:(m.length*(m.length-1))/2,...up},
+      transitNodes,
+    });
+  } catch(e){console.error('[BRICS Sovereignty]',e);return NextResponse.json({error:'Failed'},{status:500});}
+}
+EOF1
+echo "  ✅ 1/3 sovereignty API"
+
+# ━━━ 2. Matrix: 完整重写（列居中 + 全中文 tooltip + 方法学 + transitPath 中文）━━━
+cat > "$P/src/components/brics/SovereigntyMatrix.tsx" << 'EOF2'
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useBRICS } from '@/lib/brics-i18n';
@@ -201,3 +322,69 @@ function ET({tip,tb,isZh}:{tip:{x:number;y:number;cell:Cell;fn:string;tn:string}
     </div>
   );
 }
+EOF2
+echo "  ✅ 2/3 SovereigntyMatrix.tsx"
+
+# ━━━ 3. Dashboard: 中转依赖全中文 + 成员国海缆排行 ━━━
+cat > /tmp/dash-w2.py << 'PYEOF'
+import sys
+path = sys.argv[1]
+with open(path, 'r') as f: c = f.read()
+
+# Fix transit dependency table: ensure Chinese country names are used
+# The current code already uses {isZh?n.nameZh:n.name} which is correct,
+# but let's also ensure the non-BRICS transit nodes show Chinese names
+# The API now returns nameZh for all countries (from DB), so this should work.
+
+# Add member cable ranking section after transit dependency
+old_footer_section = """        <footer style={{padding:'20px 32px 12px',borderTop:`1px solid ${C.gold}10`,maxWidth:1400,margin:'0 auto'}}>"""
+
+new_section_before_footer = """        {/* 成员国海缆排行 */}
+        {ov && (
+          <section className="bs" style={{padding:'0 32px 40px',maxWidth:1400,margin:'0 auto',animationDelay:'.5s'}}>
+            <SH t={isZh?'成员国海缆实力':'Member State Cable Strength'} s={isZh?'各成员国涉及的海缆数量排行':'Number of cables connected to each member state'} />
+            <div className="bc" style={{padding:20}}>
+              <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {Object.entries(ov.brics.memberCableCounts)
+                  .sort(([,a],[,b])=>(b as number)-(a as number))
+                  .map(([code,count])=>{
+                    const meta=BRICS_COUNTRY_META[code];
+                    const maxCount=Math.max(...Object.values(ov.brics.memberCableCounts));
+                    return(
+                      <div key={code} style={{display:'flex',alignItems:'center',gap:12}}>
+                        <div style={{width:90,fontSize:12,color:'#F0E6C8',fontWeight:500,textAlign:'right',flexShrink:0}}>{isZh?meta?.nameZh:meta?.name}</div>
+                        <div style={{flex:1,height:8,borderRadius:4,background:'rgba(255,255,255,.04)',overflow:'hidden'}}>
+                          <div style={{width:`${maxCount>0?((count as number)/maxCount)*100:0}%`,height:'100%',borderRadius:4,background:`linear-gradient(90deg,${C.gold},${C.gold}88)`,transition:'width 1s ease'}} />
+                        </div>
+                        <div style={{width:36,fontSize:12,color:'#F0E6C8',fontWeight:600,fontFeatureSettings:'"tnum"',textAlign:'right'}}>{count as number}</div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        <footer style={{padding:'20px 32px 12px',borderTop:`1px solid ${C.gold}10`,maxWidth:1400,margin:'0 auto'}}>"""
+
+c = c.replace(old_footer_section, new_section_before_footer)
+
+with open(path, 'w') as f: f.write(c)
+print("  ✅ Dashboard patched")
+PYEOF
+python3 /tmp/dash-w2.py "$P/src/components/brics/BRICSDashboard.tsx"
+echo "  ✅ 3/3 Dashboard (+ member ranking)"
+
+echo ""
+echo "═══════════════════════════════════════════════════════"
+echo "✅ Wave 2 完成！"
+echo ""
+echo "腾讯云："
+echo "  npm run build"
+echo "  kill \$(lsof -t -i:3000) && sleep 1 && nohup npx next start -p 3000 > /tmp/deep-blue.log 2>&1 &"
+echo "  → Cloudflare Purge Everything"
+echo "  git add -A && git commit -m 'feat: BRICS Wave 2 — fixed matrix i18n, transit paths, member ranking' && git push origin main"
+echo ""
+echo "本地同步："
+echo "  cd /你本地的/deep-blue && git pull"
+echo "═══════════════════════════════════════════════════════"
