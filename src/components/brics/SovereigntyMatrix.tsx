@@ -69,7 +69,7 @@ export default function SovereigntyMatrix(){
                 <span style={{
                   position:'absolute',
                   bottom:0,
-                  left:'50%',marginLeft:'-2px',
+                  left:'70%',
                   fontSize:10,fontWeight:600,whiteSpace:'nowrap',
                   color:hlCol===m.code?C.gold:'rgba(255,255,255,.45)',
                   transition:'color .15s',
