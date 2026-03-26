@@ -66,19 +66,25 @@ export default function BRICSMap({ height='560px' }:Props) {
         map.addLayer({id:'brics-text',type:'symbol',source:'brics-labels',layout:{'text-field':['get','name'],'text-size':11,'text-offset':[0,1.4],'text-anchor':'top','text-font':['Open Sans Bold','Arial Unicode MS Bold']},paint:{'text-color':C.goldLight,'text-halo-color':C.navy,'text-halo-width':1.5}});
 
         // Hover: highlight + detail panel
-        const hoverLayers=['l-int','l-dom','l-rel'];
+        // Add wide transparent hitbox layers for easier hover/click
+        map.addLayer({id:'hit-int',type:'line',source:'c-int',paint:{'line-color':'transparent','line-width':14,'line-opacity':0}});
+        map.addLayer({id:'hit-dom',type:'line',source:'c-dom',paint:{'line-color':'transparent','line-width':14,'line-opacity':0}});
+        map.addLayer({id:'hit-rel',type:'line',source:'c-rel',paint:{'line-color':'transparent','line-width':14,'line-opacity':0}});
+
+        const hoverLayers=['hit-int','hit-dom','hit-rel'];
+        const visibleMap:Record<string,string>={'hit-int':'l-int','hit-dom':'l-dom','hit-rel':'l-rel'};
         for(const lid of hoverLayers){
           map.on('mouseenter',lid,e=>{map.getCanvas().style.cursor='pointer';
             const slug=e.features?.[0]?.properties?.slug;
             if(slug && cmRef.current[slug]){
               // Highlight
               const srcId=lid.replace('l-','c-');
-              map.setPaintProperty(lid,'line-width',lid.includes('int')?4:lid.includes('dom')?3:2.5);
+              const vl=visibleMap[lid]||lid;map.setPaintProperty(vl,'line-width',vl.includes('int')?4:vl.includes('dom')?3:2.5);
               setHover({x:e.point.x,y:e.point.y,info:cmRef.current[slug]});
             }
           });
           map.on('mouseleave',lid,()=>{map.getCanvas().style.cursor='';
-            map.setPaintProperty(lid,'line-width',lid.includes('int')?2.2:lid.includes('dom')?1.6:1);
+            const vl2=visibleMap[lid]||lid;map.setPaintProperty(vl2,'line-width',vl2.includes('int')?2.2:vl2.includes('dom')?1.6:1);
             setHover(null);
           });
           map.on('mousemove',lid,e=>{if(hover){setHover(prev=>prev?{...prev,x:e.point.x,y:e.point.y}:null);}

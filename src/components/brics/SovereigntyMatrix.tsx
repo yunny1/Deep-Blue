@@ -5,7 +5,7 @@ import { BRICS_COLORS as C } from '@/lib/brics-constants';
 
 type CS = 'direct' | 'indirect' | 'transit' | 'none' | 'landlocked';
 interface Member { code: string; name: string; nameZh: string; }
-interface Cell { from: string; to: string; status: CS; directCableCount: number; directCables: string[]; }
+interface Cell { from: string; to: string; status: CS; directCableCount: number; directCables: string[]; transitPath?: string[]; }
 interface Data { members: Member[]; matrix: Cell[]; summary: Record<string, number>; }
 
 const SC: Record<CS, { bg: string; key: string; tipKey?: string }> = {
@@ -24,6 +24,7 @@ export default function SovereigntyMatrix() {
   const [hlRow, setHlRow] = useState<string | null>(null);
   const [hlCol, setHlCol] = useState<string | null>(null);
   const [legendTip, setLegendTip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const [showMethod, setShowMethod] = useState(false);
 
   useEffect(() => {
     fetch('/api/brics/sovereignty').then(r => r.json()).then(setData).catch(console.error).finally(() => setLoading(false));
@@ -43,6 +44,26 @@ export default function SovereigntyMatrix() {
 
   return (
     <div>
+      <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:12 }}>
+        <button onClick={()=>setShowMethod(!showMethod)} style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:8, border:`1px solid ${C.gold}25`, background:showMethod?`${C.gold}15`:'rgba(255,255,255,.03)', color:showMethod?C.gold:'rgba(255,255,255,.4)', cursor:'pointer', fontSize:11, fontWeight:600, transition:'all .2s' }}>
+          <span style={{fontSize:13}}>{showMethod?'▲':'ℹ'}</span> {tb('method.title')}
+        </button>
+      </div>
+
+      {showMethod && (
+        <div style={{ marginBottom:16, padding:20, borderRadius:12, border:`1px solid ${C.gold}15`, background:'rgba(15,29,50,.6)', display:'flex', flexDirection:'column', gap:12 }}>
+          <div style={{fontSize:14,fontWeight:700,color:'#F0E6C8'}}>{tb('method.title')}</div>
+          <p style={{fontSize:12,color:'rgba(255,255,255,.5)',lineHeight:1.7,margin:0}}>{tb('method.scope')}</p>
+          <p style={{fontSize:12,color:'rgba(255,255,255,.5)',lineHeight:1.7,margin:0}}>{tb('method.classify')}</p>
+          <p style={{fontSize:12,color:'rgba(255,255,255,.5)',lineHeight:1.7,margin:0}}>{tb('method.matrix')}</p>
+          <p style={{fontSize:12,color:'rgba(255,255,255,.5)',lineHeight:1.7,margin:0}}>{tb('method.update')}</p>
+          <div style={{borderTop:`1px solid ${C.gold}10`,paddingTop:10,marginTop:4}}>
+            <div style={{fontSize:11,fontWeight:600,color:`${C.gold}80`,marginBottom:4}}>{tb('method.disclaimer')}</div>
+            <p style={{fontSize:11,color:'rgba(255,255,255,.3)',lineHeight:1.6,margin:0}}>{tb('method.disclaimerText')}</p>
+          </div>
+        </div>
+      )}
+
       <div style={{ overflowX: 'auto', borderRadius: 14, border: `1px solid ${C.gold}12`, background: 'rgba(15,29,50,0.5)', padding: '20px 20px 20px 20px' }}>
         <div style={{ display: 'inline-block', minWidth: 'fit-content' }}>
           {/* Column headers — rotated 45deg for compact display */}
@@ -186,8 +207,10 @@ function ETip({ tip, tb }: { tip: { x: number; y: number; cell: Cell; fn: string
             </div>
           </div>
         )}
-        {cell.status === 'transit' && <div style={{ fontSize: 11, color: '#F59E0B', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 6, padding: '8px 10px', lineHeight: 1.6 }}>⚠ {tb('matrix.transitWarn')}</div>}
+        {cell.status === 'transit' && <><div style={{ fontSize: 11, color: '#F59E0B', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 6, padding: '8px 10px', lineHeight: 1.6 }}>⚠ {tb('matrix.transitWarn')}</div>
+        {(cell as any).transitPath && <div style={{fontSize:10,color:'rgba(255,255,255,.4)',marginTop:4}}>{((cell as any).transitPath as string[]).join(' → ')}</div>}</>}
         {cell.status === 'none' && <div style={{ fontSize: 11, color: '#EF4444', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 6, padding: '8px 10px', lineHeight: 1.6 }}>🔴 {tb('matrix.noneWarn')}</div>}
+        {cell.status === 'indirect' && (cell as any).transitPath && <div style={{fontSize:11,color:'#F59E0B',background:'rgba(245,158,11,.06)',border:'1px solid rgba(245,158,11,.15)',borderRadius:6,padding:'8px 10px',lineHeight:1.6}}>🔗 {((cell as any).transitPath as string[]).join(' → ')}</div>}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tb('matrix.risk')}</span>
           <span style={{ fontSize: 11, fontWeight: 600, color: riskColor[cell.status] }}>{tb(riskMap[cell.status])}</span>

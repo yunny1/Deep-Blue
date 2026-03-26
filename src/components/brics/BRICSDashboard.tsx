@@ -13,7 +13,7 @@ interface OV {
   brics:{relatedCables:number;internalCables:number;domesticCables:number;externalCables:number;memberInternalCables:number;stations:number;sovereigntyIndex:number;
     statusBreakdown:{active:number;underConstruction:number;planned:number;other:number};memberCableCounts:Record<string,number>};
 }
-interface SovD { matrix:{from:string;to:string;status:string;directCableCount:number;directCables:string[]}[];summary:Record<string,number>; }
+interface SovD { matrix:{from:string;to:string;status:string;directCableCount:number;directCables:string[];transitPath?:string[]}[];summary:Record<string,number>;transitNodes:{code:string;name:string;nameZh:string;count:number;isBRICS:boolean}[]; }
 
 function AN({n}:{n:number}){const[v,setV]=useState(0);useEffect(()=>{const t0=Date.now();const tick=()=>{const p=Math.min((Date.now()-t0)/1200,1);setV(Math.round(n*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(tick);};requestAnimationFrame(tick);},[n]);return<>{v.toLocaleString()}</>;}
 
@@ -170,8 +170,43 @@ export default function BRICSDashboard() {
           ):loading?<LB h={200} />:null}
         </section>
 
-        <footer style={{padding:'20px 32px',borderTop:`1px solid ${C.gold}10`,maxWidth:1400,margin:'0 auto',display:'flex',justifyContent:'space-between',fontSize:11,color:'rgba(255,255,255,.2)'}}>
-          <span>{tb('footer.source')}</span><span>{tb('footer.update')}</span>
+        {/* Transit Dependency */}
+        {sov?.transitNodes && sov.transitNodes.length > 0 && (
+          <section className="bs" style={{padding:'0 32px 40px',maxWidth:1400,margin:'0 auto',animationDelay:'.45s'}}>
+            <SH t={tb('transit.title')} s={tb('transit.subtitle')} />
+            <div className="bc" style={{overflow:'hidden'}}>
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+                  <thead><tr style={{borderBottom:`1px solid ${C.gold}15`}}>
+                    {['#',tb('transit.country'),tb('transit.count'),tb('transit.isBrics')].map(h=><th key={h} style={{padding:'12px 16px',textAlign:'left',fontSize:11,fontWeight:600,color:`${C.gold}90`,textTransform:'uppercase',letterSpacing:'.06em'}}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>{sov.transitNodes.map((n,i)=>(
+                    <tr key={n.code} style={{borderBottom:'1px solid rgba(255,255,255,.03)',transition:'background .15s'}} onMouseEnter={e=>e.currentTarget.style.background=`${C.gold}06`} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                      <td style={{padding:'10px 16px',color:'rgba(255,255,255,.3)',fontSize:12}}>{i+1}</td>
+                      <td style={{padding:'10px 16px',color:'#F0E6C8',fontWeight:500}}>{isZh?n.nameZh:n.name} <span style={{color:'rgba(255,255,255,.25)',fontSize:11}}>({n.code})</span></td>
+                      <td style={{padding:'10px 16px'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                          <div style={{width:Math.min(120,n.count*8),height:6,borderRadius:3,background:n.isBRICS?C.gold:'#EF4444',opacity:0.7,transition:'width .8s ease'}} />
+                          <span style={{color:'#F0E6C8',fontWeight:600,fontFeatureSettings:'"tnum"'}}>{n.count}</span>
+                        </div>
+                      </td>
+                      <td style={{padding:'10px 16px'}}>
+                        {n.isBRICS?<span style={{fontSize:10,padding:'2px 8px',borderRadius:4,background:'rgba(34,197,94,.1)',color:'#22C55E'}}>{tb('transit.yes')}</span>
+                        :<span style={{fontSize:10,padding:'2px 8px',borderRadius:4,background:'rgba(239,68,68,.1)',color:'#EF4444'}}>{tb('transit.no')} — {tb('transit.warn')}</span>}
+                      </td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <footer style={{padding:'20px 32px 12px',borderTop:`1px solid ${C.gold}10`,maxWidth:1400,margin:'0 auto'}}>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'rgba(255,255,255,.2)',marginBottom:12}}>
+            <span>{tb('footer.source')}</span><span>{tb('footer.update')}</span>
+          </div>
+          <p style={{fontSize:10,color:'rgba(255,255,255,.12)',lineHeight:1.6,margin:'0 0 8px',maxWidth:900}}>{tb('method.disclaimerText')}</p>
         </footer>
       </div>
     </div>
