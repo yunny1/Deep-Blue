@@ -42,7 +42,8 @@ export default function BRICSMap({ height='560px', selection }:Props) {
           const cat=cableMap[cable.slug]?.cat;
           if(cat==='internal')intF.push(f);else if(cat==='domestic')domF.push(f);else if(cat==='related')relF.push(f);else othF.push(f);
         }
-        setStats({internal:intF.length,domestic:domF.length,related:relF.length,other:othF.length});
+        const ob=ovData.brics||{};
+        setStats({internal:ob.internalCables||intF.length,domestic:ob.domesticCables||domF.length,related:ob.externalCables||relF.length,other:othF.length});
 
         // Layers: other → related → domestic → internal (top)
         map.addSource('c-oth',{type:'geojson',data:{type:'FeatureCollection',features:othF}});
