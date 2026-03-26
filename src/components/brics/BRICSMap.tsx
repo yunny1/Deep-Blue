@@ -71,8 +71,8 @@ export default function BRICSMap({ height='560px', selection }:Props) {
           return { type: 'Feature', properties: { code, name: isZh ? m?.nameZh : m?.name }, geometry: { type: 'Point', coordinates: m?.center ?? [0, 0] } };
         });
         map.addSource('partner-labels', { type: 'geojson', data: { type: 'FeatureCollection', features: partnerFeatures } });
-        map.addLayer({ id: 'partner-dots', type: 'circle', source: 'partner-labels', paint: { 'circle-radius': 3.5, 'circle-color': C.silver, 'circle-opacity': 0.6, 'circle-stroke-color': '#6B7280', 'circle-stroke-width': 0.8 } });
-        map.addLayer({ id: 'partner-text', type: 'symbol', source: 'partner-labels', layout: { 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'] }, paint: { 'text-color': '#8B95A5', 'text-halo-color': C.navy, 'text-halo-width': 1.2 } });
+        map.addLayer({ id: 'partner-dots', type: 'circle', source: 'partner-labels', paint: { 'circle-radius': 5, 'circle-color': '#60A5FA', 'circle-opacity': 0.9, 'circle-stroke-color': '#3B82F6', 'circle-stroke-width': 1.5 } });
+        map.addLayer({ id: 'partner-text', type: 'symbol', source: 'partner-labels', layout: { 'text-field': ['get', 'name'], 'text-size': 10, 'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'] }, paint: { 'text-color': '#93C5FD', 'text-halo-color': C.navy, 'text-halo-width': 1.2 } });
 
         // Hover: highlight + detail panel
         // Add wide transparent hitbox layers for easier hover/click

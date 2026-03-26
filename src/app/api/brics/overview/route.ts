@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { BRICS_MEMBERS, BRICS_ALL, normalizeBRICS, isBRICSCountry, isBRICSInternalCable, isDomesticCable } from '@/lib/brics-constants';
+import { BRICS_MEMBERS, BRICS_ALL, normalizeBRICS, isBRICSCountry, isBRICSInternalCable, isDomesticCable  } from '@/lib/brics-constants';
 
 export const revalidate = 3600;
 const AF = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED'] as string[] } };
@@ -52,7 +52,7 @@ export async function GET() {
     const bricsStations = await prisma.landingStation.count({ where: { countryCode: { in: [...bricsAllSet, 'TW', 'HK', 'MO'] } } });
 
     const memberCableCounts: Record<string, number> = {};
-    for (const code of BRICS_MEMBERS) memberCableCounts[code] = cables.filter(c => c.normalizedCodes.includes(code)).length;
+    for (const code of BRICS_ALL) memberCableCounts[code] = cables.filter(c => c.normalizedCodes.includes(code)).length;
 
     const sovereigntyIndex = allBrics.length > 0 ? Math.round(((internal.length + domestic.length) / allBrics.length) * 100) : 0;
 
