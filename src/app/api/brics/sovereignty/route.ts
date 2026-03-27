@@ -45,13 +45,21 @@ export async function GET() {
       }
     }
 
-    function bfsPath(from:string,to:string,bricsOnly:boolean): string[]|null {
+    type BfsResult = { path: string[]; edges: { from: string; to: string; cables: string[] }[] } | null;
+    function bfsPath(from:string,to:string,bricsOnly:boolean): BfsResult {
       if(!adj[from])return null;
-      const vis=new Set([from]);const q:string[][]=[[from]];
-      while(q.length){const path=q.shift()!;const cur=path[path.length-1];
+      const vis=new Set([from]);
+      const q:{path:string[];edges:{from:string;to:string;cables:string[]}[]}[]=[{path:[from],edges:[]}];
+      while(q.length){
+        const{path,edges}=q.shift()!;
+        const cur=path[path.length-1];
         for(const nb of adj[cur]??[]){
-          if(nb===to)return[...path,nb];
-          if(!vis.has(nb)&&(!bricsOnly||isBRICSCountry(nb))){vis.add(nb);q.push([...path,nb]);}
+          const hopCables=(dc[cur]?.[nb]??[]).slice(0,3);
+          if(nb===to)return{path:[...path,nb],edges:[...edges,{from:cur,to:nb,cables:hopCables}]};
+          if(!vis.has(nb)&&(!bricsOnly||isBRICSCountry(nb))){
+            vis.add(nb);
+            q.push({path:[...path,nb],edges:[...edges,{from:cur,to:nb,cables:hopCables}]});
+          }
         }
       }
       return null;
@@ -73,18 +81,19 @@ export async function GET() {
       let status:CS;let transitPath:string[]|undefined;
       if(cbl.length>0){status='direct';}
       else{
-        const bricsPath=bfsPath(f,t,true);
-        if(bricsPath){status='indirect';transitPath=bricsPath;
-          for(let k=1;k<bricsPath.length-1;k++){transitNodeCount[bricsPath[k]]=(transitNodeCount[bricsPath[k]]||0)+1;}
+        let transitEdges:{from:string;to:string;cables:string[]}[]|undefined;
+        const bricsResult=bfsPath(f,t,true);
+        if(bricsResult){status='indirect';transitPath=bricsResult.path;transitEdges=bricsResult.edges;
+          for(let k=1;k<bricsResult.path.length-1;k++){transitNodeCount[bricsResult.path[k]]=(transitNodeCount[bricsResult.path[k]]||0)+1;}
         }else{
-          const anyPath=bfsPath(f,t,false);
-          if(anyPath){status='transit';transitPath=anyPath;
-            for(let k=1;k<anyPath.length-1;k++){transitNodeCount[anyPath[k]]=(transitNodeCount[anyPath[k]]||0)+1;}
+          const anyResult=bfsPath(f,t,false);
+          if(anyResult){status='transit';transitPath=anyResult.path;transitEdges=anyResult.edges;
+            for(let k=1;k<anyResult.path.length-1;k++){transitNodeCount[anyResult.path[k]]=(transitNodeCount[anyResult.path[k]]||0)+1;}
           }else{status='none';}
         }
       }
       const transitPathNames=transitPath?.map(code=>({code,name:nameMap[code]?.name??code,nameZh:nameMap[code]?.nameZh??code}));
-      mx.push({from:f,to:t,status,directCableCount:cbl.length,directCables:cbl.slice(0,10),transitPath,transitPathNames,tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
+      mx.push({from:f,to:t,status,directCableCount:cbl.length,directCables:cbl.slice(0,10),transitPath,transitPathNames,transitEdges,tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
     }
 
     // Summary: 只算成员国之间的（11×10/2=55对）

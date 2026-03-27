@@ -6,7 +6,8 @@ import { BRICS_COLORS as C } from '@/lib/brics-constants';
 type CS='direct'|'indirect'|'transit'|'none'|'landlocked';
 interface Member{code:string;name:string;nameZh:string;tier?:string}
 interface PathNode{code:string;name:string;nameZh:string}
-interface Cell{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:PathNode[]}
+interface TransitEdge{from:string;to:string;cables:string[]}
+interface Cell{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:PathNode[];transitEdges?:TransitEdge[]}
 interface Data{members:Member[];partners?:Member[];allCountries?:Member[];matrix:Cell[];summary:Record<string,number>;transitNodes:{code:string;name:string;nameZh:string;count:number;isBRICS:boolean}[]}
 
 const SC:Record<CS,{bg:string;key:string;tipKey?:string}>={
@@ -143,6 +144,91 @@ function LI({status,label,tipText}:{status:CS;label:string;tipText?:string}){
 }
 
 function ET({tip,tb,isZh}:{tip:{x:number;y:number;cell:Cell;fn:string;tn:string};tb:(k:string,p?:Record<string,string|number>)=>string;isZh:boolean}){
+  const{cell,fn,tn}=tip;const cfg=SC[cell.status];
+  const rm:Record<CS,string>={none:'matrix.riskCritical',transit:'matrix.riskHigh',indirect:'matrix.riskMedium',direct:'matrix.riskLow',landlocked:'matrix.riskNa'};
+  const rc:Record<CS,string>={none:'matrix.recNone',transit:'matrix.recTransit',indirect:'matrix.recIndirect',direct:'matrix.recDirect',landlocked:'matrix.recLandlocked'};
+  const clr:Record<CS,string>={none:'#EF4444',transit:'#F59E0B',indirect:'#3B82F6',direct:'#22C55E',landlocked:'#6B7280'};
+  const left=tip.x+16;const adj=left+340>(typeof window!=='undefined'?window.innerWidth:1200)?tip.x-356:left;
+
+  /* 构建海缆路由描述 */
+  const edges=cell.transitEdges||[];
+  const names=cell.transitPathNames||[];
+
+  return(
+    <div style={{position:'fixed',left:adj,top:Math.max(8,tip.y-20),width:340,background:'rgba(10,18,36,.97)',backdropFilter:'blur(16px)',border:`1px solid ${C.gold}30`,borderRadius:12,padding:0,zIndex:9999,pointerEvents:'none',boxShadow:'0 12px 40px rgba(0,0,0,.6)',overflow:'hidden'}}>
+      <div style={{padding:'12px 16px',borderBottom:`1px solid ${C.gold}15`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span style={{fontSize:14,fontWeight:700,color:'#F0E6C8'}}>{fn} → {tn}</span>
+        <span style={{fontSize:10,fontWeight:600,padding:'3px 8px',borderRadius:4,background:`${cfg.bg}20`,color:cfg.bg}}>{tb(cfg.key)}</span>
+      </div>
+      <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:10}}>
+        {/* 直连: 显示海缆列表 */}
+        {cell.status==='direct'&&cell.directCableCount>0&&(
+          <div>
+            <div style={{fontSize:11,color:'rgba(255,255,255,.5)',marginBottom:4}}>{tb('matrix.cables',{n:cell.directCableCount})}</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+              {cell.directCables.slice(0,5).map(s=><span key={s} style={{fontSize:10,padding:'2px 6px',borderRadius:4,background:'rgba(34,197,94,.1)',color:'#22C55E',border:'1px solid rgba(34,197,94,.2)'}}>{s}</span>)}
+            </div>
+          </div>
+        )}
+
+        {/* 金砖中转(indirect) / 非金砖中转(transit): 显示逐跳海缆路由 */}
+        {(cell.status==='indirect'||cell.status==='transit')&&edges.length>0&&(
+          <div style={{background:cell.status==='indirect'?'rgba(245,158,11,.05)':'rgba(239,68,68,.05)',border:`1px solid ${cell.status==='indirect'?'rgba(245,158,11,.12)':'rgba(239,68,68,.12)'}`,borderRadius:8,padding:'10px 12px',display:'flex',flexDirection:'column',gap:6}}>
+            <div style={{fontSize:9,fontWeight:700,color:cell.status==='indirect'?'#F59E0B80':'#EF444480',textTransform:'uppercase',letterSpacing:'.04em'}}>
+              {isZh?(cell.status==='indirect'?'🔗 经由金砖国家中转':'⚠ 经由非金砖国家中转'):(cell.status==='indirect'?'🔗 Via BRICS nations':'⚠ Via non-BRICS nations')}
+            </div>
+            {edges.map((e,i)=>{
+              const fromName=names.find(n=>n.code===e.from);
+              const toName=names.find(n=>n.code===e.to);
+              const fn2=isZh?(fromName?.nameZh||e.from):(fromName?.name||e.from);
+              const tn2=isZh?(toName?.nameZh||e.to):(toName?.name||e.to);
+              const isBricsNode=names.find(n=>n.code===e.to);
+              const isNonBrics=cell.status==='transit'&&i<edges.length-1&&!(['BR','RU','IN','CN','ZA','SA','IR','EG','AE','ET','ID','BY','BO','KZ','TH','CU','UG','MY','UZ','NG','VN'].includes(e.to));
+              return(
+                <div key={i} style={{display:'flex',alignItems:'center',gap:6,fontSize:11}}>
+                  <span style={{color:'rgba(255,255,255,.6)',fontWeight:600,flexShrink:0}}>{fn2}</span>
+                  <span style={{fontSize:9,color:'rgba(255,255,255,.2)'}}>→</span>
+                  <div style={{flex:1,display:'flex',flexWrap:'wrap',gap:2}}>
+                    {e.cables.slice(0,2).map(cab=>(
+                      <span key={cab} style={{fontSize:9,padding:'1px 5px',borderRadius:3,background:isNonBrics?'rgba(239,68,68,.1)':'rgba(212,175,55,.08)',color:isNonBrics?'#EF4444':'#D4AF37',border:`1px solid ${isNonBrics?'rgba(239,68,68,.15)':'rgba(212,175,55,.12)'}`}}>{cab}</span>
+                    ))}
+                  </div>
+                  <span style={{fontSize:9,color:'rgba(255,255,255,.2)'}}>→</span>
+                  <span style={{color:isNonBrics?'#EF4444':'rgba(255,255,255,.6)',fontWeight:isNonBrics?700:600,flexShrink:0}}>{tn2}{isNonBrics?' ⚠':''}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 金砖中转旧文字提示 — 仅在没有 edges 时回退 */}
+        {cell.status==='indirect'&&edges.length===0&&names.length>0&&(
+          <div style={{fontSize:11,color:'#F59E0B',background:'rgba(245,158,11,.06)',border:'1px solid rgba(245,158,11,.15)',borderRadius:6,padding:'8px 10px',lineHeight:1.6}}>
+            🔗 {isZh?'中转路径：':'Transit path: '}{names.map(n=>isZh?n.nameZh:n.name).join(' → ')}
+          </div>
+        )}
+
+        {/* 非金砖中转警告 */}
+        {cell.status==='transit'&&<div style={{fontSize:11,color:'#EF4444',background:'rgba(239,68,68,.06)',border:'1px solid rgba(239,68,68,.15)',borderRadius:6,padding:'8px 10px',lineHeight:1.6}}>⚠ {tb('matrix.transitWarn')}</div>}
+
+        {/* 无连接 */}
+        {cell.status==='none'&&<div style={{fontSize:11,color:'#EF4444',background:'rgba(239,68,68,.06)',border:'1px solid rgba(239,68,68,.15)',borderRadius:6,padding:'8px 10px',lineHeight:1.6}}>🔴 {tb('matrix.noneWarn')}</div>}
+
+        {/* 风险等级 */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:10,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.05em'}}>{tb('matrix.risk')}</span>
+          <span style={{fontSize:11,fontWeight:600,color:clr[cell.status]}}>{tb(rm[cell.status])}</span>
+        </div>
+
+        {/* 建议 */}
+        <div style={{borderTop:`1px solid ${C.gold}10`,paddingTop:10}}>
+          <span style={{fontSize:10,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.05em'}}>{tb('matrix.rec')}</span>
+          <div style={{fontSize:12,color:'#D1D5DB',marginTop:4,lineHeight:1.5}}>{tb(rc[cell.status])}</div>
+        </div>
+      </div>
+    </div>
+  );
+}:{tip:{x:number;y:number;cell:Cell;fn:string;tn:string};tb:(k:string,p?:Record<string,string|number>)=>string;isZh:boolean}){
   const{cell,fn,tn}=tip;const cfg=SC[cell.status];
   const rm:Record<CS,string>={none:'matrix.riskCritical',transit:'matrix.riskHigh',indirect:'matrix.riskMedium',direct:'matrix.riskLow',landlocked:'matrix.riskNa'};
   const rc:Record<CS,string>={none:'matrix.recNone',transit:'matrix.recTransit',indirect:'matrix.recIndirect',direct:'matrix.recDirect',landlocked:'matrix.recLandlocked'};
