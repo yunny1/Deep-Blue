@@ -178,7 +178,7 @@ function ET({tip,tb,isZh}:{tip:{x:number;y:number;cell:Cell;fn:string;tn:string}
               const fn2=isZh?(fromName?.nameZh||e.from):(fromName?.name||e.from);
               const tn2=isZh?(toName?.nameZh||e.to):(toName?.name||e.to);
               const isBricsNode=names.find(n=>n.code===e.to);
-              const isNonBrics=cell.status==='transit'&&i<edges.length-1&&!(['BR','RU','IN','CN','ZA','SA','IR','EG','AE','ET','ID','BY','BO','KZ','TH','CU','UG','MY','UZ','NG','VN'].includes(e.to));
+              const isNonBrics=cell.status==='transit';
               return(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:6,fontSize:11}}>
                   <span style={{color:'rgba(255,255,255,.6)',fontWeight:600,flexShrink:0}}>{fn2}</span>
