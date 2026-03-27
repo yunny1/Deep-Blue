@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { BRICS_MEMBERS, BRICS_ALL, normalizeBRICS, isBRICSCountry, isBRICSInternalCable, isDomesticCable  } from '@/lib/brics-constants';
 
 export const revalidate = 3600;
-const AF = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED'] as string[] } };
+const AF = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED','RETIRED','DECOMMISSIONED'] as string[] } };
 
 export async function GET() {
   try {

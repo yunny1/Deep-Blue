@@ -6,7 +6,7 @@ export const revalidate = 3600;
 type CS = 'direct'|'indirect'|'transit'|'none'|'landlocked';
 // 内陆国：无海岸线的金砖国家
 const LANDLOCKED = new Set(['ET','BY','BO','KZ','UZ','UG']);
-const AF = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED'] as string[] } };
+const AF = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED','RETIRED','DECOMMISSIONED'] as string[] } };
 
 async function buildNameMap(): Promise<Record<string, { name: string; nameZh: string }>> {
   const map: Record<string, { name: string; nameZh: string }> = {};
