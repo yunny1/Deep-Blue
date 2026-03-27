@@ -66,7 +66,7 @@ async function main() {
     try {
       await prisma.cable.upsert({
         where: { name },
-        update: { status, lengthKm, routeGeojson: geo },
+        update: { status, lengthKm, ...(!existing?.isApproximateRoute ? { routeGeojson: geo } : {}) },
         create: { id, name, slug, status, lengthKm, routeGeojson: geo },
       });
       cableCount++;
