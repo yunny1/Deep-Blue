@@ -74,7 +74,7 @@ export async function GET() {
       if(i===j)continue;
       const[f,t]=[allCodes[i],allCodes[j]];
       if(LANDLOCKED.has(f)||LANDLOCKED.has(t)){
-        transitCables=[];mx.push({from:f,to:t,status:'landlocked',directCableCount:0,directCables:[],tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
+        mx.push({from:f,to:t,status:'landlocked',directCableCount:0,directCables:[],tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
         continue;
       }
       const cbl=dc[f]?.[t]??[];
