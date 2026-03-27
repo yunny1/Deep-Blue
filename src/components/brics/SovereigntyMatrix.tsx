@@ -228,3 +228,4 @@ function ET({tip,tb,isZh}:{tip:{x:number;y:number;cell:Cell;fn:string;tn:string}
       </div>
     </div>
   );
+}
