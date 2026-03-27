@@ -50,7 +50,7 @@ export default function BRICSMap({ height='560px', selection }:Props) {
         map.addLayer({id:'l-oth',type:'line',source:'c-oth',paint:{'line-color':'#2A2F3A','line-width':0.6,'line-opacity':0.03}});
 
         map.addSource('c-rel',{type:'geojson',data:{type:'FeatureCollection',features:relF}});
-        map.addLayer({id:'l-rel',type:'line',source:'c-rel',paint:{'line-color':C.silver,'line-width':1,'line-opacity':0.4}});
+        map.addLayer({id:'l-rel',type:'line',source:'c-rel',paint:{'line-color':'#7C6EEB','line-width':1,'line-opacity':0.4}});
 
         map.addSource('c-dom',{type:'geojson',data:{type:'FeatureCollection',features:domF}});
         map.addLayer({id:'l-dom-glow',type:'line',source:'c-dom',paint:{'line-color':C.domestic,'line-width':5,'line-opacity':0.1,'line-blur':3}});
@@ -83,23 +83,32 @@ export default function BRICSMap({ height='560px', selection }:Props) {
 
         const hoverLayers=['hit-int','hit-dom','hit-rel'];
         const visibleMap:Record<string,string>={'hit-int':'l-int','hit-dom':'l-dom','hit-rel':'l-rel'};
+        /* 单条海缆 hover 高亮源 */
+        map.addSource('c-hover',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+        map.addLayer({id:'l-hover-glow',type:'line',source:'c-hover',paint:{'line-color':'#FFD700','line-width':8,'line-opacity':0.25,'line-blur':4}});
+        map.addLayer({id:'l-hover',type:'line',source:'c-hover',paint:{'line-color':'#FFD700','line-width':3,'line-opacity':0.9}});
+
+        const allFeatures=[...intF,...domF,...relF,...othF];
         for(const lid of hoverLayers){
           map.on('mouseenter',lid,e=>{map.getCanvas().style.cursor='pointer';
             const slug=e.features?.[0]?.properties?.slug;
             if(slug && cmRef.current[slug]){
-              // Highlight
-              const srcId=lid.replace('l-','c-');
-              const vl=visibleMap[lid]||lid;map.setPaintProperty(vl,'line-width',vl.includes('int')?4:vl.includes('dom')?3:2.5);
+              const feat=allFeatures.find(f=>f.properties?.slug===slug);
+              if(feat)(map.getSource('c-hover') as any)?.setData({type:'FeatureCollection',features:[feat]});
               setHover({x:e.point.x,y:e.point.y,info:cmRef.current[slug]});
             }
           });
           map.on('mouseleave',lid,()=>{map.getCanvas().style.cursor='';
-            const vl2=visibleMap[lid]||lid;map.setPaintProperty(vl2,'line-width',vl2.includes('int')?2.2:vl2.includes('dom')?1.6:1);
+            (map.getSource('c-hover') as any)?.setData({type:'FeatureCollection',features:[]});
             setHover(null);
           });
-          map.on('mousemove',lid,e=>{if(hover){setHover(prev=>prev?{...prev,x:e.point.x,y:e.point.y}:null);}
+          map.on('mousemove',lid,e=>{
             const slug=e.features?.[0]?.properties?.slug;
-            if(slug && cmRef.current[slug]) setHover({x:e.point.x,y:e.point.y,info:cmRef.current[slug]});
+            if(slug && cmRef.current[slug]){
+              const feat=allFeatures.find(f=>f.properties?.slug===slug);
+              if(feat)(map.getSource('c-hover') as any)?.setData({type:'FeatureCollection',features:[feat]});
+              setHover({x:e.point.x,y:e.point.y,info:cmRef.current[slug]});
+            }
           });
         }
       }catch(err){console.error('[BRICSMap]',err);}finally{setLoading(false);}
@@ -169,8 +178,7 @@ export default function BRICSMap({ height='560px', selection }:Props) {
         {[
           {color:C.gold,label:isZh?'金砖组织内跨境':'Intra-BRICS',n:stats.internal,glow:true,tip:tb('map.internalTip')},
           {color:C.domestic,label:isZh?'单一金砖国家':'Single Nation',n:stats.domestic,glow:true,tip:tb('map.domesticTip')},
-          {color:C.silver,label:isZh?'对外连接':'External',n:stats.related,glow:false,tip:tb('map.relatedTip')},
-          {color:C.silver,label:isZh?'● 伙伴国标注':'● Partner Labels',n:10,glow:false,tip:isZh?'10个金砖伙伴国的地理位置银色标注':'Silver labels showing 10 BRICS partner nation locations'},
+          {color:'#7C6EEB',label:isZh?'对外连接':'External',n:stats.related,glow:false,tip:tb('map.relatedTip')},
         ].map(({color,label,n,glow,tip})=>(
           <div key={label} style={{display:'flex',alignItems:'center',gap:6,cursor:'help',position:'relative'}}
             onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setLegendTip({x:r.left-8,y:r.top,text:tip});}}
