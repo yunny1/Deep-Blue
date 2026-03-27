@@ -189,10 +189,14 @@ function ET({tip,tb,isZh}:{tip:{x:number;y:number;cell:Cell;fn:string;tn:string}
               const fn2=isZh?(fromName?.nameZh||e.from):(fromName?.name||e.from);
               const tn2=isZh?(toName?.nameZh||e.to):(toName?.name||e.to);
               const isBricsNode=names.find(n=>n.code===e.to);
-              const isNonBrics=cell.status==='transit';
+              // 逐跳判断：任一端是非金砖国家 → 红色
+              const bricsCodes=new Set(['BR','RU','IN','CN','ZA','SA','IR','EG','AE','ET','ID','BY','BO','KZ','TH','CU','UG','MY','UZ','NG','VN']);
+              const fromIsBrics=bricsCodes.has(e.from);
+              const toIsBrics=bricsCodes.has(e.to);
+              const isNonBrics=!fromIsBrics||!toIsBrics;
               return(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:6,fontSize:11}}>
-                  <span style={{color:'rgba(255,255,255,.6)',fontWeight:600,flexShrink:0}}>{fn2}</span>
+                  <span style={{color:fromIsBrics?'rgba(255,255,255,.6)':'#EF4444',fontWeight:600,flexShrink:0}}>{fn2}{fromIsBrics?'':'  ⚠'}</span>
                   <span style={{fontSize:9,color:'rgba(255,255,255,.2)'}}>→</span>
                   <div style={{flex:1,display:'flex',flexWrap:'wrap',gap:2}}>
                     {e.cables.slice(0,2).map(cab=>(
@@ -200,7 +204,7 @@ function ET({tip,tb,isZh}:{tip:{x:number;y:number;cell:Cell;fn:string;tn:string}
                     ))}
                   </div>
                   <span style={{fontSize:9,color:'rgba(255,255,255,.2)'}}>→</span>
-                  <span style={{color:isNonBrics?'#EF4444':'rgba(255,255,255,.6)',fontWeight:isNonBrics?700:600,flexShrink:0}}>{tn2}{isNonBrics?' ⚠':''}</span>
+                  <span style={{color:toIsBrics?'rgba(255,255,255,.6)':'#EF4444',fontWeight:toIsBrics?600:700,flexShrink:0}}>{tn2}{toIsBrics?'':' ⚠'}</span>
                 </div>
               );
             })}
