@@ -41,3 +41,4 @@ yarn-error.log*
 next-env.d.ts
 # CesiumJS static assets (generated from node_modules, too large for Git)
 public/cesium/
+scripts/fix-cable-routes.ts
