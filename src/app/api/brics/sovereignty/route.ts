@@ -67,7 +67,7 @@ export async function GET() {
 
     // 分析所有金砖国家（成员+伙伴）
     const allCodes = [...BRICS_ALL];
-    const mx:{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:{code:string;name:string;nameZh:string}[];tier:'member'|'partner'}[]=[];
+    const mx:{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:{code:string;name:string;nameZh:string}[];transitEdges?:{from:string;to:string;cables:string[]}[];tier:'member'|'partner'}[]=[];
     const transitNodeCount: Record<string, number> = {};
 
     for(let i=0;i<allCodes.length;i++)for(let j=0;j<allCodes.length;j++){
