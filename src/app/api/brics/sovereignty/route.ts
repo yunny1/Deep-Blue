@@ -91,13 +91,17 @@ export async function GET() {
           const anyResult=bfsPath(f,t,false);
           if(anyResult){status='transit';transitPath=anyResult.path;transitEdges=anyResult.edges;
             // 直接从dc查每跳海缆
-            const _pc2:string[]=[];for(let k=0;k<anyResult.path.length-1;k++){const _a=anyResult.path[k],_b=anyResult.path[k+1];if(dc[_a]?.[_b])_pc2.push(...dc[_a][_b]);else if(dc[_b]?.[_a])_pc2.push(...dc[_b][_a]);}
+            const _pc2:string[]=[];for(let k=0;k<anyResult.path.length-1;k++){const _a=anyResult.path[k],_b=anyResult.path[k+1];
+            if(f==='RU'&&t==='IN')console.log('[DEBUG RU→IN]',_a,'→',_b,'dc[a][b]:',dc[_a]?.[_b]?.slice(0,3),'dc[b][a]:',dc[_b]?.[_a]?.slice(0,3));
+            if(dc[_a]?.[_b])_pc2.push(...dc[_a][_b]);else if(dc[_b]?.[_a])_pc2.push(...dc[_b][_a]);}
+            if(f==='RU'&&t==='IN')console.log('[DEBUG RU→IN] _pc2:',_pc2);
             transitCables=[...new Set(_pc2)].slice(0,10);
             for(let k=1;k<anyResult.path.length-1;k++){transitNodeCount[anyResult.path[k]]=(transitNodeCount[anyResult.path[k]]||0)+1;}
           }else{status='none';}
         }
       }
       const transitPathNames=transitPath?.map(code=>({code,name:nameMap[code]?.name??code,nameZh:nameMap[code]?.nameZh??code}));
+      if(f==='RU'&&t==='IN')console.log('[DEBUG RU→IN FINAL] transitCables:',transitCables,'status:',status);
       mx.push({from:f,to:t,status,directCableCount:cbl.length,directCables:cbl.slice(0,10),transitPath,transitPathNames,transitEdges,transitCables,tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
     }
 

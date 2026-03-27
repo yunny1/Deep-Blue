@@ -105,7 +105,7 @@ export default function SovereigntyMatrix({onCellClick}:Props){
                       setTip({x:r.right,y:r.top,cell,fn:getName(rm.code),tn:getName(cm.code)});}}
                     onMouseLeave={()=>{setHlRow(null);setHlCol(null);setTip(null);}}
                     onClick={()=>{if(!self&&cell&&onCellClick){
-                      let allCables=[...cell.directCables,...(cell.transitEdges||[]).flatMap(e=>e.cables)];
+                      let allCables=cell.transitCables&&cell.transitCables.length>0?[...cell.transitCables]:[...cell.directCables,...(cell.transitEdges||[]).flatMap(e=>e.cables)];
                       // 兜底: 从 cablePairs 查找 transitPath 每一跳的海缆
                       if(allCables.length===0&&cell.transitPath&&cell.transitPath.length>=2&&data?.cablePairs){
                         const cp=data.cablePairs;
