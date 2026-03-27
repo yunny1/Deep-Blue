@@ -78,10 +78,9 @@ export async function GET() {
         continue;
       }
       const cbl=dc[f]?.[t]??[];
-      let status:CS;let transitPath:string[]|undefined;
+      let status:CS;let transitPath:string[]|undefined;let transitEdges:{from:string;to:string;cables:string[]}[]|undefined;
       if(cbl.length>0){status='direct';}
       else{
-        let transitEdges:{from:string;to:string;cables:string[]}[]|undefined;
         const bricsResult=bfsPath(f,t,true);
         if(bricsResult){status='indirect';transitPath=bricsResult.path;transitEdges=bricsResult.edges;
           for(let k=1;k<bricsResult.path.length-1;k++){transitNodeCount[bricsResult.path[k]]=(transitNodeCount[bricsResult.path[k]]||0)+1;}
