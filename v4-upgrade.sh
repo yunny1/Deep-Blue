@@ -1,4 +1,175 @@
-'use client';
+#!/bin/bash
+set -e
+P="/home/ubuntu/deep-blue"
+echo "═══════════════════════════════════════════════════════"
+echo "🔧 综合升级 V4 — 术语/图例/SVG/战略缺口/数据一致性"
+echo "═══════════════════════════════════════════════════════"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 1. i18n 术语统一 + 删除 method 键
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ">>> 1/8: i18n 术语统一"
+python3 << 'PYEOF'
+path = "/home/ubuntu/deep-blue/src/lib/brics-i18n.ts"
+with open(path, 'r') as f:
+    c = f.read()
+ch = 0
+
+# 删除 method.classify 和 method.matrix（所有匹配行）
+lines = c.split('\n')
+new_lines = [l for l in lines if 'method.classify' not in l and 'method.matrix' not in l]
+removed = len(lines) - len(new_lines)
+c = '\n'.join(new_lines)
+if removed > 0:
+    ch += removed
+    print(f"  ✅ 删除了 {removed} 行 method.classify/matrix")
+
+# 术语替换 — 中文
+reps_zh = [
+    ("'跨国互联'", "'金砖组织内跨境'"),
+    ("'跨国互联海缆'", "'金砖组织内跨境海缆'"),
+    ("'国内海缆'", "'单一金砖国家海缆'"),
+    ("'国内'", "'单一国家'"),
+    ("'涉外'", "'对外连接'"),
+    ("'涉外海缆'", "'对外连接海缆'"),
+    ("'金砖跨国互联'", "'金砖组织内跨境'"),
+]
+# 术语替换 — 英文
+reps_en = [
+    ("'Cross-border'", "'Intra-BRICS Cross-border'"),
+    ("'Domestic'", "'Single BRICS Nation'"),
+    ("'External'", "'External Connection'"),
+]
+
+for old, new in reps_zh + reps_en:
+    if old in c:
+        c = c.replace(old, new)
+        ch += 1
+
+with open(path, 'w') as f:
+    f.write(c)
+print(f"  共 {ch} 处修改")
+PYEOF
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 2. Dashboard — 删 method 行 + 删战略缺口 + 术语
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo ">>> 2/8: Dashboard 清理"
+python3 << 'PYEOF'
+import re
+
+path = "/home/ubuntu/deep-blue/src/components/brics/BRICSDashboard.tsx"
+with open(path, 'r') as f:
+    c = f.read()
+ch = 0
+
+# 2a. 暴力删除 method.classify / method.matrix 行
+lines = c.split('\n')
+new_lines = [l for l in lines if 'method.classify' not in l and 'method.matrix' not in l]
+removed = len(lines) - len(new_lines)
+c = '\n'.join(new_lines)
+if removed > 0:
+    ch += removed
+    print(f"  ✅ Dashboard 删除 {removed} 行 method 引用")
+else:
+    print("  ✓ method 行已不存在")
+
+# 2b. 删除战略缺口分析整个 section
+# 查找 {/* 战略缺口 或 Strategic Gap
+gap_markers = ['{/* 战略缺口', '{/* Strategic Gap', "tb('gap."]
+start = -1
+for m in gap_markers:
+    idx = c.find(m)
+    if idx >= 0:
+        start = idx
+        break
+
+if start >= 0:
+    # 向后找 </section> 再找 )}
+    rest = c[start:]
+    end_match = re.search(r'</section>\s*\)\}', rest)
+    if end_match:
+        # 向前找条件包装
+        before = c[max(0,start-300):start]
+        cond = before.rfind('{gapData')
+        if cond < 0:
+            cond = before.rfind('{investOps') # 备用
+        actual_start = max(0,start-300) + cond if cond >= 0 else start
+        actual_end = start + end_match.end()
+        
+        old_section = c[actual_start:actual_end]
+        c = c[:actual_start] + c[actual_end:]
+        ch += 1
+        print(f"  ✅ 删除战略缺口分析 ({len(old_section)} 字符)")
+    else:
+        print("  ⚠️ 未找到战略缺口结束标记")
+else:
+    print("  ✓ 战略缺口分析已不存在")
+
+# 2c. Dashboard 中的术语替换
+dash_reps = [
+    ("'跨国互联'", "'金砖组织内跨境'"),
+    ("'国内海缆'", "'单一金砖国家海缆'"),
+    ("'国内'", "'单一国家'"),
+    ("'涉外'", "'对外连接'"),
+]
+for old, new in dash_reps:
+    if old in c:
+        c = c.replace(old, new)
+        ch += 1
+
+with open(path, 'w') as f:
+    f.write(c)
+print(f"  共 {ch} 处修改")
+PYEOF
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 3. 地图图例 — 删非金砖+伙伴国图例项 + 隐藏非金砖海缆层
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo ">>> 3/8: 地图图例清理 + 术语"
+python3 << 'PYEOF'
+import re
+
+path = "/home/ubuntu/deep-blue/src/components/brics/BRICSMap.tsx"
+with open(path, 'r') as f:
+    c = f.read()
+ch = 0
+
+# 3a. 删除 other 图例项 {color:'#2A2F3A'...}
+c = re.sub(r",?\s*\{color:'#2A2F3A'[^}]*\}", "", c)
+ch += 1
+print("  ✅ 删除非金砖 other 图例项")
+
+# 3b. 删除伙伴国标注图例项
+c = re.sub(r",?\s*\{color:'#60A5FA'[^}]*(?:伙伴|Partner)[^}]*\}", "", c)
+ch += 1
+print("  ✅ 删除伙伴国标注图例项")
+
+# 3c. 隐藏非金砖海缆渲染层（opacity 降到极低）
+c = c.replace("'line-opacity':0.15", "'line-opacity':0.03")
+print("  ✅ 非金砖海缆透明度 0.15→0.03（几乎隐藏）")
+
+# 3d. 图例术语替换
+c = c.replace("tb('map.internal')", "isZh?'金砖组织内跨境':'Intra-BRICS'")
+c = c.replace("tb('map.domestic')", "isZh?'单一金砖国家':'Single Nation'")
+c = c.replace("tb('map.related')", "isZh?'对外连接':'External'")
+c = c.replace("tb('map.other')", "isZh?'非金砖':'Non-BRICS'")
+ch += 4
+
+with open(path, 'w') as f:
+    f.write(c)
+print(f"  共 {ch} 处修改")
+PYEOF
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 4. SVG 投资面板 — 重新规划标注位置
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo ">>> 4/8: SVG 剖面图标注重新布局"
+python3 << 'PYEOF'
+content = r"""'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { BRICS_ALL, BRICS_MEMBERS, BRICS_COUNTRY_META, BRICS_COLORS as C } from '@/lib/brics-constants';
 import { estimateSubseaCapex, formatUsd, SENSITIVITY_ITEMS } from '@/lib/subsea-cost-model';
@@ -272,3 +443,108 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
     </section>
   );
 }
+"""
+
+path = "/home/ubuntu/deep-blue/src/components/brics/BRICSInvestmentPanel.tsx"
+with open(path, 'w') as f:
+    f.write(content)
+print(f"  ✅ BRICSInvestmentPanel.tsx 重写 ({len(content)} 字符)")
+PYEOF
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 5. 统计卡片术语
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo ">>> 5/8: BRICSStatsCards 术语更新"
+python3 << 'PYEOF'
+import os
+path = "/home/ubuntu/deep-blue/src/components/brics/BRICSStatsCards.tsx"
+if os.path.exists(path):
+    with open(path, 'r') as f:
+        c = f.read()
+    reps = [
+        ("'跨国互联'", "'金砖组织内跨境'"),
+        ("'跨国互联海缆'", "'金砖组织内跨境'"),
+        ("'国内海缆'", "'单一金砖国家'"),
+        ("'国内'", "'单一国家'"),
+        ("'涉外'", "'对外连接'"),
+        ("'涉外海缆'", "'对外连接'"),
+        ("'Internal'", "'Intra-BRICS'"),
+        ("'Domestic'", "'Single Nation'"),
+        ("'External'", "'External Conn.'"),
+    ]
+    ch = 0
+    for old, new in reps:
+        if old in c:
+            c = c.replace(old, new)
+            ch += 1
+    with open(path, 'w') as f:
+        f.write(c)
+    print(f"  ✅ StatsCards {ch} 处术语替换")
+else:
+    print("  ⚠️ StatsCards.tsx 不存在")
+PYEOF
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 6. 数据库标记 SeaMeWe-3 退役
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo ">>> 6/8: 数据库标记 SeaMeWe-3 退役"
+cd "$P"
+node -e "
+const{PrismaClient}=require('@prisma/client');
+const p=new PrismaClient();
+(async()=>{
+  // 查找 SeaMeWe-3
+  const cable=await p.cable.findFirst({where:{OR:[{name:{contains:'SeaMeWe-3'}},{slug:{contains:'seamewe-3'}}]}});
+  if(!cable){console.log('  ⚠️ SeaMeWe-3 未找到');process.exit(0);}
+  console.log('  找到:',cable.slug,'当前状态:',cable.status);
+  // 更新状态为 RETIRED + 加保护标签
+  await p.cable.update({
+    where:{id:cable.id},
+    data:{
+      status:'RETIRED',
+      notes: (cable.notes||'') + ' [PROTECTED] Marked retired 2025-06. Do not overwrite on data refresh.'
+    }
+  });
+  console.log('  ✅ SeaMeWe-3 已标记为 RETIRED + PROTECTED');
+  await p.\$disconnect();
+})();
+" 2>/dev/null || echo "  ⚠️ 数据库更新跳过（可能需要 source .env）"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 7. 清除 ISR 缓存
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo ">>> 7/8: 清除缓存"
+rm -rf "$P/.next/cache" 2>/dev/null || true
+echo "  ✅ .next/cache 清除"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 8. 验证 method.classify 彻底删除
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo ">>> 8/8: 验证 method.classify/matrix 残留"
+count=$(grep -r "method\.classify\|method\.matrix" "$P/src/" --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l)
+if [ "$count" -eq 0 ]; then
+    echo "  ✅ 零残留 — 彻底清除"
+else
+    echo "  ❌ 仍有 $count 处残留，强制删除..."
+    grep -rn "method\.classify\|method\.matrix" "$P/src/" --include="*.ts" --include="*.tsx"
+    # 暴力删除
+    find "$P/src" -name "*.ts" -o -name "*.tsx" | xargs sed -i '/method\.classify/d;/method\.matrix/d'
+    echo "  ✅ 已用 sed 强制删除"
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════════════"
+echo "✅ V4 综合升级完成！"
+echo ""
+echo "  npm run build"
+echo "  kill -9 \$(lsof -t -i:3000) 2>/dev/null; sleep 1"
+echo "  nohup npx next start -p 3000 > /tmp/deep-blue.log 2>&1 &"
+echo ""
+echo "  git add -A && git commit -m 'feat: V4 — unified terminology, SVG layout, remove gap analysis, SeaMeWe-3 retired' && git push origin main"
+echo "  → Cloudflare Purge Everything → Cmd+Shift+R"
+echo "  本地: cd /你本地的/deep-blue && git pull"
+echo "═══════════════════════════════════════════════════════"

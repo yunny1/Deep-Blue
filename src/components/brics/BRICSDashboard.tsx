@@ -188,52 +188,7 @@ export default function BRICSDashboard(){
 
                 <BRICSInvestmentPanel isZh={isZh} tb={tb} />
 
-        {/* 战略缺口 */}
-        <section className="bs" style={{padding:'0 32px 40px',maxWidth:1400,margin:'0 auto',animationDelay:'.4s'}}>
-          <SH t={tb('gap.title')} s={tb('gap.subtitle')} />
-          {gapPairs.length>0?(
-            <div className="bc" style={{overflow:'hidden'}}>
-              <div style={{overflowX:'auto'}}>
-                <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
-                  <thead><tr style={{borderBottom:`1px solid ${C.gold}15`}}>
-                    {[tb('gap.priority'),tb('gap.pair'),tb('gap.status'),tb('gap.action')].map(h=><th key={h} style={{padding:'14px 16px',textAlign:'left',fontSize:11,fontWeight:600,color:`${C.gold}90`,textTransform:'uppercase',letterSpacing:'.06em'}}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>{gapPairs.map((g,i)=>{const isN=g.status==='none';const fM=BRICS_COUNTRY_META[g.from];const tM=BRICS_COUNTRY_META[g.to];
-                    return(<tr key={i} style={{borderBottom:'1px solid rgba(255,255,255,.03)',transition:'background .15s'}} onMouseEnter={e=>e.currentTarget.style.background=`${C.gold}06`} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                      <td style={{padding:'12px 16px'}}><span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:4,background:isN?'rgba(239,68,68,.1)':'rgba(245,158,11,.1)',color:isN?'#EF4444':'#F59E0B'}}>{isN?tb('gap.high'):tb('gap.medium')}</span></td>
-                      <td style={{padding:'12px 16px',color:'#F0E6C8',fontWeight:500}}>{isZh?fM?.nameZh:fM?.name} → {isZh?tM?.nameZh:tM?.name}</td>
-                      <td style={{padding:'12px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:6}}><span style={{width:8,height:8,borderRadius:'50%',background:isN?'#EF4444':'#F59E0B'}} /><span style={{color:'rgba(255,255,255,.6)',fontSize:12}}>{isN?tb('matrix.none'):tb('matrix.transit')}</span></span></td>
-                      <td style={{padding:'12px 16px',color:'rgba(255,255,255,.5)',fontSize:12}}>{isN?tb('gap.buildDirect'):tb('gap.addRedundancy')}</td>
-                    </tr>);})}</tbody>
-                </table>
-              </div>
-            </div>
-          ):loading?<LB h={200} />:null}
-        </section>
-
-        {/* 中转依赖 */}
-        {sov?.transitNodes&&sov.transitNodes.length>0&&(
-          <section className="bs" style={{padding:'0 32px 40px',maxWidth:1400,margin:'0 auto',animationDelay:'.45s'}}>
-            <SH t={tb('transit.title')} s={tb('transit.subtitle')} />
-            <div className="bc" style={{overflow:'hidden'}}>
-              <div style={{overflowX:'auto'}}>
-                <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
-                  <thead><tr style={{borderBottom:`1px solid ${C.gold}15`}}>
-                    {['#',tb('transit.country'),tb('transit.count'),tb('transit.isBrics')].map(h=><th key={h} style={{padding:'12px 16px',textAlign:'left',fontSize:11,fontWeight:600,color:`${C.gold}90`,textTransform:'uppercase',letterSpacing:'.06em'}}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>{sov.transitNodes.map((n,i)=>(
-                    <tr key={n.code} style={{borderBottom:'1px solid rgba(255,255,255,.03)',transition:'background .15s'}} onMouseEnter={e=>e.currentTarget.style.background=`${C.gold}06`} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                      <td style={{padding:'10px 16px',color:'rgba(255,255,255,.3)',fontSize:12}}>{i+1}</td>
-                      <td style={{padding:'10px 16px',color:'#F0E6C8',fontWeight:500}}>{isZh?(n.nameZh||n.name||n.code):(n.name||n.code)} <span style={{color:'rgba(255,255,255,.25)',fontSize:11}}>({n.code})</span></td>
-                      <td style={{padding:'10px 16px'}}><div style={{display:'flex',alignItems:'center',gap:8}}><div style={{width:Math.min(120,n.count*8),height:6,borderRadius:3,background:n.isBRICS?C.gold:'#EF4444',opacity:.7}} /><span style={{color:'#F0E6C8',fontWeight:600,fontFeatureSettings:'"tnum"'}}>{n.count}</span></div></td>
-                      <td style={{padding:'10px 16px'}}>{n.isBRICS?<span style={{fontSize:10,padding:'2px 8px',borderRadius:4,background:'rgba(34,197,94,.1)',color:'#22C55E'}}>{tb('transit.yes')}</span>:<span style={{fontSize:10,padding:'2px 8px',borderRadius:4,background:'rgba(239,68,68,.1)',color:'#EF4444'}}>{tb('transit.no')}</span>}</td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        )}
+        
 
         {/* 成员国档案 */}
         {countryProfiles.length>0&&(

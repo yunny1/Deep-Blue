@@ -47,7 +47,7 @@ export default function BRICSMap({ height='560px', selection }:Props) {
 
         // Layers: other → related → domestic → internal (top)
         map.addSource('c-oth',{type:'geojson',data:{type:'FeatureCollection',features:othF}});
-        map.addLayer({id:'l-oth',type:'line',source:'c-oth',paint:{'line-color':'#2A2F3A','line-width':0.6,'line-opacity':0.15}});
+        map.addLayer({id:'l-oth',type:'line',source:'c-oth',paint:{'line-color':'#2A2F3A','line-width':0.6,'line-opacity':0.03}});
 
         map.addSource('c-rel',{type:'geojson',data:{type:'FeatureCollection',features:relF}});
         map.addLayer({id:'l-rel',type:'line',source:'c-rel',paint:{'line-color':C.silver,'line-width':1,'line-opacity':0.4}});
@@ -57,7 +57,7 @@ export default function BRICSMap({ height='560px', selection }:Props) {
         map.addLayer({id:'l-dom',type:'line',source:'c-dom',paint:{'line-color':C.domestic,'line-width':1.6,'line-opacity':0.75}});
 
         map.addSource('c-int',{type:'geojson',data:{type:'FeatureCollection',features:intF}});
-        map.addLayer({id:'l-int-glow',type:'line',source:'c-int',paint:{'line-color':C.gold,'line-width':8,'line-opacity':0.15,'line-blur':4}});
+        map.addLayer({id:'l-int-glow',type:'line',source:'c-int',paint:{'line-color':C.gold,'line-width':8,'line-opacity':0.03,'line-blur':4}});
         map.addLayer({id:'l-int',type:'line',source:'c-int',paint:{'line-color':C.gold,'line-width':2.2,'line-opacity':0.95}});
 
         // Labels
@@ -167,10 +167,9 @@ export default function BRICSMap({ height='560px', selection }:Props) {
       {/* Legend with tooltips */}
       {stats&&<div style={{position:'absolute',bottom:12,right:12,background:'rgba(10,22,40,.9)',backdropFilter:'blur(8px)',borderRadius:8,padding:'10px 14px',fontSize:11,color:'rgba(255,255,255,.5)',display:'flex',flexDirection:'column',gap:5,border:`1px solid ${C.gold}12`,zIndex:5}}>
         {[
-          {color:C.gold,label:tb('map.internal'),n:stats.internal,glow:true,tip:tb('map.internalTip')},
-          {color:C.domestic,label:tb('map.domestic'),n:stats.domestic,glow:true,tip:tb('map.domesticTip')},
-          {color:C.silver,label:tb('map.related'),n:stats.related,glow:false,tip:tb('map.relatedTip')},
-          {color:'#2A2F3A',label:tb('map.other'),n:stats.other,glow:false,tip:tb('map.otherTip')},
+          {color:C.gold,label:isZh?'金砖组织内跨境':'Intra-BRICS',n:stats.internal,glow:true,tip:tb('map.internalTip')},
+          {color:C.domestic,label:isZh?'单一金砖国家':'Single Nation',n:stats.domestic,glow:true,tip:tb('map.domesticTip')},
+          {color:C.silver,label:isZh?'对外连接':'External',n:stats.related,glow:false,tip:tb('map.relatedTip')},
           {color:C.silver,label:isZh?'● 伙伴国标注':'● Partner Labels',n:10,glow:false,tip:isZh?'10个金砖伙伴国的地理位置银色标注':'Silver labels showing 10 BRICS partner nation locations'},
         ].map(({color,label,n,glow,tip})=>(
           <div key={label} style={{display:'flex',alignItems:'center',gap:6,cursor:'help',position:'relative'}}
