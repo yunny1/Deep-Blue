@@ -118,13 +118,8 @@ export default function SovereigntyMatrix({onCellClick}:Props){
         </div>
       </div>
 
-      {/* 图例 */}
-      <div style={{display:'flex',flexWrap:'wrap',gap:16,marginTop:16}}>
-        {(['direct','indirect','transit','none','landlocked'] as CS[]).map(s=>(
-          <LI key={s} status={s} label={`${tb(SC[s].key)} — ${summary[s]??0} ${tb('matrix.pairs')}`} tipText={SC[s].tipKey?tb(SC[s].tipKey!):undefined} />
-        ))}
-        <span style={{fontSize:12,color:'rgba(255,255,255,.25)',marginLeft:8}}>{tb('matrix.total',{n:summary.totalPairs})}</span>
-      </div>
+      {/* 图例 + 展开详情 */}
+      <LegendPanel data={data} summary={summary} displayMembers={displayMembers} getName={getName} tb={tb} isZh={isZh} />
 
       {tip&&<ET tip={tip} tb={tb} isZh={isZh} />}
     </div>
@@ -226,6 +221,59 @@ function ET({tip,tb,isZh}:{tip:{x:number;y:number;cell:Cell;fn:string;tn:string}
           <div style={{fontSize:12,color:'#D1D5DB',marginTop:4,lineHeight:1.5}}>{tb(rc[cell.status])}</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LegendPanel({data,summary,displayMembers,getName,tb,isZh}:{data:Data;summary:Record<string,number>;displayMembers:Member[];getName:(c:string)=>string;tb:(k:string,p?:Record<string,string|number>)=>string;isZh:boolean}){
+  const[expanded,setExpanded]=useState<CS|null>(null);
+  const getCell=(f:string,t:string)=>data.matrix.find(m=>m.from===f&&m.to===t);
+  const getPairs=(status:CS)=>{
+    const pairs:{from:string;to:string;cell:Cell}[]=[];
+    const members=data.members||[];
+    for(let i=0;i<members.length;i++)for(let j=i+1;j<members.length;j++){
+      const cell=getCell(members[i].code,members[j].code);
+      if(cell&&cell.status===status)pairs.push({from:members[i].code,to:members[j].code,cell});
+    }
+    return pairs;
+  };
+  return(
+    <div style={{marginTop:16}}>
+      <div style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:8}}>
+        {(['direct','indirect','transit','none','landlocked'] as CS[]).map(s=>{
+          const isExp=expanded===s;
+          return(
+            <button key={s} onClick={()=>setExpanded(isExp?null:s)} style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderRadius:8,border:`1px solid ${isExp?SC[s].bg+'40':'rgba(255,255,255,.06)'}`,background:isExp?`${SC[s].bg}10`:'transparent',cursor:'pointer',transition:'all .2s'}}>
+              <span style={{width:10,height:10,borderRadius:3,background:SC[s].bg,opacity:.85}}/>
+              <span style={{fontSize:12,color:isExp?'#F0E6C8':'rgba(255,255,255,.5)',fontWeight:isExp?600:400}}>{tb(SC[s].key)}</span>
+              <span style={{fontSize:12,color:SC[s].bg,fontWeight:700,marginLeft:2}}>{summary[s]??0}</span>
+              <span style={{fontSize:10,color:'rgba(255,255,255,.2)',marginLeft:2}}>{isExp?'▲':'▼'}</span>
+            </button>
+          );
+        })}
+        <span style={{fontSize:12,color:'rgba(255,255,255,.2)',alignSelf:'center'}}>{tb('matrix.total',{n:summary.totalPairs})}</span>
+      </div>
+      {expanded&&(
+        <div style={{padding:14,borderRadius:10,border:`1px solid ${SC[expanded].bg}20`,background:`${SC[expanded].bg}06`,animation:'fadeI .3s ease'}}>
+          <div style={{fontSize:11,fontWeight:700,color:SC[expanded].bg,marginBottom:8}}>{tb(SC[expanded].key)} — {summary[expanded]??0} {tb('matrix.pairs')}</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {getPairs(expanded).map(p=>(
+              <div key={`${p.from}-${p.to}`} style={{fontSize:11,padding:'4px 10px',borderRadius:6,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)',color:'rgba(255,255,255,.6)'}}>
+                <span style={{fontWeight:600}}>{getName(p.from)}</span>
+                <span style={{color:'rgba(255,255,255,.2)',margin:'0 4px'}}>↔</span>
+                <span style={{fontWeight:600}}>{getName(p.to)}</span>
+                {p.cell.directCableCount>0&&<span style={{fontSize:9,color:SC[expanded].bg,marginLeft:4}}>({p.cell.directCableCount})</span>}
+                {p.cell.transitEdges&&p.cell.transitEdges.length>0&&(
+                  <span style={{fontSize:9,color:'rgba(255,255,255,.3)',marginLeft:4}}>
+                    via {p.cell.transitEdges.map(e=>isZh?(data.allCountries?.find(x=>x.code===e.to)?.nameZh||e.to):(data.allCountries?.find(x=>x.code===e.to)?.name||e.to)).filter((_,i,a)=>i<a.length-1).join('→')}
+                  </span>
+                )}
+              </div>
+            ))}
+            {getPairs(expanded).length===0&&<span style={{fontSize:11,color:'rgba(255,255,255,.3)'}}>{isZh?'无':'None'}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

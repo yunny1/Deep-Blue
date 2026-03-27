@@ -24,7 +24,7 @@ const T: Record<string, Record<string, string>> = {
     'map.other':'非金砖','map.otherTip':'所有登陆站均在非金砖国家的海缆',
     'map.loading':'正在加载海缆数据…',
     'matrix.title':'数字主权矩阵',
-    'matrix.subtitle':'成员国间海缆连接分析 — 评估金砖数字自主可控程度',
+    'matrix.subtitle':'金砖国家间海缆连接分析 — 评估金砖数字自主可控程度',
     'matrix.direct':'直连','matrix.indirect':'金砖中转','matrix.indirectTip':'两国之间没有直连海缆，但可以通过其他金砖国家中转到达，全程不经过西方基础设施',
     'matrix.transit':'非金砖中转','matrix.transitTip':'两国之间的通信必须经过非金砖国家的基础设施才能到达',
     'matrix.none':'无连接','matrix.landlocked':'内陆国','matrix.pairs':'对',

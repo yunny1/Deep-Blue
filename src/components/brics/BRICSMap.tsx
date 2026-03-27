@@ -83,16 +83,21 @@ export default function BRICSMap({ height='560px', selection }:Props) {
 
         const hoverLayers=['hit-int','hit-dom','hit-rel'];
         const visibleMap:Record<string,string>={'hit-int':'l-int','hit-dom':'l-dom','hit-rel':'l-rel'};
-        /* 单条海缆 hover 高亮源 */
+        /* 单条海缆 hover 高亮源 — 颜色跟随类别 */
         map.addSource('c-hover',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
-        map.addLayer({id:'l-hover-glow',type:'line',source:'c-hover',paint:{'line-color':'#FFD700','line-width':8,'line-opacity':0.25,'line-blur':4}});
-        map.addLayer({id:'l-hover',type:'line',source:'c-hover',paint:{'line-color':'#FFD700','line-width':3,'line-opacity':0.9}});
+        map.addLayer({id:'l-hover-glow',type:'line',source:'c-hover',paint:{'line-color':'#FFD700','line-width':8,'line-opacity':0.3,'line-blur':4}});
+        map.addLayer({id:'l-hover',type:'line',source:'c-hover',paint:{'line-color':'#FFD700','line-width':3,'line-opacity':0.95}});
 
         const allFeatures=[...intF,...domF,...relF,...othF];
+        const hoverColors:Record<string,string>={'hit-int':'#FFD700','hit-dom':'#5EEAD4','hit-rel':'#A78BFA'};
+        const hoverGlowColors:Record<string,string>={'hit-int':'#FFD70080','hit-dom':'#5EEAD480','hit-rel':'#A78BFA80'};
         for(const lid of hoverLayers){
           map.on('mouseenter',lid,e=>{map.getCanvas().style.cursor='pointer';
             const slug=e.features?.[0]?.properties?.slug;
             if(slug && cmRef.current[slug]){
+              const hc=hoverColors[lid]||'#FFD700';const gc=hoverGlowColors[lid]||'#FFD70060';
+              map.setPaintProperty('l-hover','line-color',hc);
+              map.setPaintProperty('l-hover-glow','line-color',gc);
               const feat=allFeatures.find(f=>f.properties?.slug===slug);
               if(feat)(map.getSource('c-hover') as any)?.setData({type:'FeatureCollection',features:[feat]});
               setHover({x:e.point.x,y:e.point.y,info:cmRef.current[slug]});
@@ -105,6 +110,9 @@ export default function BRICSMap({ height='560px', selection }:Props) {
           map.on('mousemove',lid,e=>{
             const slug=e.features?.[0]?.properties?.slug;
             if(slug && cmRef.current[slug]){
+              const hc=hoverColors[lid]||'#FFD700';const gc=hoverGlowColors[lid]||'#FFD70060';
+              map.setPaintProperty('l-hover','line-color',hc);
+              map.setPaintProperty('l-hover-glow','line-color',gc);
               const feat=allFeatures.find(f=>f.properties?.slug===slug);
               if(feat)(map.getSource('c-hover') as any)?.setData({type:'FeatureCollection',features:[feat]});
               setHover({x:e.point.x,y:e.point.y,info:cmRef.current[slug]});

@@ -136,7 +136,7 @@ export default function BRICSDashboard(){
               <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
                 <div style={{flex:1,minWidth:260}}>
                   <div style={{fontSize:11,color:'rgba(255,255,255,.4)',marginBottom:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.06em'}}>{isZh?'按状态':'By Status'}</div>
-                  {[{l:tb('chart.statusActive'),v:ov.brics.statusBreakdown.active,c:'#22C55E'},{l:tb('chart.statusBuilding'),v:ov.brics.statusBreakdown.underConstruction,c:'#3B82F6'},{l:tb('chart.statusPlanned'),v:ov.brics.statusBreakdown.planned,c:'#F59E0B'}].map(b=>(
+                  {[{l:tb('chart.statusActive'),v:ov.brics.statusBreakdown.active,c:'#22C55E'},{l:tb('chart.statusPlanned'),v:ov.brics.statusBreakdown.planned,c:'#F59E0B'}].map(b=>(
                     <div key={b.l} style={{marginBottom:8}}>
                       <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:3}}>
                         <span style={{color:'rgba(255,255,255,.6)'}}>{b.l}</span><span style={{color:'#F0E6C8',fontWeight:600,fontFeatureSettings:'"tnum"'}}>{b.v}</span>
@@ -149,7 +149,7 @@ export default function BRICSDashboard(){
                 </div>
                 <div style={{flex:1,minWidth:260}}>
                   <div style={{fontSize:11,color:'rgba(255,255,255,.4)',marginBottom:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.06em'}}>{isZh?'按类别':'By Category'}</div>
-                  {[{l:tb('chart.catInternal'),v:ov.brics.internalCables,c:C.gold},{l:tb('chart.catDomestic'),v:ov.brics.domesticCables,c:C.domestic},{l:tb('chart.catExternal'),v:ov.brics.externalCables,c:C.silver}].map(b=>(
+                  {[{l:tb('chart.catInternal'),v:ov.brics.internalCables,c:C.gold},{l:tb('chart.catDomestic'),v:ov.brics.domesticCables,c:C.domestic},{l:tb('chart.catExternal'),v:ov.brics.externalCables,c:'#7C6EEB'}].map(b=>(
                     <div key={b.l} style={{marginBottom:8}}>
                       <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:3}}>
                         <span style={{color:'rgba(255,255,255,.6)'}}>{b.l}</span><span style={{color:'#F0E6C8',fontWeight:600,fontFeatureSettings:'"tnum"'}}>{b.v}</span>
