@@ -8,7 +8,7 @@ interface Member{code:string;name:string;nameZh:string;tier?:string}
 interface PathNode{code:string;name:string;nameZh:string}
 interface TransitEdge{from:string;to:string;cables:string[]}
 interface Cell{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:PathNode[];transitEdges?:TransitEdge[]}
-interface Data{members:Member[];partners?:Member[];allCountries?:Member[];matrix:Cell[];summary:Record<string,number>;transitNodes:{code:string;name:string;nameZh:string;count:number;isBRICS:boolean}[]}
+interface Data{members:Member[];partners?:Member[];allCountries?:Member[];matrix:Cell[];summary:Record<string,number>;transitNodes:{code:string;name:string;nameZh:string;count:number;isBRICS:boolean}[];cablePairs?:Record<string,string[]>}
 
 const SC:Record<CS,{bg:string;key:string;tipKey?:string}>={
   direct:{bg:'#22C55E',key:'matrix.direct'},
@@ -104,7 +104,18 @@ export default function SovereigntyMatrix({onCellClick}:Props){
                       const r=e.currentTarget.getBoundingClientRect();
                       setTip({x:r.right,y:r.top,cell,fn:getName(rm.code),tn:getName(cm.code)});}}
                     onMouseLeave={()=>{setHlRow(null);setHlCol(null);setTip(null);}}
-                    onClick={()=>{if(!self&&cell&&onCellClick){const allCables=[...cell.directCables,...(cell.transitEdges||[]).flatMap(e=>e.cables)];onCellClick(rm.code,cm.code,[...new Set(allCables)]);}}}>
+                    onClick={()=>{if(!self&&cell&&onCellClick){
+                      let allCables=[...cell.directCables,...(cell.transitEdges||[]).flatMap(e=>e.cables)];
+                      // 兜底: 从 cablePairs 查找 transitPath 每一跳的海缆
+                      if(allCables.length===0&&cell.transitPath&&cell.transitPath.length>=2&&data?.cablePairs){
+                        const cp=data.cablePairs;
+                        for(let k=0;k<cell.transitPath.length-1;k++){
+                          const key=[cell.transitPath[k],cell.transitPath[k+1]].sort().join('-');
+                          if(cp[key])allCables.push(...cp[key]);
+                        }
+                      }
+                      onCellClick(rm.code,cm.code,[...new Set(allCables)]);
+                    }}}>
                     {self?<span style={{fontSize:showAll?7:9,color:`${C.gold}25`}}>{isZh?(rm.nameZh||'').slice(0,1):rm.code}</span>
                     :cfg?<>
                       <span style={{width:showAll?7:10,height:showAll?7:10,borderRadius:'50%',background:cfg.bg,opacity:.85}} />

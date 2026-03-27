@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { BRICS_MEMBERS, BRICS_PARTNERS, BRICS_ALL, BRICS_COUNTRY_META, normalizeBRICS, isBRICSCountry } from '@/lib/brics-constants';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 type CS = 'direct'|'indirect'|'transit'|'none'|'landlocked';
 // 内陆国：无海岸线的金砖国家
 const LANDLOCKED = new Set(['ET','BY','BO','KZ','UZ','UG']);
@@ -116,6 +116,15 @@ export async function GET() {
       tier:(BRICS_MEMBERS as readonly string[]).includes(c)?'member':'partner' as 'member'|'partner',
     }));
 
+        // 构建国家对→海缆映射（前端用于路径高亮）
+    const cablePairs: Record<string, string[]> = {};
+    for (const [a, bs] of Object.entries(dc)) {
+      for (const [b, slugs] of Object.entries(bs)) {
+        const key = [a, b].sort().join('-');
+        if (!cablePairs[key]) cablePairs[key] = [...new Set(slugs)].slice(0, 5);
+      }
+    }
+
     return NextResponse.json({
       members:allMembers.filter(m=>m.tier==='member'),
       partners:allMembers.filter(m=>m.tier==='partner'),
@@ -123,6 +132,16 @@ export async function GET() {
       matrix:mx,
       summary:{totalPairs:(BRICS_MEMBERS.length*(BRICS_MEMBERS.length-1))/2,...up},
       transitNodes,
+      cablePairs,
     });
-  } catch(e){console.error('[BRICS Sovereignty]',e);return NextResponse.json({error:'Failed'},{status:500});}
+  } catch(e){console.error('[BRICS Sovereignty]',e);    // 构建国家对→海缆映射（前端用于路径高亮）
+    const cablePairs: Record<string, string[]> = {};
+    for (const [a, bs] of Object.entries(dc)) {
+      for (const [b, slugs] of Object.entries(bs)) {
+        const key = [a, b].sort().join('-');
+        if (!cablePairs[key]) cablePairs[key] = [...new Set(slugs)].slice(0, 5);
+      }
+    }
+
+    return NextResponse.json({error:'Failed'},{status:500});}
 }
