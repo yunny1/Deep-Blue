@@ -104,7 +104,7 @@ export default function SovereigntyMatrix({onCellClick}:Props){
                       const r=e.currentTarget.getBoundingClientRect();
                       setTip({x:r.right,y:r.top,cell,fn:getName(rm.code),tn:getName(cm.code)});}}
                     onMouseLeave={()=>{setHlRow(null);setHlCol(null);setTip(null);}}
-                    onClick={()=>{if(!self&&cell&&onCellClick){onCellClick(rm.code,cm.code,cell.directCables);}}}>
+                    onClick={()=>{if(!self&&cell&&onCellClick){const allCables=[...cell.directCables,...(cell.transitEdges||[]).flatMap(e=>e.cables)];onCellClick(rm.code,cm.code,[...new Set(allCables)]);}}}>
                     {self?<span style={{fontSize:showAll?7:9,color:`${C.gold}25`}}>{isZh?(rm.nameZh||'').slice(0,1):rm.code}</span>
                     :cfg?<>
                       <span style={{width:showAll?7:10,height:showAll?7:10,borderRadius:'50%',background:cfg.bg,opacity:.85}} />
