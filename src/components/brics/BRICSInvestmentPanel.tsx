@@ -115,10 +115,10 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
           </g>
 
           {/* ── 项目管理标注（顶部右侧） ── */}
-          <Tag x={1020} y={40} label={isZh?'项目管理/保险 5%':'PM & Insurance 5%'} value={formatUsd(bd.pmInsurance)} color="#6B7280" show={isH('pm')} />
+          <Tag x={900} y={160} label={isZh?'项目管理/保险 5%':'PM & Insurance 5%'} value={formatUsd(bd.pmInsurance)} color="#6B7280" show={isH('pm')} />
 
           {/* ── 风险溢价标注（右上） ── */}
-          <Tag x={1020} y={70} label={isZh?'风险溢价 10%':'Risk Premium 10%'} value={formatUsd(bd.riskPremium)} color="#F97316" show={isH('risk')} />
+          <Tag x={600} y={160} label={isZh?'风险溢价 10%':'Risk Premium 10%'} value={formatUsd(bd.riskPremium)} color="#F97316" show={isH('risk')} />
 
           {/* ── 海面 ── */}
           <path d="M0,130 C150,122 300,138 450,130 S750,122 900,130 S1050,138 1200,130" fill="none" stroke="rgba(30,80,140,.08)" strokeWidth="0.8">
@@ -144,7 +144,7 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
             {[300,400,500,600,700,800,900].map((x,i)=>(
               <line key={`sv${i}`} x1={x} y1={284} x2={x} y2={305} stroke="#EC4899" strokeWidth="0.5" strokeDasharray="1.5 3" opacity="0.6"/>
             ))}
-            <Tag x={600} y={320} label={isZh?'路由调查 · 海底测绘':'Survey · Seabed Mapping'} value={formatUsd(bd.survey)} color="#EC4899" show={isH('survey')} w={110}/>
+            <Tag x={280} y={305} label={isZh?'路由调查 · 海底测绘':'Survey · Seabed Mapping'} value={formatUsd(bd.survey)} color="#EC4899" show={isH('survey')} w={110}/>
           </g>
 
           {/* ── 许可合规旗帜 ── */}
@@ -172,13 +172,13 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
             <path d="M185,266 C350,272 500,274 600,274 C700,274 850,272 1015,266" fill="none" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="2000" style={{animation:'drawL 1.6s ease-out forwards'}}/>
           </g>
           {/* 电缆标注 — 正中间 */}
-          <Tag x={600} y={252} label={isZh?'电缆本体 · 深海+近岸':'Cable · Deep + Shore'} value={formatUsd(bd.cable)} color="#3B82F6" show={isH('cable')} w={110}/>
+          <Tag x={600} y={288} label={isZh?'电缆本体 · 深海+近岸':'Cable · Deep + Shore'} value={formatUsd(bd.cable)} color="#3B82F6" show={isH('cable')} w={110}/>
 
           {/* ── 预备费（缆线上方微红光晕, Y=250 不挡中继器） ── */}
           <g style={{opacity:isH('contingency')?0.55:0,transition:'opacity .4s',pointerEvents:'none'}}>
             <path d="M185,266 C350,272 500,274 600,274 C700,274 850,272 1015,266" fill="none" stroke="#EF4444" strokeWidth="6" opacity="0.2"/>
           </g>
-          <Tag x={380} y={252} label={isZh?'预备费 7%':'Contingency 7%'} value={formatUsd(bd.contingency)} color="#EF4444" show={isH('contingency')} />
+          <Tag x={350} y={160} label={isZh?'预备费 7%':'Contingency 7%'} value={formatUsd(bd.contingency)} color="#EF4444" show={isH('contingency')} />
 
           {/* ── 风险溢价（更宽光晕） ── */}
           <g style={{opacity:isH('risk')?0.5:0,transition:'opacity .4s',pointerEvents:'none'}}>
