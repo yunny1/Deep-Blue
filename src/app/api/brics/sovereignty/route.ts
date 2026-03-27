@@ -134,14 +134,7 @@ export async function GET() {
       transitNodes,
       cablePairs,
     });
-  } catch(e){console.error('[BRICS Sovereignty]',e);    // 构建国家对→海缆映射（前端用于路径高亮）
-    const cablePairs: Record<string, string[]> = {};
-    for (const [a, bs] of Object.entries(dc)) {
-      for (const [b, slugs] of Object.entries(bs)) {
-        const key = [a, b].sort().join('-');
-        if (!cablePairs[key]) cablePairs[key] = [...new Set(slugs)].slice(0, 5);
-      }
-    }
+  } catch(e){console.error('[BRICS Sovereignty]',e);
 
     return NextResponse.json({error:'Failed'},{status:500});}
 }
