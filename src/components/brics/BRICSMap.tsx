@@ -13,6 +13,7 @@ export default function BRICSMap({ height='560px', selection }:Props) {
   const cRef=useRef<HTMLDivElement>(null);
   const mRef=useRef<maplibregl.Map|null>(null);
   const cmRef=useRef<Record<string,CableInfo>>({});
+  const allFeatRef=useRef<GeoJSON.Feature[]>([]);
   const[loading,setLoading]=useState(true);
   const[stats,setStats]=useState<{internal:number;domestic:number;related:number;other:number}|null>(null);
   const[hover,setHover]=useState<{x:number;y:number;info:CableInfo}|null>(null);
@@ -89,6 +90,7 @@ export default function BRICSMap({ height='560px', selection }:Props) {
         map.addLayer({id:'l-hover',type:'line',source:'c-hover',paint:{'line-color':'#FFD700','line-width':3,'line-opacity':0.95}});
 
         const allFeatures=[...intF,...domF,...relF,...othF];
+        allFeatRef.current=allFeatures;
         const hoverColors:Record<string,string>={'hit-int':'#FFD700','hit-dom':'#5EEAD4','hit-rel':'#A78BFA'};
         const hoverGlowColors:Record<string,string>={'hit-int':'#FFD70080','hit-dom':'#5EEAD480','hit-rel':'#A78BFA80'};
         for(const lid of hoverLayers){
@@ -148,13 +150,8 @@ export default function BRICSMap({ height='560px', selection }:Props) {
         });
         // 添加高亮层
         if(map.getSource('c-highlight')){map.removeLayer('l-highlight-glow');map.removeLayer('l-highlight');map.removeSource('c-highlight');}
-        // 从所有源中收集匹配的 features
-        const features:GeoJSON.Feature[]=[];
-        for(const src of allSources){
-          const source=map.getSource(src) as any;
-          if(!source?._data?.features)continue;
-          source._data.features.forEach((f:any)=>{if(slugs.has(f.properties?.slug))features.push(f);});
-        }
+        // 从存储的 features 中查找匹配项
+        const features:GeoJSON.Feature[]=allFeatRef.current.filter(f=>slugs.has(f.properties?.slug));
         if(features.length>0){
           map.addSource('c-highlight',{type:'geojson',data:{type:'FeatureCollection',features}});
           map.addLayer({id:'l-highlight-glow',type:'line',source:'c-highlight',paint:{'line-color':'#FFD700','line-width':10,'line-opacity':0.3,'line-blur':4}});
