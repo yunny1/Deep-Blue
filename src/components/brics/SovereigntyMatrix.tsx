@@ -7,7 +7,7 @@ type CS='direct'|'indirect'|'transit'|'none'|'landlocked';
 interface Member{code:string;name:string;nameZh:string;tier?:string}
 interface PathNode{code:string;name:string;nameZh:string}
 interface TransitEdge{from:string;to:string;cables:string[]}
-interface Cell{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:PathNode[];transitEdges?:TransitEdge[]}
+interface Cell{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:PathNode[];transitEdges?:TransitEdge[];transitCables?:string[]}
 interface Data{members:Member[];partners?:Member[];allCountries?:Member[];matrix:Cell[];summary:Record<string,number>;transitNodes:{code:string;name:string;nameZh:string;count:number;isBRICS:boolean}[];cablePairs?:Record<string,string[]>}
 
 const SC:Record<CS,{bg:string;key:string;tipKey?:string}>={

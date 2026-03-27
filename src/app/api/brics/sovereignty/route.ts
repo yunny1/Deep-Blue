@@ -67,32 +67,38 @@ export async function GET() {
 
     // 分析所有金砖国家（成员+伙伴）
     const allCodes = [...BRICS_ALL];
-    const mx:{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:{code:string;name:string;nameZh:string}[];transitEdges?:{from:string;to:string;cables:string[]}[];tier:'member'|'partner'}[]=[];
+    const mx:{from:string;to:string;status:CS;directCableCount:number;directCables:string[];transitPath?:string[];transitPathNames?:{code:string;name:string;nameZh:string}[];transitEdges?:{from:string;to:string;cables:string[]}[];transitCables?:string[];tier:'member'|'partner'}[]=[];
     const transitNodeCount: Record<string, number> = {};
 
     for(let i=0;i<allCodes.length;i++)for(let j=0;j<allCodes.length;j++){
       if(i===j)continue;
       const[f,t]=[allCodes[i],allCodes[j]];
       if(LANDLOCKED.has(f)||LANDLOCKED.has(t)){
-        mx.push({from:f,to:t,status:'landlocked',directCableCount:0,directCables:[],tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
+        transitCables=[];mx.push({from:f,to:t,status:'landlocked',directCableCount:0,directCables:[],tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
         continue;
       }
       const cbl=dc[f]?.[t]??[];
-      let status:CS;let transitPath:string[]|undefined;let transitEdges:{from:string;to:string;cables:string[]}[]|undefined;
-      if(cbl.length>0){status='direct';}
+      let status:CS;let transitPath:string[]|undefined;let transitEdges:{from:string;to:string;cables:string[]}[]|undefined;let transitCables:string[]=[];
+      if(cbl.length>0){status='direct';var transitCables=cbl.slice(0,10);}
       else{
         const bricsResult=bfsPath(f,t,true);
         if(bricsResult){status='indirect';transitPath=bricsResult.path;transitEdges=bricsResult.edges;
+          // 直接从dc查每跳海缆
+          const _pc:string[]=[];for(let k=0;k<bricsResult.path.length-1;k++){const _a=bricsResult.path[k],_b=bricsResult.path[k+1];if(dc[_a]?.[_b])_pc.push(...dc[_a][_b]);else if(dc[_b]?.[_a])_pc.push(...dc[_b][_a]);}
+          transitCables=[...new Set(_pc)].slice(0,10);
           for(let k=1;k<bricsResult.path.length-1;k++){transitNodeCount[bricsResult.path[k]]=(transitNodeCount[bricsResult.path[k]]||0)+1;}
         }else{
           const anyResult=bfsPath(f,t,false);
           if(anyResult){status='transit';transitPath=anyResult.path;transitEdges=anyResult.edges;
+            // 直接从dc查每跳海缆
+            const _pc2:string[]=[];for(let k=0;k<anyResult.path.length-1;k++){const _a=anyResult.path[k],_b=anyResult.path[k+1];if(dc[_a]?.[_b])_pc2.push(...dc[_a][_b]);else if(dc[_b]?.[_a])_pc2.push(...dc[_b][_a]);}
+            transitCables=[...new Set(_pc2)].slice(0,10);
             for(let k=1;k<anyResult.path.length-1;k++){transitNodeCount[anyResult.path[k]]=(transitNodeCount[anyResult.path[k]]||0)+1;}
           }else{status='none';}
         }
       }
       const transitPathNames=transitPath?.map(code=>({code,name:nameMap[code]?.name??code,nameZh:nameMap[code]?.nameZh??code}));
-      mx.push({from:f,to:t,status,directCableCount:cbl.length,directCables:cbl.slice(0,10),transitPath,transitPathNames,transitEdges,tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
+      mx.push({from:f,to:t,status,directCableCount:cbl.length,directCables:cbl.slice(0,10),transitPath,transitPathNames,transitEdges,transitCables,tier:BRICS_MEMBERS.includes(f as any)?'member':'partner'});
     }
 
     // Summary: 只算成员国之间的（11×10/2=55对）
