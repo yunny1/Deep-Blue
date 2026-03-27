@@ -2,13 +2,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BRICS_ALL, BRICS_MEMBERS, BRICS_COUNTRY_META, BRICS_COLORS as C } from '@/lib/brics-constants';
 import { estimateSubseaCapex, formatUsd, SENSITIVITY_ITEMS } from '@/lib/subsea-cost-model';
+import { getSeaRouteDistance, isLandlocked, LANDLOCKED_PORTS } from '@/lib/sea-route-distances';
 
-function haversineKm(lat1:number,lon1:number,lat2:number,lon2:number):number{
-  const R=6371,toR=(d:number)=>d*Math.PI/180;
-  const dLat=toR(lat2-lat1),dLon=toR(lon2-lon1);
-  const a=Math.sin(dLat/2)**2+Math.cos(toR(lat1))*Math.cos(toR(lat2))*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
+
 function cn(code:string,zh:boolean):string{
   const m=BRICS_COUNTRY_META[code];
   return zh?(m?.nameZh||m?.name||code):(m?.name||code);
@@ -24,7 +20,7 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
   const [ak,setAk]=useState(0);
 
   const fm=BRICS_COUNTRY_META[from],tm=BRICS_COUNTRY_META[to];
-  const dist=useMemo(()=>Math.round(haversineKm(fm?.center[1]??0,fm?.center[0]??0,tm?.center[1]??0,tm?.center[0]??0)*1.3),[from,to]);
+  const {km:dist,source:distSrc}=useMemo(()=>getSeaRouteDistance(from,to),[from,to]);
   const est=useMemo(()=>estimateSubseaCapex({routeLengthKm:dist,designCapacityTbps:100,landingStations:2,jurisdictions:2}),[dist]);
   useEffect(()=>{setAk(k=>k+1)},[from,to]);
 
@@ -268,8 +264,9 @@ export default function BRICSInvestmentPanel({isZh,tb}:Props){
           {cn(from,isZh)} ▾
         </button>
         <div style={{padding:'8px 28px',background:'rgba(212,175,55,.1)',borderTop:'1px solid rgba(212,175,55,.25)',borderBottom:'1px solid rgba(212,175,55,.25)',textAlign:'center'}}>
-          <div style={{fontSize:10,color:'rgba(255,255,255,.35)',marginBottom:2}}>{isZh?'路由距离':'Route'}</div>
+          <div style={{fontSize:10,color:'rgba(255,255,255,.35)',marginBottom:2}}>{isZh?'海运航线距离':'Sea Route'}</div>
           <div key={ak} style={{fontSize:16,fontWeight:700,color:'#F0E6C8',fontFamily:"'DM Sans',sans-serif",animation:'fadeU .5s ease-out'}}>{dist.toLocaleString()} km</div>
+          {(isLandlocked(from)||isLandlocked(to))&&<div style={{fontSize:8,color:'#F59E0B80',marginTop:2}}>{isZh?'含内陆接驳':'Incl. overland'}: {[from,to].filter(isLandlocked).map(c=>{const p=LANDLOCKED_PORTS[c];return p?(isZh?`${cn(c,true)}→${p.portZh} ${p.overlandKm}km`:`${c}→${p.port} ${p.overlandKm}km`):''}).join(' + ')}</div>}
         </div>
         <button onClick={()=>setPick(pick==='to'?null:'to')} style={{padding:'10px 20px',borderRadius:'0 8px 8px 0',border:'1px solid rgba(212,175,55,.25)',borderLeft:'none',background:'rgba(212,175,55,.06)',color:'#D4AF37',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",transition:'all .2s'}}>
           {cn(to,isZh)} ▾
