@@ -3,13 +3,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/stores/mapStore';
+import { COUNTRY_LABELS } from '@/lib/country-labels';
+import { useTranslation } from '@/lib/i18n';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import {
   VENDOR_COLOR_MAP, VENDOR_DEFAULT,
   OPERATOR_COLOR_MAP, OPERATOR_DEFAULT,
   getYearColor,
 } from '@/components/panels/ColorControlPanel';
-
+ const { locale } = useTranslation();
 interface Cable {
   id: string; name: string; slug: string; status: string;
   lengthKm: number | null; fiberPairs: number | null;
@@ -125,13 +127,28 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       if (viewer.scene.sun)  viewer.scene.sun.show  = false;
       if (viewer.scene.moon) viewer.scene.moon.show = false;
         // 叠加纯标注图层（国家名称，无国界线）
-        viewer.imageryLayers.addImageryProvider(
-          new Cesium.UrlTemplateImageryProvider({
-            url: 'https://basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
-            credit: 'CartoDB Labels',
-            maximumLevel: 10,
-          })
-        );
+        // 自定义国家标注（仅国家名称，支持中英文）
+      for (const c of COUNTRY_LABELS) {
+        viewer.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(c.lon, c.lat),
+          label: {
+            text: locale === 'zh' ? c.nameZh : c.nameEn,
+            font: c.importance === 1 ? '13px sans-serif' : c.importance === 2 ? '11px sans-serif' : '10px sans-serif',
+            fillColor: c.code.startsWith('_') ? new Cesium.Color(0.1, 0.32, 0.46, 0.6) : new Cesium.Color(0.55, 0.64, 0.78, 0.7),
+            outlineColor: new Cesium.Color(0.02, 0.04, 0.08, 0.8),
+            outlineWidth: 2,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(
+              0,
+              c.importance === 1 ? 20000000 : c.importance === 2 ? 12000000 : 8000000
+            ),
+          },
+          properties: { isCountryLabel: true },
+        });
+      }
 
       viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000) });
       viewerRef.current = viewer;

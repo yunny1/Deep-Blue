@@ -3,6 +3,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
+import { COUNTRY_LABELS } from '@/lib/country-labels';
+import { useTranslation } from '@/lib/i18n';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useMapStore } from '@/stores/mapStore';
 import {
@@ -38,6 +40,7 @@ function getCableHexColor(mode: string, status: string, vendorName: string | nul
 }
 
 export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
+  const { locale } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef          = useRef<maplibregl.Map | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,19 +74,54 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
       container: mapContainerRef.current,
       style: {
         version: 8,
-        sources: {
-          'carto-dark': { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; CartoDB' },
-          'carto-labels': { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png'], tileSize: 256 },
-        },
-        layers: [
-          { id: 'carto-layer', type: 'raster', source: 'carto-dark' },
-          { id: 'carto-labels-layer', type: 'raster', source: 'carto-labels', paint: { 'raster-opacity': 0.6 } },
-        ],
+        sources: { 'carto-dark': { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; CartoDB' } },
+        layers: [{ id: 'carto-layer', type: 'raster', source: 'carto-dark' }],
       },
       center: [110, 20], zoom: 2, maxZoom: 12,
     });
     map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
+    // 自定义国家标注（仅国家名称，不含城市/省份，支持中英文）
+      const labelFeatures = COUNTRY_LABELS.map(c => ({
+        type: 'Feature' as const,
+        properties: { nameEn: c.nameEn, nameZh: c.nameZh, importance: c.importance, isOcean: c.code.startsWith('_') },
+        geometry: { type: 'Point' as const, coordinates: [c.lon, c.lat] },
+      }));
+      map.addSource('country-labels', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: labelFeatures },
+      });
+      map.addLayer({
+        id: 'country-labels-layer',
+        type: 'symbol',
+        source: 'country-labels',
+        layout: {
+          'text-field': locale === 'zh' ? ['get', 'nameZh'] : ['get', 'nameEn'],
+          'text-size': ['case', ['==', ['get', 'importance'], 1], 13, ['==', ['get', 'importance'], 2], 11, 10],
+          'text-allow-overlap': false,
+          'text-ignore-placement': false,
+          'text-font': ['Open Sans Regular'],
+        },
+        paint: {
+          'text-color': ['case', ['get', 'isOcean'], '#1a5276', '#8BA3C7'],
+          'text-halo-color': 'rgba(6, 11, 20, 0.8)',
+          'text-halo-width': 1.5,
+          'text-opacity': ['step', ['zoom'],
+            ['case', ['==', ['get', 'importance'], 1], 0.7, 0],
+            3, ['case', ['<=', ['get', 'importance'], 2], 0.7, 0],
+            4, 0.7,
+          ],
+        },
+        minzoom: 2,
+        maxzoom: 8,
+      });
+      // 语言切换时更新标注
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded() || !map.getLayer('country-labels-layer')) return;
+    map.setLayoutProperty('country-labels-layer', 'text-field', locale === 'zh' ? ['get', 'nameZh'] : ['get', 'nameEn']);
+  }, [locale]);
+    
     map.on('load', async () => {
       try {
         const response = await fetch('/api/cables?geo=true&details=true');
