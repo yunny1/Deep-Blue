@@ -71,8 +71,14 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
       container: mapContainerRef.current,
       style: {
         version: 8,
-        sources: { 'carto-dark': { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; CartoDB' } },
-        layers: [{ id: 'carto-layer', type: 'raster', source: 'carto-dark' }],
+        sources: {
+          'carto-dark': { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; CartoDB' },
+          'carto-labels': { type: 'raster', tiles: ['https://basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png'], tileSize: 256 },
+        },
+        layers: [
+          { id: 'carto-layer', type: 'raster', source: 'carto-dark' },
+          { id: 'carto-labels-layer', type: 'raster', source: 'carto-labels', paint: { 'raster-opacity': 0.6 } },
+        ],
       },
       center: [110, 20], zoom: 2, maxZoom: 12,
     });

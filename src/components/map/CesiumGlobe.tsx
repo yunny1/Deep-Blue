@@ -124,6 +124,15 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       }
       if (viewer.scene.sun)  viewer.scene.sun.show  = false;
       if (viewer.scene.moon) viewer.scene.moon.show = false;
+        // 叠加纯标注图层（国家名称，无国界线）
+        viewer.imageryLayers.addImageryProvider(
+          new Cesium.UrlTemplateImageryProvider({
+            url: 'https://basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png',
+            credit: 'CartoDB Labels',
+            maximumLevel: 10,
+          })
+        );
+
       viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000) });
       viewerRef.current = viewer;
 
