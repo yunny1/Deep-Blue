@@ -7,6 +7,7 @@ import BRICSInvestmentPanel from './BRICSInvestmentPanel';
 import { estimateSubseaCapex, formatUsd, INDUSTRY_BENCHMARKS, SENSITIVITY_ITEMS } from '@/lib/subsea-cost-model';
 import BRICSMap from './BRICSMap';
 import BRICSCableMatrix from './BRICSCableMatrix';
+import BRICSTransitAnalysis from './BRICSTransitAnalysis';
 
 const FLAGS=['#0066B3','#D32F2F','#FFC107','#388E3C','#F57C00'];
 const LANDLOCKED=new Set(['ET','BY','BO','KZ','UZ','UG']);
@@ -192,7 +193,11 @@ export default function BRICSDashboard(){
           <BRICSCableMatrix />
         </section>
                 <BRICSInvestmentPanel isZh={isZh} tb={tb} />
-
+        <section className="bs" style={{padding:'0 32px 40px',maxWidth:1400,margin:'0 auto',animationDelay:'.45s'}}>
+          <SH t={isZh ? '中转路径主权深度分析' : 'Transit Path Sovereignty Analysis'}
+              s={isZh ? '枚举金砖成员国之间所有两段中转以内的通信路径，以最弱链条原则评估整条路径的主权安全等级' : 'Enumerate all paths within 2 transits between BRICS members, rating sovereignty by weakest link'} />
+          <BRICSTransitAnalysis />
+        </section>
         
 
         {/* 成员国档案 */}
