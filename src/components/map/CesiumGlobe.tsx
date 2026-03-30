@@ -137,21 +137,24 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
 
       viewer.entities.add({
         position: Cesium.Cartesian3.fromDegrees(label.lng, label.lat),
-        label: {
-          text: getLabelText(label, locale),
-          font: '13px sans-serif',
-          fillColor: label.type === 'ocean'
-            ? Cesium.Color.fromCssColorString('#1E6091')
-            : Cesium.Color.fromCssColorString('#6B8DB5'),
-          outlineColor: Cesium.Color.fromCssColorString('#0a0f1a'),
-          outlineWidth: 2,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: Cesium.VerticalOrigin.CENTER,
-          horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, maxDist),
-          scaleByDistance: new Cesium.NearFarScalar(1_000_000, 1.2, 15_000_000, 0.6),
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        },
+       label: {
+        text: getLabelText(label, locale),
+        // ✅ 字体调大，按重要性分级
+        font: label.importance === 1 ? '15px sans-serif'
+            : label.importance === 2 ? '13px sans-serif'
+            : '11px sans-serif',
+        fillColor: label.type === 'ocean'
+          ? Cesium.Color.fromCssColorString('#1E6091')
+          : Cesium.Color.fromCssColorString('#6B8DB5'),
+        outlineColor: Cesium.Color.fromCssColorString('#0a0f1a'),
+        outlineWidth: 2,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin: Cesium.VerticalOrigin.CENTER,
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, maxDist),
+        scaleByDistance: new Cesium.NearFarScalar(1_000_000, 1.2, 15_000_000, 0.6),
+        // ✅ 删掉 disableDepthTestDistance，让地球自然遮挡背面标注
+      },
       });
     });
       viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000) });

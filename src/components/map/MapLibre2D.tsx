@@ -67,6 +67,32 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
   }, [filterStatuses, filterYearRange, filterVendors, filterOperators]);
 
   // ── 初始化地图 ────────────────────────────────────────────────
+    // ✅ 修复反子午线问题：当相邻坐标经度差 >180° 时，说明跨越了日期变更线
+  // 通过累加或减去360°让坐标序列保持连续，MapLibre 就能正确渲染
+  function fixAntimeridian(geojson: any): any {
+    if (!geojson) return geojson;
+
+    const unwrap = (coords: number[][]): number[][] => {
+      const result = [[...coords[0]]];
+      for (let i = 1; i < coords.length; i++) {
+        const prev = result[i - 1];
+        const curr = [...coords[i]];
+        const diff = curr[0] - prev[0];
+        if (diff > 180)  curr[0] -= 360;  // 向西跨越了日期线
+        if (diff < -180) curr[0] += 360;  // 向东跨越了日期线
+        result.push(curr);
+      }
+      return result;
+    };
+
+    if (geojson.type === 'LineString') {
+      return { ...geojson, coordinates: unwrap(geojson.coordinates) };
+    }
+    if (geojson.type === 'MultiLineString') {
+      return { ...geojson, coordinates: geojson.coordinates.map(unwrap) };
+    }
+    return geojson;
+  }
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -93,7 +119,7 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
 
       map.addSource('custom-country-labels', {
         type: 'geojson',
-        data: labelGeoJSON,
+        data: labelGeoJSON, 
       });
 
       map.addLayer({
@@ -107,8 +133,8 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
           'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
           'text-size': [
             'interpolate', ['linear'], ['zoom'],
-            2, 10,
-            5, 13,
+            2, 12,
+            5, 16,
           ],
           'text-anchor': 'center',
           'text-allow-overlap': false,
@@ -172,7 +198,7 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
               data: {
                 type: 'Feature',
                 properties: { name: cable.name, slug: cable.slug, status: cable.status, lengthKm: cable.lengthKm, fiberPairs: cable.fiberPairs, vendor: vendorName, owners: ownerNames.join(','), rfsYear, isApproximateRoute: cable.isApproximateRoute || false },
-                geometry: cable.routeGeojson,
+                geometry: fixAntimeridian(cable.routeGeojson),  
               },
             });
 
