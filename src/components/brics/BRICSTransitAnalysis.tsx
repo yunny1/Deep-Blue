@@ -555,9 +555,7 @@ export default function BRICSTransitAnalysis() {
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   letterSpacing: '0.04em',
                 }}>
-                  {isZh
-                    ? (data.pairs.find(p => p.from === rowMember.code || p.to === rowMember.code) as any)?.fromNameZh?.slice(0, 3) ?? rowMember.code
-                    : rowMember.code}
+                  {isZh ? rowMember.nameZh.slice(0, 4) : rowMember.code}
                 </div>
 
                 {/* 每列的单元格 */}

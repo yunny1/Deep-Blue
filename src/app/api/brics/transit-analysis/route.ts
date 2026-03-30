@@ -264,9 +264,9 @@ export async function GET() {
     }
 
     // 4. 对每对 BRICS 国家枚举路径并评估主权
-    //    只计算成员国之间（11×10/2 = 55 对）以控制计算量
+    //    只计算成员国之间（21×20/2 = 210 对）以控制计算量
     //    如果前端需要伙伴国，可通过 query param 扩展
-    const memberCodes = [...BRICS_MEMBERS] as string[];
+    const memberCodes = [...BRICS_ALL] as string[];
     const LANDLOCKED = new Set(['ET', 'BY', 'BO', 'KZ', 'UZ', 'UG']);
 
     interface PairResult {
