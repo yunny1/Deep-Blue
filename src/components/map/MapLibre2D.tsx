@@ -69,30 +69,54 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
   // ── 初始化地图 ────────────────────────────────────────────────
     // ✅ 修复反子午线问题：当相邻坐标经度差 >180° 时，说明跨越了日期变更线
   // 通过累加或减去360°让坐标序列保持连续，MapLibre 就能正确渲染
-  function fixAntimeridian(geojson: any): any {
-    if (!geojson) return geojson;
+      function fixAntimeridian(geojson: any): any {
+      if (!geojson) return geojson;
 
-    const unwrap = (coords: number[][]): number[][] => {
-      const result = [[...coords[0]]];
-      for (let i = 1; i < coords.length; i++) {
-        const prev = result[i - 1];
-        const curr = [...coords[i]];
-        const diff = curr[0] - prev[0];
-        if (diff > 180)  curr[0] -= 360;  // 向西跨越了日期线
-        if (diff < -180) curr[0] += 360;  // 向东跨越了日期线
-        result.push(curr);
+      // unwrap 单段坐标，startRef 是上一段末尾的经度（用于跨段连续）
+      const unwrap = (coords: number[][], startRef?: number): number[][] => {
+        if (!coords || coords.length === 0) return coords;
+        const result = [[...coords[0]]];
+
+        // 如果有上一段的参考经度，先把本段起点对齐
+        if (startRef !== undefined) {
+          const diff = result[0][0] - startRef;
+          if (diff > 180)  result[0][0] -= 360;
+          if (diff < -180) result[0][0] += 360;
+        }
+
+        // 段内展开
+        for (let i = 1; i < coords.length; i++) {
+          const prev = result[i - 1];
+          const curr = [...coords[i]];
+          const diff = curr[0] - prev[0];
+          if (diff > 180)  curr[0] -= 360;
+          if (diff < -180) curr[0] += 360;
+          result.push(curr);
+        }
+        return result;
+      };
+
+      if (geojson.type === 'LineString') {
+        return { ...geojson, coordinates: unwrap(geojson.coordinates) };
       }
-      return result;
-    };
 
-    if (geojson.type === 'LineString') {
-      return { ...geojson, coordinates: unwrap(geojson.coordinates) };
+      if (geojson.type === 'MultiLineString') {
+        const fixedSegments: number[][][] = [];
+        let lastLng: number | undefined = undefined; // 跨段传递末尾经度
+
+        for (const segment of geojson.coordinates) {
+          const fixed = unwrap(segment, lastLng);
+          fixedSegments.push(fixed);
+          // 把本段最后一个点的经度传给下一段作参考
+          if (fixed.length > 0) {
+            lastLng = fixed[fixed.length - 1][0];
+          }
+        }
+        return { ...geojson, coordinates: fixedSegments };
+      }
+
+      return geojson;
     }
-    if (geojson.type === 'MultiLineString') {
-      return { ...geojson, coordinates: geojson.coordinates.map(unwrap) };
-    }
-    return geojson;
-  }
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
