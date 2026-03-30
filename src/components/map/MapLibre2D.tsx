@@ -3,8 +3,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
-import { COUNTRY_LABELS } from '@/lib/country-labels';
-import { useTranslation } from '@/lib/i18n';
+// ✅ 只从 country-labels 导入 toGeoJSON，不用 useTranslation（防止 React #321）
+import { toGeoJSON } from '@/lib/country-labels';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useMapStore } from '@/stores/mapStore';
 import {
@@ -40,7 +40,7 @@ function getCableHexColor(mode: string, status: string, vendorName: string | nul
 }
 
 export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
-  const { locale } = useTranslation();
+  // ✅ 不再使用 useTranslation（动态加载组件中会导致 React #321）
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef          = useRef<maplibregl.Map | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,48 +81,74 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
     });
     map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
-    // 自定义国家标注（仅国家名称，不含城市/省份，支持中英文）
-      const labelFeatures = COUNTRY_LABELS.map(c => ({
-        type: 'Feature' as const,
-        properties: { nameEn: c.nameEn, nameZh: c.nameZh, importance: c.importance, isOcean: c.code.startsWith('_') },
-        geometry: { type: 'Point' as const, coordinates: [c.lon, c.lat] },
-      }));
-      map.addSource('country-labels', {
+    // ✅ 保存 locale 监听器引用，用于组件销毁时清理
+    let localeChangeHandler: (() => void) | null = null;
+
+    map.on('load', async () => {
+
+      // ── 自定义国家/大洋标注 ──────────────────────────────────
+      // ✅ 用 localStorage 读取语言，不用 useTranslation（防止 React #321）
+      const locale = localStorage.getItem('deep-blue-locale');
+      const labelGeoJSON = toGeoJSON(locale);
+
+      map.addSource('custom-country-labels', {
         type: 'geojson',
-        data: { type: 'FeatureCollection', features: labelFeatures },
+        data: labelGeoJSON,
       });
+
       map.addLayer({
-        id: 'country-labels-layer',
+        id: 'custom-country-label-layer',
         type: 'symbol',
-        source: 'country-labels',
-        layout: {
-          'text-field': locale === 'zh' ? ['get', 'nameZh'] : ['get', 'nameEn'],
-          'text-size': ['case', ['==', ['get', 'importance'], 1], 13, ['==', ['get', 'importance'], 2], 11, 10],
-          'text-allow-overlap': false,
-          'text-ignore-placement': false,
-          'text-font': ['Open Sans Regular'],
-        },
-        paint: {
-          'text-color': ['case', ['get', 'isOcean'], '#1a5276', '#8BA3C7'],
-          'text-halo-color': 'rgba(6, 11, 20, 0.8)',
-          'text-halo-width': 1.5,
-          'text-opacity': ['step', ['zoom'],
-            ['case', ['==', ['get', 'importance'], 1], 0.7, 0],
-            3, ['case', ['<=', ['get', 'importance'], 2], 0.7, 0],
-            4, 0.7,
-          ],
-        },
+        source: 'custom-country-labels',
         minzoom: 2,
         maxzoom: 8,
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+          'text-size': [
+            'interpolate', ['linear'], ['zoom'],
+            2, 10,
+            5, 13,
+          ],
+          'text-anchor': 'center',
+          'text-allow-overlap': false,
+          'text-ignore-placement': false,
+        },
+        paint: {
+          // 大洋用深蓝色，国家用浅灰蓝色
+          'text-color': [
+            'match', ['get', 'labelType'],
+            'ocean', '#1E6091',
+            '#6B8DB5',
+          ],
+          'text-halo-color': 'rgba(6, 11, 20, 0.8)',
+          'text-halo-width': 1.5,
+          // 按 zoom 和重要性分级显示
+          'text-opacity': [
+            'step', ['zoom'],
+            // zoom < 3：只显示大国（importance=1）
+            ['case', ['==', ['get', 'importance'], 1], 0.8, 0],
+            3,
+            // zoom >= 3：显示大国和中等国家（importance ≤ 2）
+            ['case', ['<=', ['get', 'importance'], 2], 0.8, 0],
+            4,
+            // zoom >= 4：全部显示
+            0.8,
+          ],
+        },
       });
-      // 语言切换时更新标注
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !map.isStyleLoaded() || !map.getLayer('country-labels-layer')) return;
-    map.setLayoutProperty('country-labels-layer', 'text-field', locale === 'zh' ? ['get', 'nameZh'] : ['get', 'nameEn']);
-  }, [locale]);
-    
-    map.on('load', async () => {
+
+      // ✅ 监听语言切换事件，动态更新标注文字
+      localeChangeHandler = () => {
+        const newLocale = localStorage.getItem('deep-blue-locale');
+        const source = map.getSource('custom-country-labels') as maplibregl.GeoJSONSource;
+        if (source) {
+          source.setData(toGeoJSON(newLocale) as any);
+        }
+      };
+      window.addEventListener('deep-blue-locale-changed', localeChangeHandler);
+
+      // ── 加载海缆数据 ─────────────────────────────────────────
       try {
         const response = await fetch('/api/cables?geo=true&details=true');
         const data = await response.json();
@@ -197,7 +223,15 @@ export default function MapLibre2D({ onHover, onClick }: MapLibre2DProps) {
     });
 
     mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+
+    // ✅ 组件销毁时，清理 locale 监听器，防止内存泄漏
+    return () => {
+      if (localeChangeHandler) {
+        window.removeEventListener('deep-blue-locale-changed', localeChangeHandler);
+      }
+      map.remove();
+      mapRef.current = null;
+    };
   }, []);
 
   // ── 颜色模式切换 ──────────────────────────────────────────────

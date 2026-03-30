@@ -3,15 +3,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/stores/mapStore';
-import { COUNTRY_LABELS } from '@/lib/country-labels';
-import { useTranslation } from '@/lib/i18n';
+import { COUNTRY_LABELS, getLabelText } from '@/lib/country-labels';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import {
   VENDOR_COLOR_MAP, VENDOR_DEFAULT,
   OPERATOR_COLOR_MAP, OPERATOR_DEFAULT,
   getYearColor,
 } from '@/components/panels/ColorControlPanel';
- const { locale } = useTranslation();
 interface Cable {
   id: string; name: string; slug: string; status: string;
   lengthKm: number | null; fiberPairs: number | null;
@@ -126,30 +124,36 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       }
       if (viewer.scene.sun)  viewer.scene.sun.show  = false;
       if (viewer.scene.moon) viewer.scene.moon.show = false;
-        // 叠加纯标注图层（国家名称，无国界线）
-        // 自定义国家标注（仅国家名称，支持中英文）
-      for (const c of COUNTRY_LABELS) {
-        viewer.entities.add({
-          position: Cesium.Cartesian3.fromDegrees(c.lon, c.lat),
-          label: {
-            text: locale === 'zh' ? c.nameZh : c.nameEn,
-            font: c.importance === 1 ? '13px sans-serif' : c.importance === 2 ? '11px sans-serif' : '10px sans-serif',
-            fillColor: c.code.startsWith('_') ? new Cesium.Color(0.1, 0.32, 0.46, 0.6) : new Cesium.Color(0.55, 0.64, 0.78, 0.7),
-            outlineColor: new Cesium.Color(0.02, 0.04, 0.08, 0.8),
-            outlineWidth: 2,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            verticalOrigin: Cesium.VerticalOrigin.CENTER,
-            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
-            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(
-              0,
-              c.importance === 1 ? 20000000 : c.importance === 2 ? 12000000 : 8000000
-            ),
-          },
-          properties: { isCountryLabel: true },
-        });
-      }
 
+    // 在 viewer.camera.setView(...) 之前插入：
+    const locale = localStorage.getItem('deep-blue-locale');
+
+    COUNTRY_LABELS.forEach((label) => {
+      const maxDist = label.importance === 1
+        ? 15_000_000   // 大国：远距离可见
+        : label.importance === 2
+        ? 8_000_000    // 中等国家：中距离可见
+        : 4_000_000;   // 小国/岛国：只有放大才可见
+
+      viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(label.lng, label.lat),
+        label: {
+          text: getLabelText(label, locale),
+          font: '13px sans-serif',
+          fillColor: label.type === 'ocean'
+            ? Cesium.Color.fromCssColorString('#1E6091')
+            : Cesium.Color.fromCssColorString('#6B8DB5'),
+          outlineColor: Cesium.Color.fromCssColorString('#0a0f1a'),
+          outlineWidth: 2,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: Cesium.VerticalOrigin.CENTER,
+          horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, maxDist),
+          scaleByDistance: new Cesium.NearFarScalar(1_000_000, 1.2, 15_000_000, 0.6),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+      });
+    });
       viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000) });
       viewerRef.current = viewer;
 
