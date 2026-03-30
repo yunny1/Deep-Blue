@@ -130,7 +130,7 @@ function HomeContent() {
                 label={isMobile ? t('nav.total') : t('nav.cables')} color="#2A9D8F" />
               {!isMobile && <>
                 <StatBadge number={stats.cables.inService || 0}   label={t('nav.inService')} color="#06D6A0" />
-                <StatBadge number={stats.cables.underConstruction || 0} label={t('nav.building')} color="#E9C46A" />
+                
               </>}
               <StatBadge number={stats.landingStations || 0} label={t('nav.stations')} color="#2A9D8F" />
             </>

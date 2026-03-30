@@ -6,6 +6,7 @@ import SovereigntyMatrix from './SovereigntyMatrix';
 import BRICSInvestmentPanel from './BRICSInvestmentPanel';
 import { estimateSubseaCapex, formatUsd, INDUSTRY_BENCHMARKS, SENSITIVITY_ITEMS } from '@/lib/subsea-cost-model';
 import BRICSMap from './BRICSMap';
+import BRICSCableMatrix from './BRICSCableMatrix';
 
 const FLAGS=['#0066B3','#D32F2F','#FFC107','#388E3C','#F57C00'];
 const LANDLOCKED=new Set(['ET','BY','BO','KZ','UZ','UG']);
@@ -185,7 +186,11 @@ export default function BRICSDashboard(){
           <SH t={tb('matrix.title')} s={tb('matrix.subtitle')} />
           <SovereigntyMatrix onCellClick={handleMatrixClick} />
         </section>
-
+        <section className="bs" style={{padding:'0 32px 40px',maxWidth:1400,margin:'0 auto',animationDelay:'.4s'}}>
+          <SH t={isZh ? '海缆主权深度分析' : 'Cable Sovereignty Deep Analysis'}
+              s={isZh ? '每对金砖国家之间的直连海缆、建造商、运营商及主权评级' : 'Direct cables, vendors, operators and sovereignty rating for each BRICS country pair'} />
+          <BRICSCableMatrix />
+        </section>
                 <BRICSInvestmentPanel isZh={isZh} tb={tb} />
 
         

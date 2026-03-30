@@ -21,7 +21,7 @@ export default function BRICSMap({ height='560px', selection }:Props) {
 
   useEffect(()=>{
     if(!cRef.current) return;
-    const map = new maplibregl.Map({ container:cRef.current, style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', center:[60,15], zoom:2.2, attributionControl:false, fadeDuration:0 });
+    const map = new maplibregl.Map({ container:cRef.current, style:'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json', center:[60,15], zoom:2.2, attributionControl:false, fadeDuration:0 });
     mRef.current = map;
 
     map.on('load', async()=>{
@@ -171,6 +171,33 @@ export default function BRICSMap({ height='560px', selection }:Props) {
       }catch(e){}
     }
   },[selection]);
+
+    // ── 语言切换时刷新成员国和伙伴国标注 ─────────────────────────
+    // isZh 变化时，用 setData 重新写入地名文字，不需要重建图层
+    useEffect(() => {
+      const map = mRef.current;
+      if (!map || !map.loaded()) return;
+
+      // 刷新成员国标注（金色）
+      const memberSource = map.getSource('brics-labels') as maplibregl.GeoJSONSource;
+      if (memberSource) {
+        const lf: GeoJSON.Feature[] = BRICS_MEMBERS.map(code => {
+          const m = BRICS_COUNTRY_META[code];
+          return { type: 'Feature', properties: { code, name: isZh ? m?.nameZh : m?.name }, geometry: { type: 'Point', coordinates: m?.center ?? [0, 0] } };
+        });
+        memberSource.setData({ type: 'FeatureCollection', features: lf });
+      }
+
+      // 刷新伙伴国标注（蓝色）
+      const partnerSource = map.getSource('partner-labels') as maplibregl.GeoJSONSource;
+      if (partnerSource) {
+        const pf: GeoJSON.Feature[] = BRICS_PARTNERS.map(code => {
+          const m = BRICS_COUNTRY_META[code];
+          return { type: 'Feature', properties: { code, name: isZh ? m?.nameZh : m?.name }, geometry: { type: 'Point', coordinates: m?.center ?? [0, 0] } };
+        });
+        partnerSource.setData({ type: 'FeatureCollection', features: pf });
+      }
+    }, [isZh]); // 仅在语言变化时触发，不影响其他逻辑
 
   return(
     <div style={{position:'relative',borderRadius:14,overflow:'hidden'}}>

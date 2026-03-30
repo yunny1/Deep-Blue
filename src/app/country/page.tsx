@@ -9,6 +9,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
 import LangSwitcher from '@/components/layout/LangSwitcher';
 import CountryCodeBadge from '@/components/ui/CountryCodeBadge';
+import MultiCountryExport from '@/components/country/MultiCountryExport';
 
 // ── 登陆站名称翻译表 ──────────────────────────────────────────────
 const STATION_ZH: Record<string, string> = {
@@ -553,6 +554,12 @@ function CountryContent() {
         <div ref={heroRef}>
           <HeroStats zh={zh} onStart={!!globalStats} data={globalStats} />
         </div>
+        
+         {/* ── 多国批量导出 ── */}        {/* ← 新增这一块 */}
+        <div style={{ marginBottom: 32, animation: 'fadeInUp 0.4s ease 0.15s both' }}>
+          <MultiCountryExport />
+        </div>
+
 
         {/* ── 推荐国家快速入口 ── */}
         <div style={{ marginBottom: 32 }}>
