@@ -21,7 +21,7 @@ export default function BRICSNavButton() {
       <span style={{ display:'flex', gap:1, borderRadius:2, overflow:'hidden', flexShrink:0 }}>
         {['#0066B3','#D32F2F','#FFC107','#388E3C','#F57C00'].map(c => <span key={c} style={{ width:2.5, height:9, backgroundColor:c, opacity: isActive ? 0.9 : 0.55, transition:'opacity 0.2s' }} />)}
       </span>
-      {zh ? '金砖战略' : 'BRICS'}
+      {zh ? '战略分析' : 'Strategic'}
     </a>
   );
 }

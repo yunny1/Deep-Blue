@@ -27,9 +27,9 @@ const SEA_ROUTES: Record<string, number> = {
   // ━━━ 中东 → 亚洲 ━━━
   'AE-CN': 10000,  'AE-ID': 7500,   'AE-IN': 1800,  'AE-MY': 6500,
   'AE-TH': 7000,   'AE-VN': 8200,
-  'EG-CN': 12400,  'EG-ID': 10500,  'EG-IN': 5500,  'EG-MY': 9500,
+  'CN-EG': 12400,  'EG-ID': 10500,  'EG-IN': 5500,  'EG-MY': 9500,
   'EG-TH': 10000,  'EG-VN': 11000,
-  'IR-CN': 9200,   'IR-ID': 7000,   'IR-IN': 1500,  'IR-MY': 6000,
+  'CN-IR': 9200,   'IR-ID': 7000,   'IR-IN': 1500,  'IR-MY': 6000,
   'IR-TH': 6500,   'IR-VN': 7500,
   'CN-SA': 11200,  'ID-SA': 9000,   'IN-SA': 3400,  'MY-SA': 8000,
   'SA-TH': 8500,   'SA-VN': 9500,

@@ -1,7 +1,7 @@
 import { useTranslation } from '@/lib/i18n';
 const T: Record<string, Record<string, string>> = {
   zh: {
-    'title':'金砖海缆战略仪表盘','badge':'战略分析',
+    'title':'海缆战略仪表盘','badge':'战略分析',
     'subtitle':'覆盖金砖 11 个成员国和 10 个伙伴国的海缆基础设施、数字主权评估与战略缺口分析',
     'back':'返回首页',
     'stats.title':'核心指标',
