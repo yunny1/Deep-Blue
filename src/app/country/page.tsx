@@ -235,6 +235,146 @@ const FEATURED_COUNTRIES = [
   { code: 'DE', flag: '🇩🇪', labelZh: '德国', labelEn: 'Germany' },
 ];
 
+// ── 综合情报 CSV 生成（海缆 + 金砖中转路径）──────────────────────
+function generateIntelCSV(json: any, locale: 'zh' | 'en') {
+  const zh = locale === 'zh';
+  const rows: any[][] = [];
+
+  // ─ 文件头 ─
+  rows.push([zh ? '综合情报导出' : 'Intel Export', json.code]);
+  rows.push([zh ? '导出时间' : 'Exported', new Date().toLocaleString(zh ? 'zh-CN' : 'en-US')]);
+  rows.push(['Deep Blue', 'deep-cloud.org']);
+  rows.push([]);
+
+  // ─ 第一区：海缆清单 ─
+  rows.push([zh ? '【第一区】海缆清单' : '[Part A] Cable List']);
+  rows.push(zh
+    ? ['海缆名称','类型','状态','长度(km)','RFS年份','光纤对数','建造商','运营商','本地登陆站','全部登陆站（含国家代码）']
+    : ['Cable Name','Type','Status','Length(km)','RFS Year','Fiber Pairs','Vendor','Operators','Local Stations','All Stations(with country)']);
+
+  for (const cable of json.cables ?? []) {
+    const typeMap: Record<string, {zh:string;en:string}> = {
+      international: {zh:'国际海缆',en:'International'},
+      domestic: {zh:'国内线',en:'Domestic'},
+      branch: {zh:'支线',en:'Branch'},
+    };
+    const statusMap: Record<string, {zh:string;en:string}> = {
+      IN_SERVICE: {zh:'在役',en:'In Service'},
+      UNDER_CONSTRUCTION: {zh:'在建',en:'Under Construction'},
+      PLANNED: {zh:'规划中',en:'Planned'},
+      DECOMMISSIONED: {zh:'已退役',en:'Decommissioned'},
+    };
+    rows.push([
+      cable.name,
+      zh ? (typeMap[cable.type]?.zh ?? cable.type) : (typeMap[cable.type]?.en ?? cable.type),
+      zh ? (statusMap[cable.status]?.zh ?? cable.status) : (statusMap[cable.status]?.en ?? cable.status),
+      cable.lengthKm ?? '',
+      cable.rfsYear ?? '',
+      cable.fiberPairs ?? '',
+      cable.vendor ?? '',
+      cable.operators.join(' | '),
+      cable.localStations.map((s: any) => zh ? (s.nameZh || s.name) : s.name).join(' | '),
+      cable.allStations.map((s: any) => {
+        const n = zh ? (s.nameZh || s.name) : s.name;
+        return `${n}(${s.countryCode})`;
+      }).join(' | '),
+    ]);
+  }
+
+  // ─ 第二区：金砖中转路径 ─
+  if (json.isBRICS && json.transitPairs?.length > 0) {
+    rows.push([]);
+    rows.push([zh ? '【第二区】金砖中转路径主权分析' : '[Part B] BRICS Transit Path Sovereignty Analysis']);
+    rows.push([zh ? '说明：枚举两段中转以内所有路径，最弱链条原则评定主权等级' : 'Note: All paths within 2 transits. Weakest-link principle for sovereignty rating.']);
+    rows.push(zh
+      ? ['甲方','乙方','路径类型','路径节点序列','中转国全为金砖','路径主权','主权分','段序号','本段起点','本段终点','海缆名称','状态','长度(km)','RFS年份','建造商','运营商','本段所有登陆站','本段主权','主权分','主权说明','是否最优']
+      : ['From','To','Path Type','Path Nodes','All Transit BRICS','Path Sov.','Path Score','Seg#','Seg From','Seg To','Cable Name','Status','Length(km)','RFS Year','Vendor','Operators','Seg All Stations','Seg Sov.','Seg Score','Sov. Reason','Is Best']);
+
+    for (const pair of json.transitPairs) {
+      for (const path of pair.paths ?? []) {
+        const pathType = path.hopCount === 1
+          ? (zh ? '直连' : 'Direct')
+          : zh ? `${path.hopCount - 1}段中转` : `${path.hopCount - 1}-hop transit`;
+
+        // 路径节点序列：起点 → [中转] → 终点
+        const nodeSeq = [
+          zh ? pair.fromNameZh : pair.fromName,
+          ...path.transitNames.map((t: any) => zh ? t.nameZh : t.name),
+          zh ? pair.toNameZh : pair.toName,
+        ].join(' → ');
+
+        for (let si = 0; si < path.segments.length; si++) {
+          const seg = path.segments[si];
+          if (seg.cables.length === 0) {
+            rows.push([
+              zh ? pair.fromNameZh : pair.fromName,
+              zh ? pair.toNameZh : pair.toName,
+              pathType, nodeSeq,
+              path.allTransitBRICS ? 'Y' : 'N',
+              zh ? path.pathSov.label_zh : path.pathSov.label_en,
+              path.pathSov.score,
+              si + 1,
+              zh ? seg.fromNameZh : seg.fromName,
+              zh ? seg.toNameZh : seg.toName,
+              zh ? '无数据' : 'No data',
+              '','','','','','',
+              zh ? seg.bestSov.label_zh : seg.bestSov.label_en,
+              seg.bestSov.score,
+              zh ? seg.bestSov.reason_zh : seg.bestSov.reason_en,
+              '',
+            ]);
+            continue;
+          }
+          for (let ci = 0; ci < seg.cables.length; ci++) {
+            const cable = seg.cables[ci];
+            // 这段海缆的所有登陆站（有国家代码）
+            const segStations = cable.stations
+              .map((s: any) => { const n = zh ? (s.nameZh || s.name) : s.name; return `${n}(${s.countryCode})`; })
+              .join(' | ');
+            rows.push([
+              zh ? pair.fromNameZh : pair.fromName,
+              zh ? pair.toNameZh : pair.toName,
+              pathType, nodeSeq,
+              path.allTransitBRICS ? 'Y' : 'N',
+              zh ? path.pathSov.label_zh : path.pathSov.label_en,
+              path.pathSov.score,
+              si + 1,
+              zh ? seg.fromNameZh : seg.fromName,
+              zh ? seg.toNameZh : seg.toName,
+              cable.name,
+              cable.status.replace(/_/g, ' '),
+              cable.lengthKm ?? '',
+              cable.rfsYear ?? '',
+              cable.vendor ?? '',
+              cable.operators.join(' | '),
+              segStations,
+              zh ? cable.sovereignty.label_zh : cable.sovereignty.label_en,
+              cable.sovereignty.score,
+              zh ? cable.sovereignty.reason_zh : cable.sovereignty.reason_en,
+              ci === 0 ? 'Y' : 'N',
+            ]);
+          }
+        }
+      }
+    }
+  }
+
+  // 生成 CSV 并下载
+  const csv = rows.map(row => (row as any[]).map(cell => {
+    const s = String(cell ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+  }).join(',')).join('\n');
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `deep-blue-intel-${json.code}-${locale}-${new Date().toISOString().slice(0, 10)}.csv`,
+  });
+  a.click();
+}
+
+
+
 // ── CSV 导出 ──────────────────────────────────────────────────────
 function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
   const zh = locale === 'zh';
@@ -242,8 +382,8 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
   const countryName = zh ? data.country.nameZh : data.country.nameEn;
 
   const cableHeaders = zh
-    ? ['海缆名称', '类型', '状态', '长度(km)', '投产年份', '容量(Tbps)', '光纤对数', '建造商', '运营商', '本地登陆站', ...(isChinaGroup ? ['所属地区'] : []), '覆盖国家数']
-    : ['Cable Name', 'Type', 'Status', 'Length (km)', 'RFS Year', 'Capacity (Tbps)', 'Fiber Pairs', 'Vendor', 'Owners', 'Local Stations', ...(isChinaGroup ? ['Region'] : []), 'Country Count'];
+  ? ['海缆名称', '类型', '状态', '长度(km)', '投产年份', '容量(Tbps)', '光纤对数', '建造商', '运营商', '本地登陆站', '全部登陆站', ...(isChinaGroup ? ['所属地区'] : []), '覆盖国家数']
+  : ['Cable Name', 'Type', 'Status', 'Length (km)', 'RFS Year', 'Capacity (Tbps)', 'Fiber Pairs', 'Vendor', 'Owners', 'Local Stations', 'All Stations', ...(isChinaGroup ? ['Region'] : []), 'Country Count'];
 
   const cableRows = data.cables.map(c => [
     c.name,
@@ -255,7 +395,14 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
     c.fiberPairs ?? '',
     c.vendor ?? '',
     c.owners.join(' / '),
-    c.stationsInCountry.map(s => stationName(s, zh)).join(' / '),
+    c.stationsInCountry.map(s => stationName(s, zh)).join(' | '),
+    // ✅ 新增：全部登陆站（所有国家，用 | 分隔，中文页面优先显示中文站名）
+    (c as any).allStations
+      ? (c as any).allStations.map((s: any) => {
+          const displayName = zh ? (s.nameZh || s.name) : s.name;
+          return `${displayName}(${s.countryCode})`;
+        }).join(' | ')
+      : c.stationsInCountry.map(s => stationName(s, zh)).join(' | '),
     ...(isChinaGroup ? [[...new Set(c.stationsInCountry.map(s => s.regionLabel).filter(Boolean))].join(' / ')] : []),
     c.countries.length,
   ]);
@@ -688,7 +835,8 @@ function CountryContent() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button onClick={() => handleExport('zh')} disabled={exporting}
                     style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(42,157,143,0.3)', backgroundColor: 'rgba(42,157,143,0.08)', color: '#2A9D8F', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                     📥 {exporting ? '...' : zh ? '导出中文' : '导出中文'}
@@ -697,8 +845,34 @@ function CountryContent() {
                     style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: '#9CA3AF', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                     📥 {exporting ? '...' : 'Export EN'}
                   </button>
+                  {/* ✅ 综合情报导出：海缆数据 + 金砖中转路径（仅金砖国家显示） */}
+                  <button
+                    onClick={async () => {
+                      setExporting(true);
+                      try {
+                        const code = selectedCode === 'CN' ? (includeTaiwan ? 'CN_WITH_TW' : 'CN') : selectedCode;
+                        const res = await fetch(`/api/country/intel-export?code=${code}&locale=${locale}`);
+                        const json = await res.json();
+                        generateIntelCSV(json, locale as 'zh' | 'en');
+                      } catch (e) {
+                        console.error('Intel export failed', e);
+                      } finally {
+                        setExporting(false);
+                      }
+                    }}
+                    disabled={!data || exporting}
+                    style={{
+                      padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                      cursor: !data || exporting ? 'not-allowed' : 'pointer',
+                      border: '1px solid rgba(212,175,55,0.4)',
+                      backgroundColor: 'rgba(212,175,55,0.08)',
+                      color: '#D4AF37',
+                      opacity: !data ? 0.5 : 1,
+                    }}
+                  >
+                    📊 {exporting ? '...' : (zh ? '综合情报导出' : 'Intel Export')}
+                  </button>
                 </div>
-              </div>
 
               {/* 统计卡片 — 层级结构 */}
               <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' as const }}>
