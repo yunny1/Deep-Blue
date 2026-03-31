@@ -240,7 +240,7 @@ export async function GET(req: NextRequest) {
       });
 
       // 枚举：以目标国为端点的所有金砖国家对
-      const otherBRICS = (BRICS_ALL as string[]).filter(c => c !== normalizedCode);
+      const otherBRICS = ([...BRICS_ALL] as string[]).filter(c => c !== normalizedCode);
       const LANDLOCKED = new Set(['ET', 'BY', 'BO', 'KZ', 'UZ', 'UG']);
 
       for (const other of otherBRICS) {

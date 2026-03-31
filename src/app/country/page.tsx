@@ -873,6 +873,7 @@ function CountryContent() {
                     📊 {exporting ? '...' : (zh ? '综合情报导出' : 'Intel Export')}
                   </button>
                 </div>
+              </div>
 
               {/* 统计卡片 — 层级结构 */}
               <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' as const }}>
