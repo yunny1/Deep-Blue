@@ -385,26 +385,120 @@ function MatrixCell({
 
 // ── CSV 导出 ─────────────────────────────────────────────────────
 function exportTransitCSV(pairs: PairResult[], isZh: boolean) {
+  // ✅ 全量展开：每条路径的每段的每条候选海缆都单独一行
+  // 这样分析师可以在 Excel 里按任意维度透视
   const headers = isZh
-    ? ['甲方','乙方','路径数','最优主权','最优路径主权分','有直连','有主权安全路径','路径节点序列','各段最优建造商','各段主权']
-    : ['From','To','Paths','Best Sovereignty','Best Score','Direct','Has Sovereign Path','Path Nodes','Segment Vendors','Segment Sovereignty'];
+    ? [
+        '甲方代码','甲方',
+        '乙方代码','乙方',
+        '路径类型',          // 直连 / 1段中转 / 2段中转
+        '路径节点序列',      // 如：中国 → 新加坡 → 巴西
+        '中转国是否全为金砖',
+        '路径整体主权',
+        '路径主权分(0-100)',
+        '段序号',            // 1 / 2 / 3
+        '本段起点','本段终点',
+        '海缆名称',
+        '海缆状态',
+        '长度(km)',
+        'RFS年份',
+        '建造商',
+        '运营商',
+        '本段主权等级',
+        '本段主权分',
+        '本段主权说明',
+        '是否为该段最优海缆',
+      ]
+    : [
+        'From Code','From Country',
+        'To Code','To Country',
+        'Path Type',
+        'Path Nodes',
+        'All Transit BRICS',
+        'Path Sovereignty',
+        'Path Score(0-100)',
+        'Segment No.',
+        'Seg From','Seg To',
+        'Cable Name',
+        'Cable Status',
+        'Length(km)',
+        'RFS Year',
+        'Vendor/Builder',
+        'Operators',
+        'Segment Sovereignty',
+        'Segment Score',
+        'Segment Reason',
+        'Is Best Cable in Segment',
+      ];
 
   const rows: string[][] = [headers];
+
   for (const pair of pairs) {
     if (pair.isLandlocked || pair.paths.length === 0) continue;
+
     for (const path of pair.paths) {
-      rows.push([
+      const pathType = path.hopCount === 1
+        ? (isZh ? '直连' : 'Direct')
+        : isZh ? `${path.hopCount - 1}段中转` : `${path.hopCount - 1}-hop transit`;
+
+      // 路径节点序列：起点 → 中转1 → 中转2 → 终点
+      const nodeSeq = [
         isZh ? pair.fromNameZh : pair.fromName,
+        ...path.transitCountries.map(t => isZh ? t.nameZh : t.name),
         isZh ? pair.toNameZh : pair.toName,
-        pair.paths.length.toString(),
-        isZh ? path.pathSovereignty.label_zh : path.pathSovereignty.label_en,
-        path.pathSovereigntyScore.toString(),
-        pair.directConnected ? 'Y' : 'N',
-        pair.hasSovereignPath ? 'Y' : 'N',
-        path.segments.map(s => isZh ? s.toNameZh : s.toName).join(' → '),
-        path.segments.map(s => s.cables[0]?.vendor ?? '?').join(' | '),
-        path.segments.map(s => isZh ? s.bestCableSovereignty.label_zh : s.bestCableSovereignty.label_en).join(' | '),
-      ]);
+      ].join(' → ');
+
+      for (let segIdx = 0; segIdx < path.segments.length; segIdx++) {
+        const seg = path.segments[segIdx];
+
+        if (seg.cables.length === 0) {
+          // 该段没有海缆数据，仍输出一行占位
+          rows.push([
+            pair.from, isZh ? pair.fromNameZh : pair.fromName,
+            pair.to,   isZh ? pair.toNameZh   : pair.toName,
+            pathType, nodeSeq,
+            path.allTransitBRICS ? 'Y' : 'N',
+            isZh ? path.pathSovereignty.label_zh : path.pathSovereignty.label_en,
+            path.pathSovereigntyScore.toString(),
+            (segIdx + 1).toString(),
+            isZh ? seg.fromNameZh : seg.fromName,
+            isZh ? seg.toNameZh   : seg.toName,
+            isZh ? '无海缆数据' : 'No cable data',
+            '', '', '', '', '',
+            isZh ? seg.bestCableSovereignty.label_zh : seg.bestCableSovereignty.label_en,
+            seg.bestCableSovereignty.score.toString(),
+            isZh ? seg.bestCableSovereignty.reason_zh : seg.bestCableSovereignty.reason_en,
+            '',
+          ]);
+          continue;
+        }
+
+        // ✅ 展开该段所有候选海缆，每条单独一行
+        for (let cableIdx = 0; cableIdx < seg.cables.length; cableIdx++) {
+          const cable = seg.cables[cableIdx];
+          rows.push([
+            pair.from, isZh ? pair.fromNameZh : pair.fromName,
+            pair.to,   isZh ? pair.toNameZh   : pair.toName,
+            pathType, nodeSeq,
+            path.allTransitBRICS ? 'Y' : 'N',
+            isZh ? path.pathSovereignty.label_zh : path.pathSovereignty.label_en,
+            path.pathSovereigntyScore.toString(),
+            (segIdx + 1).toString(),
+            isZh ? seg.fromNameZh : seg.fromName,
+            isZh ? seg.toNameZh   : seg.toName,
+            cable.name,
+            cable.status.replace(/_/g, ' '),
+            cable.lengthKm?.toString() ?? '',
+            cable.rfsYear?.toString() ?? '',
+            cable.vendor ?? '',
+            cable.operators.join(' | '),
+            isZh ? cable.sovereignty.label_zh : cable.sovereignty.label_en,
+            cable.sovereignty.score.toString(),
+            isZh ? cable.sovereignty.reason_zh : cable.sovereignty.reason_en,
+            cableIdx === 0 ? 'Y' : 'N',   // 第一条=该段最优海缆
+          ]);
+        }
+      }
     }
   }
 
@@ -420,10 +514,13 @@ function exportTransitCSV(pairs: PairResult[], isZh: boolean) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `deep-blue-brics-transit-sovereignty-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `deep-blue-brics-transit-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
+
+
+
 
 // ── 主组件 ───────────────────────────────────────────────────────
 export default function BRICSTransitAnalysis() {
@@ -532,15 +629,28 @@ export default function BRICSTransitAnalysis() {
 
         {/* 左：热力矩阵 */}
         <div style={{ overflowX: 'auto' }}>
-          <div style={{ display: 'inline-block', minWidth: 420 }}>
+          <div style={{ display: 'inline-block', minWidth: 500 }}>
             {/* 列标题（国家代码） */}
-            <div style={{ display: 'flex', gap: 3, marginBottom: 3, paddingLeft: 56 }}>
+            <div style={{ display: 'flex', gap: 3, marginBottom: 3, paddingLeft: 82 }}>
               {members.map(m => (
                 <div key={m.code} style={{
-                  width: 36, textAlign: 'center', fontSize: 9, fontWeight: 700,
-                  color: '#6B7280', letterSpacing: '0.04em',
+                  width: 36,
+                  height: 72,           // 给竖排文字足够高度
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'center',
+                  paddingBottom: 4,
                 }}>
-                  {m.code}
+                  <span style={{
+                    writingMode: 'vertical-rl',
+                    transform: 'rotate(180deg)', // 让文字从下往上读
+                    fontSize: 9, fontWeight: 700,
+                    color: '#9CA3AF',
+                    letterSpacing: '0.04em',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {isZh ? m.nameZh : m.code}
+                  </span>
                 </div>
               ))}
             </div>
@@ -550,7 +660,7 @@ export default function BRICSTransitAnalysis() {
               <div key={rowMember.code} style={{ display: 'flex', gap: 3, marginBottom: 3, alignItems: 'center' }}>
                 {/* 行标题 */}
                 <div style={{
-                  width: 52, fontSize: 9, fontWeight: 700, color: '#6B7280',
+                  width: 76, fontSize: 9, fontWeight: 700, color: '#6B7280',
                   textAlign: 'right', paddingRight: 6,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   letterSpacing: '0.04em',
