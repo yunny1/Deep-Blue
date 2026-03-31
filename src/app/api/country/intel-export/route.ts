@@ -79,7 +79,7 @@ function enumeratePaths(
   const results: any[] = [];
   const stack: any[] = [{ nodes: [from], segments: [] }];
   while (stack.length > 0 && results.length < maxPaths) {
-    const { nodes, segments } = stack.pop();
+    const { nodes, segments } = stack.shift();
     const cur = nodes[nodes.length - 1];
     if (cur === to) { results.push({ nodes: [...nodes], segments: [...segments] }); continue; }
     if (nodes.length - 1 >= maxTransits + 1) continue;
