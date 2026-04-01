@@ -122,7 +122,7 @@ function HomeContent() {
             <>
               <AnalysisMenu />
               <BRICSNavButton />
-              <Link
+            
                  href="/sovereign-network"
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -135,7 +135,7 @@ function HomeContent() {
                 >
                   自主权网络
                 </a>
-              </Link>
+            
               <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.1)' }} />
             </>
           )}
