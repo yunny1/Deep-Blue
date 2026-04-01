@@ -1,7 +1,5 @@
 // src/lib/sovereign-routes.ts
-// 自主权网络图谱 — 静态数据层
-// 110 条路径来自 deep-blue-brics-transit_v2.xlsx 路径汇总表
-// 风险评分体系：建造商 20% + 运营商 45% + 中转国家 35%，标准化到 0–100
+// 自主权网络图谱静态数据层
 
 export const BRICS_MEMBERS = new Set([
   '中国', '俄罗斯', '印度', '巴西', '南非',
@@ -13,50 +11,64 @@ export const BRICS_PARTNERS = new Set([
   '古巴', '白俄罗斯', '哈萨克斯坦', '乌兹别克斯坦', '玻利维亚', '乌干达',
 ]);
 
-/** [lng, lat] — 所有出现在路径中的节点坐标 */
 export const NODE_COORDS: Record<string, [number, number]> = {
-  '巴西':      [-51.9, -14.2],
-  '俄罗斯':    [105,    61.5],
-  '印度':      [79,     21],
-  '中国':      [104,    35],
-  '南非':      [25,    -30],
-  '沙特阿拉伯':[45,     24],
-  '埃及':      [30,     26],
-  '阿联酋':    [54,     24],
-  '伊朗':      [53,     33],
-  '印度尼西亚':[118,    -5],
-  '马来西亚':  [109,     4],
-  '泰国':      [101,    15],
-  '越南':      [106,    14],
-  '尼日利亚':  [8,       9],
-  '新加坡':    [104,     1.3],
-  '日本':      [138,    36],
-  '菲律宾':    [122,    13],
-  '韩国':      [128,    37],
-  '喀麦隆':    [12,      4],
-  '塞舌尔':    [55.5,   -4.7],
-  '索马里':    [46,      5],
-  '坦桑尼亚':  [35,     -6],
-  '也门':      [48,     15.5],
+  '巴西':      [-51.9, -14.2], '俄罗斯':    [105, 61.5],   '印度':      [79, 21],
+  '中国':      [104, 35],      '南非':      [25, -30],     '沙特阿拉伯':[45, 24],
+  '埃及':      [30, 26],       '阿联酋':    [54, 24],      '伊朗':      [53, 33],
+  '印度尼西亚':[118, -5],      '马来西亚':  [109, 4],      '泰国':      [101, 15],
+  '越南':      [106, 14],      '尼日利亚':  [8, 9],        '新加坡':    [104, 1.3],
+  '日本':      [138, 36],      '菲律宾':    [122, 13],     '韩国':      [128, 37],
+  '喀麦隆':    [12, 4],        '塞舌尔':    [55.5, -4.7],  '索马里':    [46, 5],
+  '坦桑尼亚':  [35, -6],       '也门':      [48, 15.5],
 };
 
 export type SafetyLevel = '相对低暴露优先路径' | '较优备选路径' | '中等暴露路径' | '高暴露路径';
 
 export interface SovereignRoute {
-  id: string;
-  from: string;
-  to: string;
-  path: string;
-  nodes: string[];
-  cables: string;
-  riskScores: string;
-  maxRisk: number;
-  avgRisk: number;
-  segments: number;
-  safety: SafetyLevel;
+  id: string; from: string; to: string; path: string; nodes: string[];
+  cables: string; riskScores: string; maxRisk: number; avgRisk: number;
+  segments: number; safety: SafetyLevel;
 }
 
-// 原始数据 [from, to, path, cables(缩略), riskScores, maxRisk, avgRisk, segments, safety]
+// ── Badge 样式：深色底色 + 细边框药丸（"混合依赖"风格）─────────────────────
+export function safetyCfg(safety: SafetyLevel): { bg: string; text: string; border: string; label: string } {
+  const map: Record<SafetyLevel, { bg: string; text: string; border: string; label: string }> = {
+    '相对低暴露优先路径': {
+      bg: 'rgba(16,112,86,.25)',
+      text: '#4ade80',
+      border: 'rgba(74,222,128,.3)',
+      label: '低风险',
+    },
+    '较优备选路径': {
+      bg: 'rgba(20,100,76,.2)',
+      text: '#34d399',
+      border: 'rgba(52,211,153,.25)',
+      label: '较优备选',
+    },
+    '中等暴露路径': {
+      bg: 'rgba(120,90,10,.25)',
+      text: '#fbbf24',
+      border: 'rgba(251,191,36,.3)',
+      label: '中等风险',
+    },
+    '高暴露路径': {
+      bg: 'rgba(120,20,20,.25)',
+      text: '#f87171',
+      border: 'rgba(248,113,113,.3)',
+      label: '高暴露',
+    },
+  };
+  return map[safety] ?? { bg: 'rgba(40,40,60,.3)', text: '#94a3b8', border: 'rgba(148,163,184,.2)', label: safety };
+}
+
+export function riskColor(score: number): string {
+  if (score <= 20) return '#0F6E56';
+  if (score <= 40) return '#639922';
+  if (score <= 60) return '#BA7517';
+  if (score <= 75) return '#D85A30';
+  return '#A32D2D';
+}
+
 const RAW: [string, string, string, string, string, number, number, number, SafetyLevel][] = [
   ['阿联酋','泰国','阿联酋 → 新加坡 → 泰国','PEACE Cable | Thailand-Indonesia-Singapore (TIS) | Asia Direct Cable (ADC)','8 | 33 | 55',55,32,2,'中等暴露路径'],
   ['阿联酋','印度尼西亚','阿联酋 → 新加坡 → 印度尼西亚','PEACE Cable | Indonesia Global Gateway (IGG) System | Thailand-Indonesia-Singapore (TIS) | Batam Singapore Cable System (BSCS) | INSICA','8 | 33 | 33 | 33 | 30',33,27,2,'相对低暴露优先路径'],
@@ -70,7 +82,7 @@ const RAW: [string, string, string, string, string, number, number, number, Safe
   ['巴西','尼日利亚','巴西 → 喀麦隆 → 尼日利亚','South Atlantic Inter Link (SAIL) | Nigeria Cameroon Submarine Cable System (NCSCS)','19 | 19',19,19,2,'相对低暴露优先路径'],
   ['俄罗斯','阿联酋','俄罗斯 → 日本 → 新加坡 → 阿联酋','Russia-Japan Cable Network (RJCN) | Hokkaido-Sakhalin Cable System (HSCS) | Asia Direct Cable (ADC) | ALPHA | TGN-IA2 | PEACE Cable','71 | 71 | 71 | 61 | 61 | 8',71,57,3,'高暴露路径'],
   ['俄罗斯','埃及','俄罗斯 → 日本 → 新加坡 → 埃及','RJCN | HSCS | ADC | ALPHA | TGN-IA2 | PEACE Cable','71 | 71 | 71 | 61 | 61 | 8',71,57,3,'高暴露路径'],
-  ['俄罗斯','马来西亚','俄罗斯 → 日本 → 菲律宾 → 马来西亚','RJCN | HSCS | ADC | ALPHA | ASE/Cahaya Malaysia | Asia Link Cable (ALC) | SEA-H2X | MYUS | ASE','71 | 71 | 71 | 61 | 71 | 50 | 36 | 61 | 71',71,63,3,'高暴露路径'],
+  ['俄罗斯','马来西亚','俄罗斯 → 日本 → 菲律宾 → 马来西亚','RJCN | HSCS | ADC | ALPHA | ASE/Cahaya Malaysia | ALC | SEA-H2X | MYUS | ASE','71 | 71 | 71 | 61 | 71 | 50 | 36 | 61 | 71',71,63,3,'高暴露路径'],
   ['俄罗斯','马来西亚','俄罗斯 → 日本 → 马来西亚','RJCN | HSCS | Asia Submarine-cable Express (ASE)/Cahaya Malaysia','71 | 71 | 71',71,71,2,'高暴露路径'],
   ['俄罗斯','马来西亚','俄罗斯 → 日本 → 泰国 → 马来西亚','RJCN | HSCS | ADC | SEA-H2X','71 | 71 | 71 | 19',71,58,3,'高暴露路径'],
   ['俄罗斯','马来西亚','俄罗斯 → 日本 → 新加坡 → 马来西亚','RJCN | HSCS | ADC | ALPHA | TGN-IA2 | ALC','71 | 71 | 71 | 61 | 61 | 33',71,61,3,'高暴露路径'],
@@ -85,7 +97,7 @@ const RAW: [string, string, string, string, string, number, number, number, Safe
   ['俄罗斯','泰国','俄罗斯 → 日本 → 中国 → 泰国','RJCN | HSCS | ADC | TGN-IA2 | ADC | SEA-H2X','71 | 71 | 71 | 61 | 55 | 19',71,58,3,'高暴露路径'],
   ['俄罗斯','印度','俄罗斯 → 日本 → 泰国 → 印度','RJCN | HSCS | ADC | MIST','71 | 71 | 71 | 47',71,65,3,'高暴露路径'],
   ['俄罗斯','印度尼西亚','俄罗斯 → 日本 → 菲律宾 → 印度尼西亚','RJCN | HSCS | ADC | ALPHA | ASE | Asia Connect Cable-1 (ACC-1) | MYUS','71 | 71 | 71 | 61 | 71 | 61 | 61',71,67,3,'高暴露路径'],
-  ['俄罗斯','印度尼西亚','俄罗斯 → 日本 → 马来西亚 → 印度尼西亚','RJCN | HSCS | ASE | Dumai-Melaka Cable System (DMCS) | Batam Dumai Melaka (BDM) | BRCS | BaSICS','71 | 71 | 71 | 33 | 19 | 30 | 30',71,46,3,'高暴露路径'],
+  ['俄罗斯','印度尼西亚','俄罗斯 → 日本 → 马来西亚 → 印度尼西亚','RJCN | HSCS | ASE | Dumai-Melaka Cable System (DMCS) | BDM | BRCS | BaSICS','71 | 71 | 71 | 33 | 19 | 30 | 30',71,46,3,'高暴露路径'],
   ['俄罗斯','印度尼西亚','俄罗斯 → 日本 → 泰国 → 印度尼西亚','RJCN | HSCS | ADC | Thailand-Indonesia-Singapore (TIS)','71 | 71 | 71 | 33',71,62,3,'高暴露路径'],
   ['俄罗斯','印度尼西亚','俄罗斯 → 日本 → 新加坡 → 印度尼西亚','RJCN | HSCS | ADC | ALPHA | TGN-IA2 | IGG | TIS | BSCS | INSICA','71 | 71 | 71 | 61 | 61 | 33 | 33 | 33 | 30',71,52,3,'高暴露路径'],
   ['俄罗斯','越南','俄罗斯 → 日本 → 菲律宾 → 越南','RJCN | HSCS | ADC | ALPHA | ASE | ALC | ADC | ALPHA','71 | 71 | 71 | 61 | 71 | 50 | 71 | 61',71,66,3,'高暴露路径'],
@@ -132,7 +144,7 @@ const RAW: [string, string, string, string, string, number, number, number, Safe
   ['印度','越南','印度 → 泰国 → 越南','MIST | ADC | VTS','47 | 55 | 30',55,44,2,'中等暴露路径'],
   ['印度','中国','印度 → 泰国 → 中国','MIST | ADC | SEA-H2X','47 | 55 | 19',55,40,2,'中等暴露路径'],
   ['印度尼西亚','马来西亚','印度尼西亚 → 菲律宾 → 马来西亚','ACC-1 | MYUS | ALC | SEA-H2X | MYUS | ASE','61 | 61 | 50 | 36 | 61 | 71',71,57,2,'高暴露路径'],
-  ['印度尼西亚','马来西亚','印度尼西亚 → 马来西亚','Dumai-Melaka Cable System (DMCS) | Batam Dumai Melaka (BDM) | BRCS | BaSICS','33 | 19 | 30 | 30',33,28,1,'相对低暴露优先路径'],
+  ['印度尼西亚','马来西亚','印度尼西亚 → 马来西亚','Dumai-Melaka Cable System (DMCS) | BDM | BRCS | BaSICS','33 | 19 | 30 | 30',33,28,1,'相对低暴露优先路径'],
   ['印度尼西亚','马来西亚','印度尼西亚 → 泰国 → 马来西亚','TIS | SEA-H2X','33 | 19',33,26,2,'相对低暴露优先路径'],
   ['印度尼西亚','马来西亚','印度尼西亚 → 新加坡 → 马来西亚','IGG | TIS | BSCS | INSICA | ALC','33 | 33 | 33 | 30 | 33',33,32,2,'相对低暴露优先路径'],
   ['印度尼西亚','泰国','印度尼西亚 → 菲律宾 → 泰国','ACC-1 | MYUS | ADC | SEA-H2X','61 | 61 | 71 | 36',71,57,2,'高暴露路径'],
@@ -177,23 +189,3 @@ export const SOVEREIGN_ROUTES: SovereignRoute[] = RAW.map(
     nodes: path.split(' → '),
   })
 );
-
-/** 风险值 → 颜色（0–100 连续映射） */
-export function riskColor(score: number): string {
-  if (score <= 20) return '#0F6E56';
-  if (score <= 40) return '#639922';
-  if (score <= 60) return '#BA7517';
-  if (score <= 75) return '#D85A30';
-  return '#A32D2D';
-}
-
-/** 安全等级 → badge 样式 */
-export function safetyCfg(safety: SafetyLevel): { bg: string; text: string; label: string } {
-  const map: Record<SafetyLevel, { bg: string; text: string; label: string }> = {
-    '相对低暴露优先路径': { bg: '#dcfce7', text: '#14532d', label: '低风险 ✓' },
-    '较优备选路径':       { bg: '#d1fae5', text: '#064e3b', label: '较优备选' },
-    '中等暴露路径':       { bg: '#fef9c3', text: '#713f12', label: '中等风险' },
-    '高暴露路径':         { bg: '#fee2e2', text: '#7f1d1d', label: '高风险' },
-  };
-  return map[safety] ?? { bg: '#f3f4f6', text: '#374151', label: safety };
-}

@@ -2,6 +2,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
+
 
 export const metadata: Metadata = {
   title: 'Deep Blue | Global Submarine Cable Intelligence',
@@ -40,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
       </head>
       <body>{children}<Analytics /></body>
+      <SpeedInsights />
     </html>
   );
 }
