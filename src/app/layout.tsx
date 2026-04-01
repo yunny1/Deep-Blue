@@ -42,8 +42,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
       </head>
-      <body>{children}<Analytics /></body>
-      <SpeedInsights />
+      <body>
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
