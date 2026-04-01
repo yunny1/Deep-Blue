@@ -121,6 +121,12 @@ function HomeContent() {
             <>
               <AnalysisMenu />
               <BRICSNavButton />
+              <Link
+                href="/sovereign-network"
+                className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-1"
+              >
+                自主权网络
+              </Link>
               <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.1)' }} />
             </>
           )}

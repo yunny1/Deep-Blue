@@ -19,7 +19,7 @@ export default function BRICSNavButton() {
     }}
       onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor='rgba(212,175,55,0.3)'; e.currentTarget.style.backgroundColor='rgba(212,175,55,0.08)'; e.currentTarget.style.color='#D4AF37'; } }}
       onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'; e.currentTarget.style.backgroundColor='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#9CA3AF'; } }}>
-      <Link href="/sovereign-network">自主权网络</Link>
+     
       <span style={{ display:'flex', gap:1, borderRadius:2, overflow:'hidden', flexShrink:0 }}>
         {['#0066B3','#D32F2F','#FFC107','#388E3C','#F57C00'].map(c => <span key={c} style={{ width:2.5, height:9, backgroundColor:c, opacity: isActive ? 0.9 : 0.55, transition:'opacity 0.2s' }} />)}
       </span>
