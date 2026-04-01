@@ -9,6 +9,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { useMapStore } from '@/stores/mapStore';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
