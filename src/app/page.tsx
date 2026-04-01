@@ -1,11 +1,4 @@
 // src/app/page.tsx
-// Deep Blue 首页
-// 导航栏：Logo | SearchBox(绝对居中) | AnalysisMenu + 统计数字
-// LangSwitcher 移到右下角浮动元素，不再占用导航栏空间
-// ColorControlPanel: top:96（组件内部已改）
-// FilterPanel: bottom:160，往上移，右侧
-// BottomLeftPanel: 左下角，bottom:20
-
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -72,12 +65,6 @@ function HomeContent() {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
 
-      {/* ═══ 顶部导航栏 ═══
-          最简布局：
-          左侧  → Logo（固定宽度）
-          中间  → SearchBox（absolute居中，只有这一个元素，280px不可能溢出）
-          右侧  → AnalysisMenu + 分隔线 + 统计数字
-          LangSwitcher 已移出导航栏，放到右下角 */}
       <nav style={{
         position: 'absolute', top: 0, left: 0, right: 0,
         height: isMobile ? 48 : 56,
@@ -104,38 +91,32 @@ function HomeContent() {
           </div>
         </div>
 
-        {/* 中：SearchBox 单独居中，宽280px，两侧各延伸140px，不会碰到任何东西 */}
+        {/* 中：SearchBox 绝对居中 */}
         {!isMobile && (
-          <div style={{
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 280,
-          }}>
+          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 280 }}>
             <SearchBox />
           </div>
         )}
 
-        {/* 右：分析工具 + 统计数字（LangSwitcher 已移走） */}
+        {/* 右：分析工具 + 自主权网络 + 统计数字 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, flexShrink: 0 }}>
           {!isMobile && (
             <>
               <AnalysisMenu />
               <BRICSNavButton />
-            
-                 href="/sovereign-network"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    padding: '5px 14px', background: 'rgba(212,175,55,.08)',
-                    border: '1px solid rgba(212,175,55,.25)', borderRadius: 8,
-                    fontSize: 13, fontWeight: 600, color: '#D4AF37',
-                    textDecoration: 'none', transition: 'all .2s',
-                    fontFamily: "'DM Sans', system-ui, sans-serif",
-                  }}
-                >
-                  自主权网络
-                </a>
-            
+              <a
+                href="/sovereign-network"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '5px 14px', background: 'rgba(212,175,55,.08)',
+                  border: '1px solid rgba(212,175,55,.25)', borderRadius: 8,
+                  fontSize: 13, fontWeight: 600, color: '#D4AF37',
+                  textDecoration: 'none', transition: 'all .2s',
+                  fontFamily: "'DM Sans', system-ui, sans-serif",
+                }}
+              >
+                自主权网络
+              </a>
               <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.1)' }} />
             </>
           )}
@@ -143,31 +124,26 @@ function HomeContent() {
             <>
               <StatBadge number={stats.cables.total || 0}
                 label={isMobile ? t('nav.total') : t('nav.cables')} color="#2A9D8F" />
-              {!isMobile && <>
-                <StatBadge number={stats.cables.inService || 0}   label={t('nav.inService')} color="#06D6A0" />
-                
-              </>}
+              {!isMobile && (
+                <StatBadge number={stats.cables.inService || 0} label={t('nav.inService')} color="#06D6A0" />
+              )}
               <StatBadge number={stats.landingStations || 0} label={t('nav.stations')} color="#2A9D8F" />
             </>
           ) : <span style={{ fontSize: 12, color: '#6B7280' }}>{t('nav.loading')}</span>}
         </div>
       </nav>
 
-      {/* 新闻滚动条 */}
       {!isMobile && <NewsTicker />}
 
-      {/* 地图 */}
       {viewMode === '3d' ? (
         <CesiumGlobe onHover={handleHover} onClick={handleClick} />
       ) : (
         <MapLibre2D onHover={handleHover} onClick={handleClick} />
       )}
 
-      {/* ═══ 右侧控制栏 top=96 ═══ */}
       {!isMobile && (
         <div style={{
-          position: 'absolute', top: 96, right: 16,
-          zIndex: 45,
+          position: 'absolute', top: 96, right: 16, zIndex: 45,
           display: 'flex', flexDirection: 'column', gap: 8,
           width: 300, overflow: 'visible',
         }}>
@@ -179,43 +155,25 @@ function HomeContent() {
         </div>
       )}
 
-      {/* 左侧：着色模式（top在组件内改为96） */}
       {!isMobile && <ColorControlPanel />}
 
-      {/* ═══ 右下角：筛选面板（往上移到bottom:160，展开向上，不遮挡署名）═══ */}
       {!isMobile && (
-        <div style={{
-          position: 'absolute',
-          bottom: 160,
-          right: 16,
-          zIndex: 40,
-        }}>
+        <div style={{ position: 'absolute', bottom: 160, right: 16, zIndex: 40 }}>
           <FilterPanel />
         </div>
       )}
 
-      {/* ═══ 右下角：语言切换（从导航栏移出，独立悬浮）═══ */}
       {!isMobile && (
-        <div style={{
-          position: 'absolute',
-          bottom: 100,
-          right: 16,
-          zIndex: 40,
-        }}>
+        <div style={{ position: 'absolute', bottom: 100, right: 16, zIndex: 40 }}>
           <LangSwitcher />
         </div>
       )}
 
-      {/* 左下角：地震 + 互联网健康 */}
       {!isMobile && <BottomLeftPanel />}
-
-      {/* 悬停卡片 */}
       {!isMobile && <HoverCard cable={hoverCable} position={hoverPos} />}
 
-      {/* 海缆详情面板 */}
       <CableDetailPanel />
 
-      {/* 右下角署名 */}
       {!isMobile && (
         <div style={{
           position: 'absolute', bottom: 10, right: 16,
@@ -225,19 +183,18 @@ function HomeContent() {
           by Jiang Yun
         </div>
       )}
+
       <a href="/admin" style={{
         position: 'fixed', bottom: 60, right: 16, zIndex: 100,
         width: 32, height: 32, borderRadius: 8,
         backgroundColor: 'rgba(255,255,255,0.05)',
         border: '1px solid rgba(255,255,255,0.1)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        textDecoration: 'none', fontSize: 14,
-        opacity: 0.4,
+        textDecoration: 'none', fontSize: 14, opacity: 0.4,
       }} title="管理后台">
         🔒
       </a>
 
-      {/* 移动端：底部导航栏 + 所有功能抽屉 */}
       {isMobile && <MobileUI />}
     </div>
   );
@@ -259,4 +216,3 @@ function StatBadge({ number, label, color }: { number: number; label: string; co
     </div>
   );
 }
-
