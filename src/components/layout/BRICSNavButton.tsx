@@ -1,6 +1,7 @@
 'use client';
 import { useTranslation } from '@/lib/i18n';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 export default function BRICSNavButton() {
   const { locale } = useTranslation();
