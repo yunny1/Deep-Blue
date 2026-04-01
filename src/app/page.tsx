@@ -123,10 +123,18 @@ function HomeContent() {
               <AnalysisMenu />
               <BRICSNavButton />
               <Link
-                href="/sovereign-network"
-                className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-1"
-              >
-                自主权网络
+                 href="/sovereign-network"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '5px 14px', background: 'rgba(212,175,55,.08)',
+                    border: '1px solid rgba(212,175,55,.25)', borderRadius: 8,
+                    fontSize: 13, fontWeight: 600, color: '#D4AF37',
+                    textDecoration: 'none', transition: 'all .2s',
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                  }}
+                >
+                  自主权网络
+                </a>
               </Link>
               <div style={{ width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.1)' }} />
             </>
