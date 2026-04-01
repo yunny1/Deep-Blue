@@ -385,51 +385,21 @@ function MatrixCell({
 
 // ── CSV 导出 ─────────────────────────────────────────────────────
 function exportTransitCSV(pairs: PairResult[], isZh: boolean) {
-  // ✅ 全量展开：每条路径的每段的每条候选海缆都单独一行
-  // 这样分析师可以在 Excel 里按任意维度透视
+  // 完整展开：每条路径 × 每段 × 每条候选海缆 = 独立一行
+  // 分析师可在 Excel 里按任意维度透视
   const headers = isZh
-    ? [
-        '甲方代码','甲方',
-        '乙方代码','乙方',
-        '路径类型',          // 直连 / 1段中转 / 2段中转
-        '路径节点序列',      // 如：中国 → 新加坡 → 巴西
-        '中转国是否全为金砖',
-        '路径整体主权',
-        '路径主权分(0-100)',
-        '段序号',            // 1 / 2 / 3
-        '本段起点','本段终点',
-        '海缆名称',
-        '海缆状态',
-        '长度(km)',
-        'RFS年份',
-        '建造商',
-        '运营商',
-        '本段主权等级',
-        '本段主权分',
-        '本段主权说明',
-        '是否为该段最优海缆',
-      ]
-    : [
-        'From Code','From Country',
-        'To Code','To Country',
-        'Path Type',
-        'Path Nodes',
-        'All Transit BRICS',
-        'Path Sovereignty',
-        'Path Score(0-100)',
-        'Segment No.',
-        'Seg From','Seg To',
-        'Cable Name',
-        'Cable Status',
-        'Length(km)',
-        'RFS Year',
-        'Vendor/Builder',
-        'Operators',
-        'Segment Sovereignty',
-        'Segment Score',
-        'Segment Reason',
-        'Is Best Cable in Segment',
-      ];
+    ? ['甲方代码','甲方','乙方代码','乙方','路径类型','路径节点序列',
+       '中转国是否全为金砖','路径整体主权','路径主权分',
+       '段序号','本段起点','本段终点',
+       '海缆名称','海缆状态','长度(km)','RFS年份',
+       '建造商','运营商','本段主权','本段主权分','本段主权说明',
+       '是否为该段最优海缆']
+    : ['From Code','From','To Code','To','Path Type','Path Nodes',
+       'All Transit BRICS','Path Sovereignty','Path Score',
+       'Seg#','Seg From','Seg To',
+       'Cable Name','Cable Status','Length(km)','RFS Year',
+       'Vendor','Operators','Seg Sovereignty','Seg Score','Sov Reason',
+       'Is Best Cable'];
 
   const rows: string[][] = [headers];
 
@@ -437,22 +407,23 @@ function exportTransitCSV(pairs: PairResult[], isZh: boolean) {
     if (pair.isLandlocked || pair.paths.length === 0) continue;
 
     for (const path of pair.paths) {
+      // 路径类型：直连 / 1段中转 / 2段中转
       const pathType = path.hopCount === 1
         ? (isZh ? '直连' : 'Direct')
         : isZh ? `${path.hopCount - 1}段中转` : `${path.hopCount - 1}-hop transit`;
 
-      // 路径节点序列：起点 → 中转1 → 中转2 → 终点
+      // ✅ 路径节点序列：起点 → [中转国] → 终点（包含起点）
       const nodeSeq = [
         isZh ? pair.fromNameZh : pair.fromName,
         ...path.transitCountries.map(t => isZh ? t.nameZh : t.name),
         isZh ? pair.toNameZh : pair.toName,
       ].join(' → ');
 
-      for (let segIdx = 0; segIdx < path.segments.length; segIdx++) {
-        const seg = path.segments[segIdx];
+      for (let si = 0; si < path.segments.length; si++) {
+        const seg = path.segments[si];
 
         if (seg.cables.length === 0) {
-          // 该段没有海缆数据，仍输出一行占位
+          // 该段无海缆数据，输出占位行，让分析师知道这段数据缺失
           rows.push([
             pair.from, isZh ? pair.fromNameZh : pair.fromName,
             pair.to,   isZh ? pair.toNameZh   : pair.toName,
@@ -460,7 +431,7 @@ function exportTransitCSV(pairs: PairResult[], isZh: boolean) {
             path.allTransitBRICS ? 'Y' : 'N',
             isZh ? path.pathSovereignty.label_zh : path.pathSovereignty.label_en,
             path.pathSovereigntyScore.toString(),
-            (segIdx + 1).toString(),
+            (si + 1).toString(),
             isZh ? seg.fromNameZh : seg.fromName,
             isZh ? seg.toNameZh   : seg.toName,
             isZh ? '无海缆数据' : 'No cable data',
@@ -473,9 +444,9 @@ function exportTransitCSV(pairs: PairResult[], isZh: boolean) {
           continue;
         }
 
-        // ✅ 展开该段所有候选海缆，每条单独一行
-        for (let cableIdx = 0; cableIdx < seg.cables.length; cableIdx++) {
-          const cable = seg.cables[cableIdx];
+        // ✅ 展开该段所有候选海缆，第一条标记"最优"
+        for (let ci = 0; ci < seg.cables.length; ci++) {
+          const cable = seg.cables[ci];
           rows.push([
             pair.from, isZh ? pair.fromNameZh : pair.fromName,
             pair.to,   isZh ? pair.toNameZh   : pair.toName,
@@ -483,7 +454,7 @@ function exportTransitCSV(pairs: PairResult[], isZh: boolean) {
             path.allTransitBRICS ? 'Y' : 'N',
             isZh ? path.pathSovereignty.label_zh : path.pathSovereignty.label_en,
             path.pathSovereigntyScore.toString(),
-            (segIdx + 1).toString(),
+            (si + 1).toString(),
             isZh ? seg.fromNameZh : seg.fromName,
             isZh ? seg.toNameZh   : seg.toName,
             cable.name,
@@ -495,7 +466,7 @@ function exportTransitCSV(pairs: PairResult[], isZh: boolean) {
             isZh ? cable.sovereignty.label_zh : cable.sovereignty.label_en,
             cable.sovereignty.score.toString(),
             isZh ? cable.sovereignty.reason_zh : cable.sovereignty.reason_en,
-            cableIdx === 0 ? 'Y' : 'N',   // 第一条=该段最优海缆
+            ci === 0 ? 'Y' : 'N',
           ]);
         }
       }

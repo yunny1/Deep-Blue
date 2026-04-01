@@ -135,7 +135,7 @@ function enumeratePaths(
   const stack: StackItem[] = [{ nodes: [from], segments: [] }];
 
   while (stack.length > 0 && results.length < maxPaths) {
-    const { nodes, segments } = stack.pop()!;
+    const { nodes, segments } = stack.shift()!;
     const current = nodes[nodes.length - 1];
 
     // 到达终点，记录路径
