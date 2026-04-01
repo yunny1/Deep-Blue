@@ -32,6 +32,7 @@
     "react-map-gl": "^8.1.0",
     "resium": "^1.19.4",
     "tailwind-merge": "^3.5.0",
+    "topojson-client": "^3.1.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -40,6 +41,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/topojson-client": "^3.1.4",
     "babel-plugin-react-compiler": "1.0.0",
     "copy-webpack-plugin": "^14.0.0",
     "eslint": "^9",
