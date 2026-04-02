@@ -163,7 +163,7 @@ function buildMemberFeatures(isZh: boolean): GeoJSON.FeatureCollection {
     type: 'FeatureCollection',
     features: BRICS_MEMBERS.map(code => {
       const meta = BRICS_COUNTRY_META[code];
-      const name = isZh ? (meta?.nameZh ?? code) : (meta?.nameEn ?? meta?.nameZh ?? code);
+      const name = meta?.nameZh ?? meta?.name ?? code;
       return { type: 'Feature' as const, properties: { code, name }, geometry: { type: 'Point' as const, coordinates: meta?.center ?? [0, 0] } };
     }),
   };
