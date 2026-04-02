@@ -22,7 +22,6 @@ export async function GET() {
         name: true,
         status: true,           // ← 新增：在役/退役/计划中
         lengthKm: true,
-        capacityTbps: true,
         fiberPairs: true,
         rfsDate: true,
         routeGeojson: true,
@@ -69,7 +68,7 @@ export async function GET() {
       name: c.name,
       status: c.status,                            // ← 新增
       lengthKm: c.lengthKm,
-      capacityTbps: c.capacityTbps,
+      
       fiberPairs: c.fiberPairs,
       rfsDate: c.rfsDate,
       routeGeojson: c.routeGeojson ?? null,
