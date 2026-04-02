@@ -32,6 +32,17 @@ export async function GET() {
   } catch (e) {
     console.warn('[sovereign-routes GET] Redis read failed, using static:', e);
   }
+  // 验证数据有效性：如果超过一半的路径缺少 from 或 cables 字段，认为数据损坏
+const validCount = routes.filter(
+  (r: SovereignRoute) => r.from && r.from.length > 0 && r.cables && r.cables.length > 0
+).length;
+
+if (validCount < routes.length * 0.5) {
+  // Redis 数据损坏，回退到静态数据
+  return NextResponse.json({ routes: SOVEREIGN_ROUTES, source: 'static-fallback' });
+}
+
+return NextResponse.json({ routes, source: 'redis' });
   // 回退到静态数据
   return NextResponse.json({ routes: SOVEREIGN_ROUTES, source: 'static' });
 }
