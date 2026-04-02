@@ -39,7 +39,7 @@ interface Stats {
 
 function HomeContent() {
   const [stats, setStats] = useState<Stats | null>(null);
-  const { viewMode, setSelectedCable, selectedCable } = useMapStore();
+  const { viewMode, setSelectedCable, selectedCableId } = useMapStore();
   const [hoverCable, setHoverCable] = useState<CableHoverInfo | null>(null);
   const [hoverPos, setHoverPos]     = useState({ x: 0, y: 0 });
   const { t } = useTranslation();
@@ -54,7 +54,7 @@ function HomeContent() {
   const isMobile = windowWidth < 768;
 
   // 面板是否展开（有选中海缆就展开）
-  const panelOpen = !!selectedCable && !isMobile;
+  const panelOpen = !!selectedCableId && !isMobile;
 
   useEffect(() => {
     fetch('/api/stats').then(r => r.json()).then(setStats).catch(console.error);
