@@ -12,6 +12,7 @@
 import { useState, useRef, useCallback } from 'react';
 import NewsInitButton from '@/components/admin/NewsInitButton';
 import { useRouter } from 'next/navigation';
+import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
 
 // ── 海缆字段完整定义（与 Prisma schema 对齐）──────────────────────────────────
 const CABLE_FIELDS: { key: string; label: string; type: 'text' | 'number' | 'select' | 'textarea'; options?: string[] }[] = [
@@ -408,7 +409,7 @@ export default function CableIntakePage() {
           触发新闻初始化
         </button>
       </div>
-
+    <SovereignRouteCompare />
     <NewsInitButton />
     </div>
   );
