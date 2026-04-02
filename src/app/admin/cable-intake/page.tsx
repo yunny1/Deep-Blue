@@ -149,36 +149,6 @@ export default function CableIntakePage() {
       setXlsxMsg(`注意：数据已解析（${data.length} 条），但上传 API 尚未实现。如需持久化，请联系开发者添加 /api/admin/sovereign-routes-upload 端点。`);
     }
   };
-      {/* 新闻初始化区域 */}
-      <div style={{ background: CARD, border: '1px solid rgba(139,92,246,.2)', borderRadius: 14, padding: '20px 24px' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: '#8B5CF6', marginBottom: 8 }}>
-          海缆新闻初始化（首次部署执行一次）
-        </div>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 14, lineHeight: 1.6 }}>
-          为全部 26 条保留海缆搜索近两年新闻并缓存到 Redis。约需 1-2 分钟，之后每天凌晨自动更新。
-        </p>
-        <button
-          onClick={async () => {
-            if (!confirm('确认触发新闻初始化？约需1-2分钟。')) return;
-            const btn = document.getElementById('init-news-btn') as HTMLButtonElement;
-            btn.disabled = true; btn.textContent = '初始化中，请等待...';
-            try {
-              const res = await fetch('/api/admin/init-cable-news', { method: 'POST' });
-              const data = await res.json();
-              alert(`✓ 完成！已为 ${data.initialized} 条海缆初始化新闻缓存。`);
-            } catch {
-              alert('初始化失败，请检查控制台');
-            } finally {
-              btn.disabled = false; btn.textContent = '触发新闻初始化';
-            }
-          }}
-          id="init-news-btn"
-          style={{ padding: '9px 20px', borderRadius: 8, background: 'rgba(139,92,246,.15)', border: '1px solid rgba(139,92,246,.4)', color: '#8B5CF6', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}
-        >
-          触发新闻初始化
-        </button>
-      </div>
-
 
 
 
@@ -398,6 +368,47 @@ export default function CableIntakePage() {
           </div>
         </div>
       </div>
+    {/* 新闻初始化 */}
+      <div style={{ background: CARD, border: '1px solid rgba(139,92,246,.2)', borderRadius: 14, padding: '20px 24px' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#8B5CF6', marginBottom: 8 }}>
+          海缆新闻初始化（首次部署执行一次）
+        </div>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 14, lineHeight: 1.6 }}>
+          为全部 26 条保留海缆搜索近两年新闻并缓存到 Redis。约需 1-2 分钟，之后每天凌晨 2 点自动更新。
+        </p>
+        <button
+          id="init-news-btn"
+          onClick={async () => {
+            if (!confirm('确认触发新闻初始化？约需 1-2 分钟。')) return;
+            const btn = document.getElementById('init-news-btn') as HTMLButtonElement;
+            btn.disabled = true;
+            btn.textContent = '初始化中，请耐心等待…';
+            try {
+              const res = await fetch('/api/admin/init-cable-news', { method: 'POST' });
+              const data = await res.json();
+              if (data.success) {
+                alert(`✓ 完成！已为 ${data.initialized} 条海缆初始化新闻缓存。`);
+              } else {
+                alert(`失败：${data.error}`);
+              }
+            } catch {
+              alert('网络错误，请检查控制台');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = '触发新闻初始化';
+            }
+          }}
+          style={{
+            padding: '9px 20px', borderRadius: 8, cursor: 'pointer',
+            background: 'rgba(139,92,246,.15)', border: '1px solid rgba(139,92,246,.4)',
+            color: '#8B5CF6', fontSize: 13, fontWeight: 500,
+          }}
+        >
+          触发新闻初始化
+        </button>
+      </div>
+
+
     </div>
   );
 }

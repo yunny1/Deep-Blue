@@ -513,8 +513,21 @@ export default function SovereignNetworkMap({
     return {
       x, y, name: cableName, slug: db?.slug ?? cableName.toLowerCase().replace(/\s+/g,'-'),
       score: maxScore, routeCount,
-      vendor: db?.vendor, owners: db?.owners, lengthKm: db?.lengthKm,
-      capacityTbps: db?.capacityTbps, fiberPairs: db?.fiberPairs,
+      // vendor 在数据库里是关联的 Company 对象，需要提取 .name 字符串
+      vendor: db?.vendor
+        ? (typeof db.vendor === 'string'
+            ? db.vendor
+            : (db.vendor as { name?: string })?.name ?? null)
+        : null,
+      // owners 同理，可能是 Company 对象数组
+      owners: Array.isArray(db?.owners)
+        ? (db!.owners as unknown[]).map(o =>
+            typeof o === 'string' ? o : (o as { name?: string })?.name ?? ''
+          ).filter(Boolean)
+        : [],
+      lengthKm: db?.lengthKm ?? null,
+      capacityTbps: db?.capacityTbps ?? null,
+      fiberPairs: db?.fiberPairs ?? null,
       segments, locked,
     };
   }, [routes]);
