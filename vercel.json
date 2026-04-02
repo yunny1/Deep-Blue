@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/fetch-cable-news",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}
