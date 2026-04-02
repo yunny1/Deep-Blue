@@ -383,7 +383,7 @@ export default function SovereignNetworkAtlas(){
                 highlightedCableName={highlightedCable}
                 onRouteSelect={handleSelect}
                 onPopup={handlePopup}
-                onCableClick={(name,score)=>openCableModal(name,score,allUniqueCables.find(c=>c.name.toLowerCase()===name.toLowerCase())?.routeCount??1)}
+                
               />
             </div>
 
