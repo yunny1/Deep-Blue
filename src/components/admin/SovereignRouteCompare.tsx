@@ -331,7 +331,7 @@ export default function SovereignRouteCompare() {
                                 background: 'rgba(234,179,8,.1)', color: '#EAB308', border: '1px solid rgba(234,179,8,.2)' }}>
                                 {field}：
                                 <span style={{ textDecoration: 'line-through', opacity: .6, marginRight: 3 }}>
-                                  {String((item.oldRoute as Record<string,unknown>)[field])}
+                                  {String((item.oldRoute as unknown as Record<string, unknown>)[field])}
                                 </span>
                                 →
                                 <span style={{ marginLeft: 3 }}>
