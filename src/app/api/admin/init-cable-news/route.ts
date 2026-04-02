@@ -1,8 +1,5 @@
-// src/app/api/admin/init-cable-news/route.ts
-//
-// 管理员接口：手动触发首次初始化 26 条海缆的新闻缓存。
-// 在部署后第一次访问 /admin/cable-intake 时可从管理页面触发一次。
-// 之后每日 Cron 自动更新，不需要再手动触发。
+// src/app/api/admin/init-cable-news/route.ts  v2
+// 修复：使用 enable_search:true 联网搜索
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminJWT } from '@/lib/admin-auth';
@@ -18,7 +15,7 @@ function nameToSlug(name: string): string {
 }
 
 async function redisSet(key: string, value: string, ttl: number) {
-  const url   = process.env.UPSTASH_REDIS_REST_URL;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return;
   await fetch(`${url}/set/${encodeURIComponent(key)}`, {
@@ -32,45 +29,60 @@ async function fetchNewsForCable(cableName: string): Promise<unknown[]> {
   const apiKey = process.env.QWEN_API_KEY;
   if (!apiKey) return [];
   const y = new Date().getFullYear();
+
   try {
     const res = await fetch(
       'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           model: 'qwen-plus',
           input: {
             messages: [
               {
                 role: 'system',
-                content: '你是新闻提取助手，从 web_search 结果中提取真实新闻，只返回 JSON 数组，不得虚构。格式：[{"title":"","titleZh":"","summary":"","sourceUrl":"","sourceName":"","publishDate":"YYYY-MM-DD","category":""}]',
+                content: `你是海底光缆新闻助手。搜索真实新闻，只返回 JSON 数组，禁止虚构。
+格式：[{"title":"","titleZh":"","summary":"","sourceUrl":"https://...","sourceName":"","publishDate":"YYYY-MM-DD","category":"cut|repair|deployment|policy|investment|incident|other"}]
+如无结果返回 []。不加任何额外文字。`,
               },
               {
                 role: 'user',
-                content: `搜索 "${cableName}" 海缆近两年新闻，最多8条，倒序，只返回有真实URL的条目。`,
+                content: `搜索 "${cableName} submarine cable" 在 ${y-1} 至 ${y} 年的新闻，最多8条，倒序，只要有真实URL的。`,
               },
             ],
           },
           parameters: {
-            result_format: 'message', temperature: 0,
-            tools: [{ type: 'web_search', web_search: { search_query: `"${cableName}" submarine cable ${y-1} OR ${y}`, enable: true } }],
+            result_format: 'message',
+            temperature: 0.1,
+            enable_search: true,  // ← 关键修复
           },
         }),
       }
     );
+
     if (!res.ok) return [];
     const data = await res.json();
     const content = data?.output?.choices?.[0]?.message?.content ?? '';
     const text = Array.isArray(content)
       ? content.map((c: { text?: string }) => c.text ?? '').join('')
       : String(content);
-    const cleaned = text.replace(/```json?\s*/gi, '').replace(/```\s*/g, '').trim();
-    const si = cleaned.indexOf('[');
-    if (si === -1) return [];
-    const parsed = JSON.parse(cleaned.slice(si));
-    return parsed.filter((x: { sourceUrl?: string }) => x.sourceUrl?.startsWith('http'));
-  } catch { return []; }
+
+    const si = text.indexOf('[');
+    const ei = text.lastIndexOf(']');
+    if (si === -1 || ei === -1) return [];
+
+    const parsed = JSON.parse(text.slice(si, ei + 1));
+    return parsed.filter((x: { sourceUrl?: string; title?: string }) =>
+      x.sourceUrl?.startsWith('http') && x.title
+    );
+  } catch (e) {
+    console.error(`[init-news] ${cableName}:`, e);
+    return [];
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -78,19 +90,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const results: { name: string; count: number }[] = [];
+  const results: { name: string; slug: string; count: number; error?: string }[] = [];
   const now = new Date().toISOString();
 
   for (const cableName of CANONICAL_CABLE_NAMES) {
     const slug = nameToSlug(cableName);
-    await new Promise(r => setTimeout(r, 2500)); // 限流
-    const news = await fetchNewsForCable(cableName);
-    if (news.length > 0) {
-      await redisSet(`cable-news:${slug}`, JSON.stringify(news), 93600);
-      await redisSet(`cable-news-ts:${slug}`, now, 93600);
+    try {
+      // 每条缆间隔 2 秒防限流
+      await new Promise(r => setTimeout(r, 2000));
+      const news = await fetchNewsForCable(cableName);
+
+      if (news.length > 0) {
+        await redisSet(`cable-news:${slug}`, JSON.stringify(news), 93600);
+        await redisSet(`cable-news-ts:${slug}`, now, 93600);
+      }
+      results.push({ name: cableName, slug, count: news.length });
+      console.log(`[init-news] ${cableName}: ${news.length} articles`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      results.push({ name: cableName, slug, count: 0, error: msg });
     }
-    results.push({ name: cableName, count: news.length });
   }
 
-  return NextResponse.json({ success: true, initialized: CANONICAL_CABLE_NAMES.length, results });
+  return NextResponse.json({
+    success: true,
+    initialized: CANONICAL_CABLE_NAMES.length,
+    fetched: results.filter(r => r.count > 0).length,
+    results,
+  });
 }
