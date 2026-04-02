@@ -184,7 +184,20 @@ function AnimNum({ n, color=GOLD_LIGHT }: { n: number; color?: string }) {
 
 // ── 主组件 ──────────────────────────────────────────────────────────────────
 export default function SovereignNetworkAtlas() {
-  const { isZh } = useBRICS();
+  // 从 localStorage 读取当前语言，并提供切换函数
+// 之所以不直接用 useBRICS() 的 setIsZh，是因为我们需要同时广播事件给地图组件
+  const [isZh, setIsZhState] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? (localStorage.getItem('deep-blue-locale') ?? 'zh') === 'zh' : true
+  );
+  const toggleLang = useCallback(() => {
+    setIsZhState(prev => {
+      const next = !prev;
+      localStorage.setItem('deep-blue-locale', next ? 'zh' : 'en');
+      // 广播给 SovereignNetworkMap 和其他监听语言切换的组件
+      window.dispatchEvent(new Event('deep-blue-locale-changed'));
+      return next;
+    });
+  }, []);
   const t = isZh ? T.zh : T.en;
 
   const [routes,       setRoutes]       = useState<SovereignRoute[]>(SOVEREIGN_ROUTES);
@@ -350,17 +363,35 @@ export default function SovereignNetworkAtlas() {
 
         {/* Hero */}
         <div className="sna-up" style={{ marginBottom:28 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-            <a href="/brics" style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'5px 12px',
-              background:`${GOLD}10`, border:`1px solid ${GOLD}28`, borderRadius:20, textDecoration:'none', fontSize:11, color:'#9CA3AF' }}>
-              {t.back}
-            </a>
-            <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 14px',
-              background:`${GOLD}08`, border:`1px solid ${GOLD}1e`, borderRadius:20 }}>
-              <span style={{ width:8, height:8, borderRadius:'50%', background:GOLD, boxShadow:`0 0 8px ${GOLD}80` }} />
-              <span style={{ fontSize:11, color:`${GOLD}BB`, letterSpacing:'.1em', textTransform:'uppercase', fontWeight:600 }}>{t.badge}</span>
-            </div>
+         
+
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {/* 语言切换按钮 */}
+          <button
+            onClick={toggleLang}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
+              background: 'rgba(212,175,55,.1)', border: '1px solid rgba(212,175,55,.3)',
+              color: '#D4AF37', fontSize: 12, fontWeight: 600,
+              fontFamily: "'DM Sans',system-ui,sans-serif",
+              transition: 'background .15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,.18)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,.1)'; }}
+          >
+            {isZh ? '🌐 EN' : '🌐 中文'}
+          </button>
+          {/* 原来的 badge */}
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 14px',
+            background:`${GOLD}08`, border:`1px solid ${GOLD}1e`, borderRadius:20 }}>
+            <span style={{ width:8, height:8, borderRadius:'50%', background:GOLD, boxShadow:`0 0 8px ${GOLD}80` }}/>
+            <span style={{ fontSize:11, color:`${GOLD}BB`, letterSpacing:'.1em', textTransform:'uppercase', fontWeight:600 }}>{t.badge}</span>
           </div>
+        </div>
+
+
+
           <h1 style={{ fontSize:36, fontWeight:800, color:GOLD_LIGHT, margin:'0 0 8px', lineHeight:1.1 }}>{t.title}</h1>
           <p style={{ fontSize:14, color:'rgba(255,255,255,.4)', margin:0, maxWidth:640, lineHeight:1.75 }}>
             {t.desc.replace('{n}', String(CANONICAL_CABLE_NAMES.length))}
@@ -460,14 +491,7 @@ export default function SovereignNetworkAtlas() {
 
           {/* 地图 + 详情 */}
           <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:12 }}>
-            <div style={{ display:'flex', justifyContent:'flex-end' }}>
-              <label style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'5px 12px',
-                background:`${GOLD}08`, border:`1px solid ${GOLD}18`, borderRadius:8,
-                cursor:'pointer', fontSize:11, color:`${GOLD}80`, transition:'all .15s' }}>
-                {normalizing ? t.uploadingAI : t.uploadBtn}
-                <input type="file" accept=".xlsx,.xls" style={{ display:'none' }} onChange={handleUpload} disabled={normalizing}/>
-              </label>
-            </div>
+          
 
             {highlightedCable && !selectedRoute && (
               <div style={{ padding:'8px 14px', borderRadius:8, background:'rgba(255,215,0,.08)', border:'1px solid rgba(255,215,0,.3)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>

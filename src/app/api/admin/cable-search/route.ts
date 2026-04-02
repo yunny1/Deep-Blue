@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     },
     select: {
       id: true, slug: true, name: true, status: true,
-      lengthKm: true, fiberPairs: true, capacityTbps: true, rfsDate: true,
+      lengthKm: true, fiberPairs: true, rfsDate: true,
       reviewStatus: true,
       // 关联字段：只取 .name，不返回整个 Company 对象
       vendor: { select: { name: true } },
@@ -43,7 +43,6 @@ export async function GET(req: NextRequest) {
     reviewStatus: c.reviewStatus,
     lengthKm:     c.lengthKm,
     fiberPairs:   c.fiberPairs,
-    capacityTbps: c.capacityTbps,
     rfsYear:      c.rfsDate ? new Date(c.rfsDate).getFullYear() : null,
     // 关键：vendor 和 owners 只返回字符串，不返回对象
     vendor:       c.vendor?.name ?? null,
