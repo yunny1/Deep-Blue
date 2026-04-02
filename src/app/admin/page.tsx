@@ -1,11 +1,10 @@
 'use client';
 // src/app/admin/page.tsx
-// 管理后台 v2：新增 PENDING_REVIEW 海缆审核 + DLQ AI 审核
+// 管理后台 v3：新增海缆智能录入入口
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-// ── 类型 ─────────────────────────────────────────────────────────
 interface SyncLog {
   runAt: string; tgTotal: number; snTotal: number;
   snOnlyAdded: number; snOnlySkipped: number;
@@ -28,7 +27,6 @@ interface PendingCable {
   similarCables: Array<{ id: string; name: string; status: string; lengthKm: number | null; _count: { landingStations: number } }>;
 }
 
-// ── 主组件 ───────────────────────────────────────────────────────
 export default function AdminPage() {
   const router = useRouter();
   const [tab, setTab] = useState<'logs' | 'dlq' | 'pending' | 'ai_audit'>('logs');
@@ -120,7 +118,6 @@ export default function AdminPage() {
     } finally { setSaving(false); }
   };
 
-  // 批准 AI 推理的坐标
   const handleApproveAI = async (item: DLQItem) => {
     if (!item.aiSuggestedPayload) return;
     setSaving(true);
@@ -146,7 +143,6 @@ export default function AdminPage() {
     setSelected(new Set()); loadDLQ('PENDING', dlqPage);
   };
 
-  // PENDING_REVIEW 操作
   const handlePendingAction = async (id: string, action: string, mergeIntoId?: string) => {
     setActionLoading(id);
     try {
@@ -205,6 +201,84 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+
+        {/* ── 快捷工具区（Tab 栏上方，永远可见）── */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4B5563', marginBottom: 10 }}>
+            快捷工具
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+
+            {/* 海缆智能录入入口 */}
+            <a
+              href="/admin/cable-intake"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 16,
+                padding: '16px 20px',
+                backgroundColor: 'rgba(212,175,55,.06)',
+                border: '1px solid rgba(212,175,55,.2)',
+                borderRadius: 12,
+                textDecoration: 'none',
+                transition: 'all .18s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(212,175,55,.11)';
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,.45)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 20px rgba(212,175,55,.08)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(212,175,55,.06)';
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,.2)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none';
+              }}
+            >
+              <div style={{ fontSize: 26, flexShrink: 0 }}>🛰</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', marginBottom: 3 }}>
+                  海缆智能录入
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', lineHeight: 1.5 }}>
+                  上传资料 · AI 提取字段 · 模糊匹配 · 路径数据更新
+                </div>
+              </div>
+              <div style={{ fontSize: 16, color: 'rgba(212,175,55,.5)', flexShrink: 0 }}>→</div>
+            </a>
+
+            {/* 自主权网络图谱入口 */}
+            <a
+              href="/sovereign-network"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 16,
+                padding: '16px 20px',
+                backgroundColor: 'rgba(59,130,246,.05)',
+                border: '1px solid rgba(59,130,246,.18)',
+                borderRadius: 12,
+                textDecoration: 'none',
+                transition: 'all .18s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(59,130,246,.09)';
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(59,130,246,.35)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLAnchorElement).style.backgroundColor = 'rgba(59,130,246,.05)';
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(59,130,246,.18)';
+              }}
+            >
+              <div style={{ fontSize: 26, flexShrink: 0 }}>🌐</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#EDF2F7', marginBottom: 3 }}>
+                  自主权网络图谱
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', lineHeight: 1.5 }}>
+                  查看 26 条保留海缆 · 路径风险评级
+                </div>
+              </div>
+              <div style={{ fontSize: 16, color: 'rgba(59,130,246,.45)', flexShrink: 0 }}>→</div>
+            </a>
+
+          </div>
+        </div>
 
         {/* Tab */}
         <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 20 }}>
@@ -280,7 +354,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 相似的 TG 海缆 */}
                 {cable.similarCables.length > 0 && (
                   <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '10px 12px' }}>
                     <div style={{ fontSize: 10, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>疑似同源的 TG 海缆</div>
@@ -430,6 +503,7 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
       </div>
     </div>
   );
