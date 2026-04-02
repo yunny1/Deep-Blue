@@ -644,7 +644,7 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
         </div>
       ) : (
         <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-          {（route.cables ？？ ''）.split(' | ').map((cable, i) => {
+          {(route.cables ?? '').split(' | ').map((cable, i) => {
             const scores = route.riskScores.split(' | ').map(Number);
             const score = scores[i] ?? route.maxRisk;
             return (
