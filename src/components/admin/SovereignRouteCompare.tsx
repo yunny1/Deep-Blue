@@ -55,7 +55,7 @@ function parseRow(r: Record<string, unknown>): SovereignRoute {
     from:       String(r['甲方']            ?? ''),
     to:         String(r['乙方']            ?? ''),
     path,
-    nodes:      path.split(' → '), 
+    
     cables:     String(r['各段保留海缆']    ?? ''),
     riskScores: String(r['各段风险评分']    ?? ''),
     maxRisk:    Number(r['路径最大单段风险'] ?? 0),
