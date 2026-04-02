@@ -10,6 +10,7 @@
 // 6. xlsx 路径数据上传（从主页面移入管理后台）
 
 import { useState, useRef, useCallback } from 'react';
+import NewsInitButton from '@/components/admin/NewsInitButton';
 import { useRouter } from 'next/navigation';
 
 // ── 海缆字段完整定义（与 Prisma schema 对齐）──────────────────────────────────
@@ -408,7 +409,7 @@ export default function CableIntakePage() {
         </button>
       </div>
 
-
+    <NewsInitButton />
     </div>
   );
 }

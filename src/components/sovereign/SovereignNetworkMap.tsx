@@ -25,7 +25,7 @@ const TRANSIT_NODES: Record<string, [number, number]> = {
   '索马里':[46.2,5.2],'坦桑尼亚':[35.0,-6.4],'也门':[48.5,15.6],
 };
 
-const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
+const CATEGORY_LABELS_ZH: Record<string, { label: string; color: string }> = {
   cut:        { label: '断缆', color: '#EF4444' },
   repair:     { label: '修复', color: '#F59E0B' },
   deployment: { label: '部署', color: '#3B82F6' },
@@ -33,6 +33,15 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   investment: { label: '投资', color: '#10B981' },
   incident:   { label: '事件', color: '#F97316' },
   other:      { label: '其他', color: '#6B7280' },
+};
+const CATEGORY_LABELS_EN: Record<string, { label: string; color: string }> = {
+  cut:        { label: 'Cut',        color: '#EF4444' },
+  repair:     { label: 'Repair',     color: '#F59E0B' },
+  deployment: { label: 'Deploy',     color: '#3B82F6' },
+  policy:     { label: 'Policy',     color: '#8B5CF6' },
+  investment: { label: 'Investment', color: '#10B981' },
+  incident:   { label: 'Incident',   color: '#F97316' },
+  other:      { label: 'Other',      color: '#6B7280' },
 };
 
 // ── 类型 ─────────────────────────────────────────────────────────────────────
@@ -87,7 +96,7 @@ interface Props {
   highlightedCableName: string | null;
   onRouteSelect: (id: string | null) => void;
   onPopup?: (info: CablePopupInfo | null) => void;
-  // 不再需要 onCableClick（卡片在地图内部处理）
+  isZh?: boolean;
 }
 
 // ── 工具 ─────────────────────────────────────────────────────────────────────
@@ -151,10 +160,10 @@ function getCableSegments(cableName: string, routes: SovereignRoute[]) {
 
 // ── 浮动卡片组件 ──────────────────────────────────────────────────────────────
 function FloatingCableCard({
-  card, containerW, containerH, onClose, routes,
+  card, containerW, containerH, onClose, routes, isZh = true,
 }: {
   card: FloatingCard; containerW: number; containerH: number;
-  onClose: () => void; routes: SovereignRoute[];
+  onClose: () => void; routes: SovereignRoute[]; isZh?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [news, setNews]         = useState<NewsItem[] | null>(null);
@@ -178,6 +187,7 @@ function FloatingCableCard({
   const top  = Math.max(card.y - 60, 8);
 
   const color = riskColor(card.score);
+  const CATEGORY_LABELS = isZh ? CATEGORY_LABELS_ZH : CATEGORY_LABELS_EN;
 
   return (
     <div style={{
@@ -209,7 +219,7 @@ function FloatingCableCard({
               <div style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>
                 {card.score}
               </div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)', marginTop: 1 }}>风险</div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)', marginTop: 1 }}>{isZh ? '风险' : 'Risk'}</div>
             </div>
             {/* 关闭按钮（锁定态） */}
             {card.locked && (
@@ -224,13 +234,13 @@ function FloatingCableCard({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
             {card.vendor && (
               <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', whiteSpace: 'nowrap', minWidth: 44 }}>建造商</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', whiteSpace: 'nowrap', minWidth: 44 }}>{isZh ? '建造商' : 'Vendor'}</span>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,.75)' }}>{card.vendor}</span>
               </div>
             )}
             {card.owners && card.owners.length > 0 && (
               <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', whiteSpace: 'nowrap', minWidth: 44 }}>运营商</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', whiteSpace: 'nowrap', minWidth: 44 }}>{isZh ? '运营商' : 'Operators'}</span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   {card.owners.slice(0, 4).map(o => (
                     <span key={o} style={{ fontSize: 10, padding: '1px 5px', borderRadius: 4,
@@ -249,19 +259,19 @@ function FloatingCableCard({
           <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
             {card.lengthKm && (
               <div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>长度</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>{isZh ? '长度' : 'Length'}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.7)' }}>{card.lengthKm.toLocaleString()} km</div>
               </div>
             )}
             {card.capacityTbps && (
               <div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>容量</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>{isZh ? '容量' : 'Capacity'}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.7)' }}>{card.capacityTbps} Tbps</div>
               </div>
             )}
             {card.fiberPairs && (
               <div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>光纤对</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>{isZh ? '光纤对' : 'Fiber pairs'}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.7)' }}>{card.fiberPairs}</div>
               </div>
             )}
@@ -272,7 +282,7 @@ function FloatingCableCard({
         {card.segments.length > 0 && (
           <div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', marginBottom: 5, fontWeight: 600, letterSpacing: '.05em', textTransform: 'uppercase' }}>
-              涉及子段（{card.segments.length}）
+              {isZh ? `涉及子段（${card.segments.length}）` : `Segments (${card.segments.length})`}
             </div>
             {card.segments.map((seg, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
@@ -290,8 +300,10 @@ function FloatingCableCard({
 
         {/* 出现路径数 */}
         <div style={{ marginTop: 6, fontSize: 10, color: 'rgba(255,255,255,.3)' }}>
-          出现在 <strong style={{ color: 'rgba(255,255,255,.6)' }}>{card.routeCount}</strong> 条主权路径中
-          {!card.locked && <span style={{ marginLeft: 8, color: `${C.gold}80` }}>点击展开新闻 ▾</span>}
+          {isZh
+            ? <><strong style={{ color: 'rgba(255,255,255,.6)' }}>{card.routeCount}</strong> 条主权路径涉及此缆</>
+            : <>Appears in <strong style={{ color: 'rgba(255,255,255,.6)' }}>{card.routeCount}</strong> sovereign routes</>}
+          {!card.locked && <span style={{ marginLeft: 8, color: `${C.gold}80` }}>{isZh ? '点击展开新闻 ▾' : 'Click for news ▾'}</span>}
         </div>
       </div>
 
@@ -304,22 +316,22 @@ function FloatingCableCard({
         }}>
           <div style={{ padding: '10px 14px 14px' }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase',
-              color: `${C.gold}80`, marginBottom: 10 }}>近两年相关新闻</div>
+              color: `${C.gold}80`, marginBottom: 10 }}>{isZh ? '近两年相关新闻' : 'Recent News (2 years)'}</div>
 
             {newsLoading && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0', color: 'rgba(255,255,255,.35)', fontSize: 12 }}>
                 <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,.1)', borderTop: `2px solid ${C.gold}`, borderRadius: '50%', animation: 'sv-spin .7s linear infinite', flexShrink: 0 }} />
-                正在搜索最新新闻…
+                {isZh ? '正在搜索最新新闻…' : 'Searching for latest news…'}
               </div>
             )}
 
             {newsError && (
-              <div style={{ fontSize: 12, color: '#f87171', padding: '8px 0' }}>新闻加载失败，请稍后重试</div>
+              <div style={{ fontSize: 12, color: '#f87171', padding: '8px 0' }}>{isZh ? '新闻加载失败，请稍后重试' : 'Failed to load news, please retry'}</div>
             )}
 
             {!newsLoading && !newsError && news && news.length === 0 && (
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,.3)', padding: '8px 0' }}>
-                暂未找到近两年相关新闻
+                {isZh ? '暂未找到近两年相关新闻' : 'No recent news found for this cable'}
               </div>
             )}
 
@@ -340,7 +352,7 @@ function FloatingCableCard({
                       {cat.label}
                     </span>
                     <span style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0', lineHeight: 1.4 }}>
-                      {item.titleZh || item.title}
+                      {isZh ? (item.titleZh || item.title) : item.title}
                     </span>
                   </div>
                   {/* 摘要 */}
@@ -375,7 +387,9 @@ function FloatingCableCard({
           }}
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.07)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}>
-          {expanded ? '▲ 收起新闻' : '▼ 展开近两年新闻'}
+          {expanded
+            ? (isZh ? '▲ 收起新闻' : '▲ Collapse news')
+            : (isZh ? '▼ 展开近两年新闻' : '▼ Show recent news')}
         </button>
       )}
     </div>
@@ -385,7 +399,7 @@ function FloatingCableCard({
 // ── 主组件 ───────────────────────────────────────────────────────────────────
 export default function SovereignNetworkMap({
   height = '540px', routes, filteredRoutes, selectedRouteId,
-  cableApiData, highlightedCableName, onRouteSelect, onPopup,
+  cableApiData, highlightedCableName, onRouteSelect, onPopup, isZh = true,
 }: Props) {
   const containerRef  = useRef<HTMLDivElement>(null);
   const mapRef        = useRef<maplibregl.Map | null>(null);
@@ -779,6 +793,7 @@ export default function SovereignNetworkMap({
           containerH={H}
           onClose={() => setFloatingCard(null)}
           routes={routes}
+          isZh={isZh}
         />
       )}
 
@@ -786,15 +801,15 @@ export default function SovereignNetworkMap({
       {loadState === 'ready' && (
         <div style={{ position:'absolute', bottom:12, right:12, background:'rgba(10,22,40,.9)', backdropFilter:'blur(8px)', borderRadius:8, padding:'10px 14px', border:`1px solid ${C.gold}12`, zIndex:5, display:'flex', flexDirection:'column', gap:5 }}>
           {[
-            { color:C.gold,    dot:true,  label:'金砖成员国' },
-            { color:'#60A5FA', dot:true,  label:'金砖伙伴国' },
-            { color:'#64748b', dot:true,  label:'中转节点' },
-            { color:C.gold,    dot:false, label:'主权保留海缆（悬浮查看）' },
-          ].map(({ color, dot, label }) => (
-            <div key={label} style={{ display:'flex', alignItems:'center', gap:7, fontSize:11, color:'rgba(255,255,255,.5)' }}>
+            { color:C.gold,    dot:true,  labelZh:'金砖成员国',        labelEn:'BRICS Members' },
+            { color:'#60A5FA', dot:true,  labelZh:'金砖伙伴国',        labelEn:'BRICS Partners' },
+            { color:'#64748b', dot:true,  labelZh:'中转节点',          labelEn:'Transit nodes' },
+            { color:C.gold,    dot:false, labelZh:'主权保留海缆（悬浮查看）', labelEn:'Sovereign cables (hover)' },
+          ].map(({ color, dot, labelZh, labelEn }) => (
+            <div key={labelZh} style={{ display:'flex', alignItems:'center', gap:7, fontSize:11, color:'rgba(255,255,255,.5)' }}>
               {dot ? <span style={{ width:8, height:8, borderRadius:'50%', background:color, boxShadow:`0 0 6px ${color}70`, flexShrink:0 }} />
                    : <span style={{ width:18, height:3, background:color, borderRadius:1, flexShrink:0 }} />}
-              {label}
+              {isZh ? labelZh : labelEn}
             </div>
           ))}
         </div>
