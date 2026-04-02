@@ -76,6 +76,9 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   // 地震扩散圆实体引用（用于清除）
   const quakeRippleRef = useRef<any[]>([]);
   const quakeAnimRef   = useRef<any>(null);
+  // 当前高亮的缆：用 ref 存而不是局部变量，这样组件级的 useEffect 也能访问到
+  const lastHoveredRef     = useRef<any>(null);
+  const lastHoveredSlugRef = useRef<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats]     = useState({ total: 0, rendered: 0 });
@@ -87,6 +90,7 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
     filterVendors, filterOperators,
     searchHighlightSlugs, searchHoverSlug,
     earthquakeHighlight,
+    selectedCableId,
   } = useMapStore();
 
   // ── 初始化 ────────────────────────────────────────────────────
@@ -230,39 +234,39 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
       // 鼠标交互
       if (!viewer || !viewer.scene) { setLoading(false); return; }
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-      let lastHovered: any = null, lastMaterial: any = null;
 
       handler.setInputAction((m: any) => {
-                // 恢复上次悬停的所有实体
-        if (lastHovered) {
-          const lastSlug = entityMetaRef.current.get(lastHovered)?.slug;
-          if (lastSlug) {
-            const siblings = entitiesMapRef.current.get(lastSlug) || [];
-            for (const sibling of siblings) {
-              const meta = entityMetaRef.current.get(sibling);
-              if (!meta) continue;
-              try {
-                restoreCableMaterial(Cesium, sibling, meta, useMapStore.getState().colorMode);
-              } catch (e) {}
-            }
-          }
-          lastHovered = null; lastMaterial = null;
-        }
         const picked = viewer.scene.pick(m.endPosition);
+
         if (Cesium.defined(picked) && picked.id?.polyline) {
           const e = picked.id;
-          lastHovered = e; lastMaterial = e.polyline.material;
-          // 高亮该海缆的所有实体
-          const slug = entityMetaRef.current.get(e)?.slug;
-          if (slug) {
-            const siblings = entitiesMapRef.current.get(slug) || [];
-            for (const sibling of siblings) {
+          const newSlug = entityMetaRef.current.get(e)?.slug ?? null;
+          const currentSlug = lastHoveredSlugRef.current;
+
+          // 只有悬浮到"不同的缆"时才切换高亮
+          // 悬浮到空白区域时 newSlug 不存在，走 else 分支，什么都不做
+          if (newSlug && newSlug !== currentSlug) {
+            // 恢复上一条缆的材质
+            if (currentSlug) {
+              const siblings = entitiesMapRef.current.get(currentSlug) || [];
+              for (const sibling of siblings) {
+                const meta = entityMetaRef.current.get(sibling);
+                if (!meta) continue;
+                try { restoreCableMaterial(Cesium, sibling, meta, useMapStore.getState().colorMode); } catch {}
+              }
+            }
+            // 高亮新缆（该缆的所有线段实体）
+            lastHoveredRef.current = e;
+            lastHoveredSlugRef.current = newSlug;
+            const newSiblings = entitiesMapRef.current.get(newSlug) || [];
+            for (const sibling of newSiblings) {
               try {
                 sibling.polyline.material = new Cesium.Color(1, 1, 1, 1);
                 sibling.polyline.width = new Cesium.ConstantProperty(3);
-              } catch (err) {}
+              } catch {}
             }
           }
+
           if (onHover && e.properties) {
             onHover({
               name: e.name || 'Unknown',
@@ -273,6 +277,8 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
           }
           viewer.scene.canvas.style.cursor = 'pointer';
         } else {
+          // 鼠标移到空白区域：只重置 cursor 和 hover 信息卡
+          // 不恢复高亮——高亮保持稳定，直到明确操作才清除
           if (onHover) onHover(null, { x: 0, y: 0 });
           viewer.scene.canvas.style.cursor = 'default';
         }
@@ -291,6 +297,24 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
     initCesium();
     return () => { if (viewerRef.current) { viewerRef.current.destroy(); viewerRef.current = null; } };
   }, []);
+
+  // ── 面板关闭时清除高亮 ────────────────────────────────────────────────────
+  // 当用户点击 CableDetailPanel 的关闭按钮，selectedCableId 变为 null
+  // 此时恢复被高亮的那条缆的正常材质
+  useEffect(() => {
+    const Cesium = cesiumRef.current;
+    if (!Cesium || selectedCableId !== null) return;
+    const slug = lastHoveredSlugRef.current;
+    if (!slug) return;
+    const siblings = entitiesMapRef.current.get(slug) || [];
+    for (const sibling of siblings) {
+      const meta = entityMetaRef.current.get(sibling);
+      if (!meta) continue;
+      try { restoreCableMaterial(Cesium, sibling, meta, colorMode); } catch {}
+    }
+    lastHoveredRef.current = null;
+    lastHoveredSlugRef.current = null;
+  }, [selectedCableId, colorMode]);
 
   // ── 颜色模式切换 ──────────────────────────────────────────────
   useEffect(() => {
