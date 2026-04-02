@@ -755,7 +755,7 @@ export default function SovereignNetworkMap({
 
     if (allCoords.length) { const bbox = computeBbox(allCoords); if (bbox) map.fitBounds(bbox, { padding:90, duration:900, maxZoom:7 }); }
 
-    const pulsePoints: [number,number][] = route.nodes
+    const pulsePoints: [number,number][] = (route.nodes ?? route.path.split(' → '))
       .map(name => TRANSIT_NODES[name] ?? (BRICS_COUNTRY_META[name]?.center as [number,number]|undefined))
       .filter((p): p is [number,number] => !!p);
     const pts = pulsePoints.length >= 2 ? pulsePoints
