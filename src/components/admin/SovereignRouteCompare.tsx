@@ -266,7 +266,30 @@ export default function SovereignRouteCompare() {
       if (item.status === 'added' || item.status === 'modified') curMap.set(item.route.id, item.route);
       else if (item.status === 'removed') curMap.delete(item.route.id);
     }
-    const finalRoutes = Array.from(curMap.values());
+    const allRoutes = Array.from(curMap.values());
+
+// 诊断：在浏览器控制台输出前5条，帮你判断字段是否被正确解析
+console.log('[SovereignRouteCompare] 准备提交，前5条路径：', 
+  allRoutes.slice(0, 5).map(r => ({
+    id: r.id,
+    from: r.from,
+    to: r.to,
+    cablesPreview: (r.cables ?? '').slice(0, 30),
+  }))
+);
+console.log('[SovereignRouteCompare] 总条数：', allRoutes.length);
+
+// 过滤掉任何 from/to/cables 为空的路径（防止脏数据混入）
+const finalRoutes = allRoutes.filter(
+  r => r.from?.trim() && r.to?.trim() && (r.cables ?? '').trim()
+);
+
+// 如果过滤后数量变少了，说明有问题，也输出一下
+if (finalRoutes.length < allRoutes.length) {
+  console.warn(
+    `[SovereignRouteCompare] ⚠ 过滤掉了 ${allRoutes.length - finalRoutes.length} 条空字段路径`
+  );
+}
 
     try {
       const res  = await fetch('/api/admin/sovereign-routes-upload', {
