@@ -122,7 +122,7 @@ const T = {
 // ── 类型 ────────────────────────────────────────────────────────────────────
 interface CableDbRecord {
   slug: string; name: string;
-  routeGeojson: unknown;
+  routeGeojson: GeoJSON.Geometry | null;
   stations: { name: string; lng: number; lat: number; country: string | null; city: string | null }[];
   vendor?: unknown;
   owners?: unknown[];
