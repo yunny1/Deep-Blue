@@ -121,14 +121,16 @@ const T = {
 
 // ── 类型 ────────────────────────────────────────────────────────────────────
 interface CableDbRecord {
-  slug: string; name: string;
+  slug: string;
+  name: string;
   routeGeojson: GeoJSON.Geometry | null;
   stations: { name: string; lng: number; lat: number; country: string | null; city: string | null }[];
-  vendor?: unknown;
-  owners?: unknown[];
+  vendor?: string | null;
+  owners?: string[];
   lengthKm?: number | null;
   capacityTbps?: number | null;
   fiberPairs?: number | null;
+  rfsDate?: string | null;
 }
 interface CableApiResponse { cables: CableDbRecord[]; nameIndex: Record<string,string>; }
 interface CableModalData {
