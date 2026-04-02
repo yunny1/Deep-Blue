@@ -71,6 +71,7 @@ interface FloatingCard {
   owners?: string[];
   lengthKm?: number | null;
   capacityTbps?: number | null;
+   fiberPairs?: number | null; 
   // 各段信息（来自 ROUTE_SEGMENT_MAP）
   segments: Array<{ from: string; to: string; score: number; cables: string[] }>;
   // 锁定状态（点击后固定）
