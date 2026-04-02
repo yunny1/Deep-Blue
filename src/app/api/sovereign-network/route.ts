@@ -41,8 +41,8 @@ export async function GET() {
                 name: true,
                 city: true,
                 countryCode: true,
-                lat: true,
-                lng: true,
+                latitude: true,
+                longitude: true,
               },
             },
           },
@@ -79,8 +79,8 @@ export async function GET() {
         name: ls.landingStation.name,
         city: ls.landingStation.city,
         country: ls.landingStation.countryCode,
-        lat: ls.landingStation.lat,
-        lng: ls.landingStation.lng,
+        lat: ls.landingStation.latitude,
+        lng: ls.landingStation.longitude,
       })),
     }));
 
