@@ -103,12 +103,8 @@ export default function CableDetailPanel() {
 
   return (
     <>
-      <div onClick={handleClose} style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)', zIndex: 90,
-        animation: isClosing ? 'fadeOut 0.25s ease forwards' : 'fadeIn 0.2s ease',
-      }} />
-
+      {/* 背景遮罩已移除：保留遮罩会拦截地球上的所有点击事件，导致面板无法关闭时意外关闭。
+          关闭面板请使用右上角的 ✕ 按钮。 */}
       <div style={{
         position: 'fixed', top: 56, right: 0, bottom: 0, width: 420,
         paddingTop: 'env(safe-area-inset-top, 0px)',

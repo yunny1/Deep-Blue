@@ -4,7 +4,6 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import SovereignNetworkMap, { type CablePopupInfo } from './SovereignNetworkMap';
-import { useBRICS } from '@/lib/brics-i18n';
 import {
   SOVEREIGN_ROUTES, CANONICAL_CABLE_NAMES,
   riskColor, safetyCfg,
@@ -645,7 +644,7 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
       ) : (
         <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
           {(route.cables ?? '').split(' | ').map((cable, i) => {
-            const scores = route.riskScores.split(' | ').map(Number);
+            const scores = (route.riskScores ?? '').split(' | ').map(Number);
             const score = scores[i] ?? route.maxRisk;
             return (
               <button key={i} onClick={() => onCableClick(cable.trim(), score, getRc(cable.trim()))}
