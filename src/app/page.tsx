@@ -68,8 +68,12 @@ function HomeContent() {
   }, [isMobile]);
 
   const handleClick = useCallback((slug: string | null) => {
-    setHoverCable(null);
+  setHoverCable(null);
+  // slug 为 null 表示点击了地球空白区域或拖拽结束，不关闭面板
+  // 面板只能通过自身的关闭按钮（X）来关闭
+  if (slug !== null) {
     setSelectedCable(slug);
+  }
   }, [setSelectedCable]);
 
   // Globe 宽度过渡结束后触发 window resize，让 Cesium 更新坐标系

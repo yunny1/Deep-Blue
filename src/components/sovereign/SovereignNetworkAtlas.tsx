@@ -251,8 +251,8 @@ export default function SovereignNetworkAtlas() {
   const allUniqueCables = useMemo(() => {
     const seen = new Map<string, { name: string; score: number; routeCount: number }>();
     for (const r of filtered) {
-      const cables = r.cables.split(' | ');
-      const scores = r.riskScores.split(' | ').map(Number);
+    const cables = (r.cables ?? '').split(' | ').filter(Boolean);
+    const scores = (r.riskScores ?? '').split(' | ').map(Number);
       cables.forEach((cable, i) => {
         const key = cable.trim().toLowerCase();
         if (!seen.has(key)) seen.set(key, { name: cable.trim(), score: scores[i] ?? r.maxRisk, routeCount: 1 });
@@ -285,7 +285,7 @@ export default function SovereignNetworkAtlas() {
         safety: String(r['是否安全']??'') as SafetyLevel };
     });
     const rawNames = new Set<string>();
-    parsed.forEach(r => r.cables.split(' | ').forEach(c => rawNames.add(c.trim())));
+    parsed.forEach(r => (r.cables ?? '').split(' | ').forEach(c => rawNames.add(c.trim())));
     setNormalizing(true); setNormalizeMsg(t.normalizing(rawNames.size));
     let nameMapping: Record<string, string> = {};
     try {
@@ -296,7 +296,7 @@ export default function SovereignNetworkAtlas() {
       setNormalizeMsg(t.normalizeOk(rawNames.size, new Set(Object.values(nameMapping)).size, fix));
     } catch { setNormalizeMsg(t.normalizeErr); }
     const normalizedRoutes = parsed.map(r => ({
-      ...r, cables: r.cables.split(' | ').map(c => nameMapping[c.trim()] ?? c.trim()).join(' | '),
+      ...r, cables: (r.cables ?? '').split(' | ').map(c => nameMapping[c.trim()] ?? c.trim()).join(' | '),
     }));
     try {
       const saveRes = await fetch('/api/admin/sovereign-routes-upload', { method: 'POST',
@@ -644,7 +644,7 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
         </div>
       ) : (
         <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-          {route.cables.split(' | ').map((cable, i) => {
+          {（route.cables ？？ ''）.split(' | ').map((cable, i) => {
             const scores = route.riskScores.split(' | ').map(Number);
             const score = scores[i] ?? route.maxRisk;
             return (
