@@ -18,12 +18,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyAdminJWT } from '@/lib/admin-auth';
+// 使用 @turf/turf 统一包，包含所有子功能，无需分别安装各子包
 import {
-  lineString, point, type Feature,
-  type LineString, type Polygon, type MultiPolygon, type FeatureCollection,
-} from '@turf/helpers';
-import { lineIntersect } from '@turf/line-intersect';
-import { booleanPointInPolygon } from '@turf/boolean-point-in-polygon';
+  lineString, point,
+  lineIntersect, booleanPointInPolygon,
+  type Feature, type FeatureCollection,
+  type LineString, type Polygon, type MultiPolygon,
+} from '@turf/turf';
 
 export const dynamic   = 'force-dynamic';
 export const maxDuration = 60; // 平滑计算可能较慢，设置 60 秒上限
