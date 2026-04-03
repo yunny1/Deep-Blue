@@ -83,7 +83,7 @@ function LandingStationSelector({
   const [q,       setQ]       = useState('');
   const [results, setResults] = useState<LandingStationResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const search = (query: string) => {
     clearTimeout(timer.current);
