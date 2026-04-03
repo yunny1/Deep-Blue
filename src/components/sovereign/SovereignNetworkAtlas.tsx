@@ -118,6 +118,21 @@ const T = {
   },
 };
 
+// ── 中文节点名 → 英文（路由列表/筛选器/子段显示语言切换）────────────────────
+const ZH_TO_EN: Record<string, string> = {
+  '中国':'China','俄罗斯':'Russia','印度':'India','巴西':'Brazil','南非':'South Africa',
+  '沙特阿拉伯':'Saudi Arabia','埃及':'Egypt','阿联酋':'UAE','伊朗':'Iran',
+  '埃塞俄比亚':'Ethiopia','印度尼西亚':'Indonesia','阿根廷':'Argentina',
+  '马来西亚':'Malaysia','泰国':'Thailand','越南':'Vietnam','尼日利亚':'Nigeria',
+  '古巴':'Cuba','白俄罗斯':'Belarus','哈萨克斯坦':'Kazakhstan',
+  '乌兹别克斯坦':'Uzbekistan','玻利维亚':'Bolivia','乌干达':'Uganda',
+  '新加坡':'Singapore','日本':'Japan','菲律宾':'Philippines','韩国':'South Korea',
+  '喀麦隆':'Cameroon','塞舌尔':'Seychelles','索马里':'Somalia','坦桑尼亚':'Tanzania','也门':'Yemen',
+};
+const xlate = (zh: string, isZh: boolean) => isZh ? zh : (ZH_TO_EN[zh] ?? zh);
+const xlatePath = (path: string, isZh: boolean) =>
+  path.split(' → ').map(n => xlate(n, isZh)).join(' → ');
+
 // ── 类型 ────────────────────────────────────────────────────────────────────
 interface CableDbRecord {
   slug: string;
@@ -320,11 +335,11 @@ export default function SovereignNetworkAtlas() {
     });
   }, []);
 
-  const handleTableCableClick = useCallback((name: string, score: number, routeCount: number) => {
-    openCableModal(name, score, routeCount);
+  const handleTableCableClick = useCallback((name: string, _score: number, _routeCount: number) => {
+    // 不再打开旧的 CableDetailModal，改为触发地图浮动卡片
     setHighlightedCable(name);
     mapContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [openCableModal]);
+  }, []);
 
   const handleSelect = useCallback((id: string | null) => {
     setSelectedId(id); if (!id) setRoutePopup(null); setHighlightedCable(null);
@@ -436,8 +451,8 @@ export default function SovereignNetworkAtlas() {
                 { label:t.filterSafety, val:filterSafety, set:setFilterSafety, opts:[
                   {v:'相对低暴露优先路径',l:t.filterLow},{v:'较优备选路径',l:t.filterOpt},
                   {v:'中等暴露路径',l:t.filterMid},{v:'高暴露路径',l:t.filterHigh}]},
-                { label:t.filterFrom, val:filterFrom, set:(v:string)=>{setFilterFrom(v);setFilterTo('');}, opts:fromOpts.map(c=>({v:c,l:c})) },
-                { label:t.filterTo,   val:filterTo,   set:setFilterTo, opts:toOpts.map(c=>({v:c,l:c})) },
+                { label:t.filterFrom, val:filterFrom, set:(v:string)=>{setFilterFrom(v);setFilterTo('');}, opts:fromOpts.map(c=>({v:c,l:xlate(c,isZh)})) },
+                { label:t.filterTo,   val:filterTo,   set:setFilterTo, opts:toOpts.map(c=>({v:c,l:xlate(c,isZh)})) },
               ].map(({ label, val, set, opts }) => (
                 <div key={label} style={{ marginBottom:8 }}>
                   <div style={{ fontSize:11, color:'rgba(255,255,255,.3)', marginBottom:4 }}>{label}</div>
@@ -466,11 +481,11 @@ export default function SovereignNetworkAtlas() {
                       <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
                         <Dot score={r.maxRisk}/>
                         <span style={{ fontSize:12, fontWeight:600, color:isSel?GOLD_LIGHT:'#CBD5E1', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                          {r.from} → {r.to}
+                          {xlate(r.from,isZh)} → {xlate(r.to,isZh)}
                         </span>
                         <Badge safety={r.safety} isZh={isZh}/>
                       </div>
-                      <div style={{ fontSize:10, color:'rgba(255,255,255,.22)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:'monospace' }}>{r.path}</div>
+                      <div style={{ fontSize:10, color:'rgba(255,255,255,.22)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:'monospace' }}>{xlatePath(r.path,isZh)}</div>
                     </button>
                   );
                 })}
@@ -505,7 +520,7 @@ export default function SovereignNetworkAtlas() {
             {selectedRoute && (
               <div style={{ padding:'8px 14px', borderRadius:8, background:`${GOLD}0e`, border:`1px solid ${GOLD}28`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <span style={{ fontSize:12, color:GOLD }}>
-                  {selectedRoute.from} → {selectedRoute.to}
+                  {xlate(selectedRoute.from,isZh)} → {xlate(selectedRoute.to,isZh)}
                   <span style={{ color:'rgba(255,255,255,.3)', marginLeft:10 }}>{t.routeMaxRisk}</span>
                   <span style={{ color:riskColor(selectedRoute.maxRisk), fontWeight:700, marginLeft:4 }}>{selectedRoute.maxRisk}</span>
                 </span>
@@ -522,6 +537,7 @@ export default function SovereignNetworkAtlas() {
                 cableApiData={cableApi}
                 highlightedCableName={highlightedCable}
                 onRouteSelect={handleSelect}
+                onCableDeselect={() => setHighlightedCable(null)}
                 onPopup={handlePopup}
                 isZh={isZh}
               />
@@ -562,8 +578,8 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20 }}>
         <div>
           <div style={{ fontSize:11, fontWeight:600, letterSpacing:'.08em', textTransform:'uppercase', color:`${GOLD}80`, marginBottom:4 }}>{t.detailTitle}</div>
-          <h2 style={{ fontSize:20, fontWeight:700, color:GOLD_LIGHT, margin:'0 0 4px', fontFamily:"'Playfair Display',serif" }}>{route.from} → {route.to}</h2>
-          <p style={{ fontSize:11, color:'rgba(255,255,255,.3)', margin:0, fontFamily:'monospace' }}>{route.path}</p>
+          <h2 style={{ fontSize:20, fontWeight:700, color:GOLD_LIGHT, margin:'0 0 4px', fontFamily:"'Playfair Display',serif" }}>{xlate(route.from,isZh)} → {xlate(route.to,isZh)}</h2>
+          <p style={{ fontSize:11, color:'rgba(255,255,255,.3)', margin:0, fontFamily:'monospace' }}>{xlatePath(route.path,isZh)}</p>
         </div>
         <span style={{ background:bg, color:text, border:'1px solid rgba(255,255,255,.08)', fontSize:11, padding:'4px 10px', borderRadius:20, fontWeight:600, flexShrink:0 }}>
           {isZh ? label : (enLabel[label] ?? label)}
@@ -598,7 +614,7 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
                 <div style={{ flex:1, paddingBottom:isLast?0:12, paddingLeft:8 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, marginTop:10 }}>
                     <span style={{ fontSize:11, color:'rgba(255,255,255,.35)' }}>{t.segLabel} {seg.seg} {t.segUnit}</span>
-                    <span style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,.7)' }}>{seg.from} → {seg.to}</span>
+                    <span style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,.7)' }}>{xlate(seg.from,isZh)} → {xlate(seg.to,isZh)}</span>
                     {hasMulti && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:10, background:'rgba(212,175,55,.12)', color:`${GOLD}BB`, border:`1px solid ${GOLD}25` }}>{seg.cables.length} {t.segAlt}</span>}
                   </div>
                   {hasMulti ? (
@@ -811,8 +827,8 @@ function RoutePopup({ info, onClose, isZh }: { info: CablePopupInfo; onClose: ()
         border:`1px solid ${GOLD}25`, borderRadius:12, zIndex:201, boxShadow:'0 8px 40px rgba(0,0,0,.7)', overflow:'hidden' }}>
         <div style={{ padding:'12px 16px', borderBottom:`1px solid ${GOLD}12`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <div>
-            <div style={{ fontSize:13, fontWeight:700, color:GOLD_LIGHT }}>{info.route.from} → {info.route.to}</div>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,.35)', fontFamily:'monospace', marginTop:2 }}>{info.route.path}</div>
+            <div style={{ fontSize:13, fontWeight:700, color:GOLD_LIGHT }}>{xlate(info.route.from,isZh)} → {xlate(info.route.to,isZh)}</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,.35)', fontFamily:'monospace', marginTop:2 }}>{xlatePath(info.route.path,isZh)}</div>
           </div>
           <button onClick={onClose} style={{ background:'none', border:'none', color:'rgba(255,255,255,.4)', cursor:'pointer', fontSize:18, lineHeight:1 }}>×</button>
         </div>

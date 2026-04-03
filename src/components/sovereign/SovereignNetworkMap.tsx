@@ -8,7 +8,7 @@
 // 4. 点击空白：关闭一切，高亮恢复默认
 // 5. 不再使用外部 CableDetailModal
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
@@ -23,6 +23,24 @@ const TRANSIT_NODES: Record<string, [number, number]> = {
   '新加坡':[103.8,1.35],'日本':[138.5,36.2],'菲律宾':[122.0,12.8],
   '韩国':[127.8,36.5],'喀麦隆':[12.3,3.9],'塞舌尔':[55.5,-4.7],
   '索马里':[46.2,5.2],'坦桑尼亚':[35.0,-6.4],'也门':[48.5,15.6],
+};
+
+// 中文节点名 → ISO国家代码（用于判断登陆站是否属于涉及子段）
+const NODE_TO_CC: Record<string, string> = {
+  '中国':'CN','俄罗斯':'RU','印度':'IN','巴西':'BR','南非':'ZA',
+  '沙特阿拉伯':'SA','埃及':'EG','阿联酋':'AE','伊朗':'IR','埃塞俄比亚':'ET','印度尼西亚':'ID',
+  '马来西亚':'MY','泰国':'TH','越南':'VN','尼日利亚':'NG','古巴':'CU',
+  '白俄罗斯':'BY','哈萨克斯坦':'KZ','乌兹别克斯坦':'UZ','玻利维亚':'BO','乌干达':'UG',
+  '阿根廷':'AR',
+  // 中转节点
+  '新加坡':'SG','日本':'JP','菲律宾':'PH','韩国':'KR',
+  '喀麦隆':'CM','塞舌尔':'SC','索马里':'SO','坦桑尼亚':'TZ','也门':'YE',
+};
+
+// 中转节点中文 → 英文（地图标注语言切换用）
+const TRANSIT_NAMES_EN: Record<string, string> = {
+  '新加坡':'Singapore','日本':'Japan','菲律宾':'Philippines','韩国':'South Korea',
+  '喀麦隆':'Cameroon','塞舌尔':'Seychelles','索马里':'Somalia','坦桑尼亚':'Tanzania','也门':'Yemen',
 };
 
 const CATEGORY_LABELS_ZH: Record<string, { label: string; color: string }> = {
@@ -44,9 +62,22 @@ const CATEGORY_LABELS_EN: Record<string, { label: string; color: string }> = {
   other:      { label: 'Other',      color: '#6B7280' },
 };
 
+// 状态标签（覆盖数据库常见值）
+const STATUS_LABELS: Record<string, { zh: string; en: string; color: string }> = {
+  ACTIVE:             { zh: '在役',   en: 'In Service',         color: '#10B981' },
+  active:             { zh: '在役',   en: 'In Service',         color: '#10B981' },
+  PLANNED:            { zh: '规划中', en: 'Planned',             color: '#3B82F6' },
+  planned:            { zh: '规划中', en: 'Planned',             color: '#3B82F6' },
+  UNDER_CONSTRUCTION: { zh: '建设中', en: 'Under Construction',  color: '#F59E0B' },
+  RETIRED:            { zh: '退役',   en: 'Retired',             color: '#6B7280' },
+  retired:            { zh: '退役',   en: 'Retired',             color: '#6B7280' },
+  INACTIVE:           { zh: '停运',   en: 'Inactive',            color: '#6B7280' },
+};
+
 // ── 类型 ─────────────────────────────────────────────────────────────────────
 interface CableData {
   slug: string; name: string;
+  status?: string | null;           // ← 在役 / 规划中 / 退役
   routeGeojson: GeoJSON.Geometry | null;
   stations: { name: string; lng: number; lat: number; country: string | null; city: string | null }[];
   // 以下字段从数据库额外返回（如存在）
@@ -75,12 +106,14 @@ interface NewsItem {
 interface FloatingCard {
   x: number; y: number;
   name: string; slug: string;
+  status?: string | null;           // ← 已有
   score: number; routeCount: number;
   vendor?: string | null;
   owners?: string[];
   lengthKm?: number | null;
   capacityTbps?: number | null;
-   fiberPairs?: number | null; 
+  fiberPairs?: number | null;
+  stations: { name: string; lng: number; lat: number; country: string | null; city: string | null }[];
   // 各段信息（来自 ROUTE_SEGMENT_MAP）
   segments: Array<{ from: string; to: string; score: number; cables: string[] }>;
   // 锁定状态（点击后固定）
@@ -95,6 +128,7 @@ interface Props {
   cableApiData: CableApiData | null;
   highlightedCableName: string | null;
   onRouteSelect: (id: string | null) => void;
+  onCableDeselect?: () => void;   // ← 新增：浮动卡片关闭时通知父组件取消高亮
   onPopup?: (info: CablePopupInfo | null) => void;
   isZh?: boolean;
 }
@@ -169,6 +203,26 @@ function FloatingCableCard({
   const [news, setNews]         = useState<NewsItem[] | null>(null);
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsError, setNewsError]     = useState(false);
+  const [drawerOpen, setDrawerOpen]   = useState(false);
+
+  // 计算子段涉及的国家代码（用于高亮登陆站）
+  const relevantCCs = useMemo(() => {
+    const s = new Set<string>();
+    card.segments.forEach(seg => {
+      const f = NODE_TO_CC[seg.from]; if (f) s.add(f);
+      const t = NODE_TO_CC[seg.to];   if (t) s.add(t);
+    });
+    return s;
+  }, [card.segments]);
+
+  // 排序：涉及子段的登陆站排在前面
+  const sortedStations = useMemo(() => {
+    return [...(card.stations ?? [])].sort((a, b) => {
+      const aR = a.country ? relevantCCs.has(a.country) : false;
+      const bR = b.country ? relevantCCs.has(b.country) : false;
+      return Number(bR) - Number(aR);
+    });
+  }, [card.stations, relevantCCs]);
 
   // 展开时加载新闻
   useEffect(() => {
@@ -176,221 +230,314 @@ function FloatingCableCard({
     setNewsLoading(true); setNewsError(false);
     fetch(`/api/cables/news?slug=${encodeURIComponent(card.slug)}&name=${encodeURIComponent(card.name)}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(d => { setNews(d.news ?? []); })
+      .then(d => {
+        // 客户端二次过滤：防御 Redis 缓存的旧格式数据（只有 category 字段、title 缺失）
+        const valid = (d.news ?? []).filter((item: NewsItem) =>
+          item.title?.trim() && item.sourceUrl?.startsWith('http')
+        );
+        setNews(valid);
+      })
       .catch(() => { setNewsError(true); setNews([]); })
       .finally(() => setNewsLoading(false));
   }, [expanded, card.slug, card.name, news]);
 
-  // 定位：避免超出容器边界
-  const W = 320;
-  const left = Math.min(card.x + 16, containerW - W - 8);
+  const CARD_W   = 320;
+  const DRAWER_W = 268;
+  // 定位：避免超出容器右边界
+  const left = Math.min(card.x + 16, containerW - CARD_W - 8);
   const top  = Math.max(card.y - 60, 8);
+  // 抽屉：空间不够时向左弹出
+  const drawerToLeft = left + CARD_W + DRAWER_W + 8 > containerW;
+  const drawerLeft   = drawerToLeft ? -(DRAWER_W + 4) : CARD_W + 4;
 
   const color = riskColor(card.score);
   const CATEGORY_LABELS = isZh ? CATEGORY_LABELS_ZH : CATEGORY_LABELS_EN;
+  const hasStations = card.stations && card.stations.length > 0;
 
   return (
-    <div style={{
-      position: 'absolute', left, top, width: W, zIndex: 30,
-      background: 'rgba(8,18,36,.97)', backdropFilter: 'blur(20px)',
-      border: `1px solid ${card.locked ? C.gold + '50' : C.gold + '20'}`,
-      borderRadius: 12, overflow: 'hidden',
-      boxShadow: `0 8px 40px rgba(0,0,0,.7)${card.locked ? `,0 0 20px ${C.gold}18` : ''}`,
-      // 入场动画：透明度 + 向上偏移
-      animation: 'sv-card-in .18s ease both',
-      pointerEvents: card.locked ? 'auto' : 'none',
-    }}>
+    // 外层定位容器，overflow:visible 让抽屉可以溢出到卡片外
+    <div style={{ position:'absolute', left, top, zIndex:30 }}>
 
-      {/* ── 基础信息区 ── */}
-      <div style={{ padding: '12px 14px', borderBottom: `1px solid rgba(255,255,255,.06)` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <div style={{ flex: 1, overflow: 'hidden', paddingRight: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8', lineHeight: 1.3,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {card.name}
-            </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 2, fontFamily: 'monospace' }}>
-              {card.slug}
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            {/* 风险评分 badge */}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>
-                {card.score}
-              </div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)', marginTop: 1 }}>{isZh ? '风险' : 'Risk'}</div>
-            </div>
-            {/* 关闭按钮（锁定态） */}
-            {card.locked && (
-              <button onClick={onClose} style={{ background: 'none', border: 'none',
-                color: 'rgba(255,255,255,.4)', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>×</button>
-            )}
-          </div>
-        </div>
+      {/* ── 主卡片 ── */}
+      <div style={{
+        width: CARD_W,
+        background:'rgba(8,18,36,.97)', backdropFilter:'blur(20px)',
+        border:`1px solid ${card.locked ? C.gold+'50' : C.gold+'20'}`,
+        borderRadius:12, overflow:'hidden',
+        boxShadow:`0 8px 40px rgba(0,0,0,.7)${card.locked?`,0 0 20px ${C.gold}18`:''}`,
+        animation:'sv-card-in .18s ease both',
+        pointerEvents: card.locked ? 'auto' : 'none',
+      }}>
 
-        {/* 建造商 + 运营商 */}
-        {(card.vendor || (card.owners && card.owners.length > 0)) && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
-            {card.vendor && (
-              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', whiteSpace: 'nowrap', minWidth: 44 }}>{isZh ? '建造商' : 'Vendor'}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,.75)' }}>{card.vendor}</span>
+        {/* ── 头部（不随正文滚动）── */}
+        <div style={{ padding:'12px 14px 0', borderBottom:'1px solid rgba(255,255,255,.06)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+            <div style={{ flex:1, overflow:'hidden', paddingRight:8 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#F0E6C8', lineHeight:1.3,
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {card.name}
               </div>
-            )}
-            {card.owners && card.owners.length > 0 && (
-              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', whiteSpace: 'nowrap', minWidth: 44 }}>{isZh ? '运营商' : 'Operators'}</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                  {card.owners.slice(0, 4).map(o => (
-                    <span key={o} style={{ fontSize: 10, padding: '1px 5px', borderRadius: 4,
-                      background: 'rgba(42,157,143,.12)', color: '#2A9D8F',
-                      border: '1px solid rgba(42,157,143,.2)' }}>{o}</span>
-                  ))}
-                  {card.owners.length > 4 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.3)' }}>+{card.owners.length - 4}</span>}
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3 }}>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,.35)', fontFamily:'monospace' }}>
+                  {card.slug}
                 </div>
+                {/* 在役/规划中/退役 状态徽章 */}
+                {card.status && (() => {
+                  const st = STATUS_LABELS[card.status];
+                  const label = st ? (isZh ? st.zh : st.en) : card.status;
+                  const sc = st?.color ?? '#6B7280';
+                  return (
+                    <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4,
+                      background:sc+'20', color:sc, border:`1px solid ${sc}40`,
+                      fontWeight:600, letterSpacing:'.04em', flexShrink:0 }}>{label}</span>
+                  );
+                })()}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* 技术参数（如有） */}
-        {(card.lengthKm || card.capacityTbps || card.fiberPairs) && (
-          <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-            {card.lengthKm && (
-              <div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>{isZh ? '长度' : 'Length'}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.7)' }}>{card.lengthKm.toLocaleString()} km</div>
-              </div>
-            )}
-            {card.capacityTbps && (
-              <div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>{isZh ? '容量' : 'Capacity'}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.7)' }}>{card.capacityTbps} Tbps</div>
-              </div>
-            )}
-            {card.fiberPairs && (
-              <div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)' }}>{isZh ? '光纤对' : 'Fiber pairs'}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.7)' }}>{card.fiberPairs}</div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 各段风险评分 */}
-        {card.segments.length > 0 && (
-          <div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', marginBottom: 5, fontWeight: 600, letterSpacing: '.05em', textTransform: 'uppercase' }}>
-              {isZh ? `涉及子段（${card.segments.length}）` : `Segments (${card.segments.length})`}
             </div>
-            {card.segments.map((seg, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: riskColor(seg.score), flexShrink: 0, boxShadow: `0 0 4px ${riskColor(seg.score)}` }} />
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {seg.from} → {seg.to}
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: riskColor(seg.score), flexShrink: 0, fontFeatureSettings: '"tnum"' }}>
-                  {seg.score}
-                </span>
+
+            <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+              {/* 风险评分 */}
+              <div style={{ textAlign:'center' }}>
+                <div style={{ fontSize:20, fontWeight:800, color, lineHeight:1, fontFeatureSettings:'"tnum"' }}>
+                  {card.score}
+                </div>
+                <div style={{ fontSize:9, color:'rgba(255,255,255,.3)', marginTop:1 }}>{isZh?'风险':'Risk'}</div>
               </div>
-            ))}
+              {/* 登陆站抽屉开关 */}
+              {hasStations && (
+                <button
+                  onClick={() => setDrawerOpen(o => !o)}
+                  title={isZh?'查看登陆站':'View landing stations'}
+                  style={{ background:drawerOpen?`${C.gold}20`:'rgba(255,255,255,.06)',
+                    border:`1px solid ${drawerOpen?C.gold+'40':'rgba(255,255,255,.1)'}`,
+                    borderRadius:6, width:26, height:26, display:'flex', alignItems:'center',
+                    justifyContent:'center', cursor:'pointer',
+                    color:drawerOpen?C.gold:'rgba(255,255,255,.4)',
+                    fontSize:15, fontWeight:700, flexShrink:0, transition:'all .15s' }}>
+                  {drawerOpen ? '‹' : '›'}
+                </button>
+              )}
+              {/* 关闭按钮（锁定态） */}
+              {card.locked && (
+                <button onClick={onClose} style={{ background:'none', border:'none',
+                  color:'rgba(255,255,255,.4)', cursor:'pointer', fontSize:18, lineHeight:1, padding:'0 2px' }}>×</button>
+              )}
+            </div>
+          </div>
+
+          {/* ── 可滚动正文区 ── */}
+          <div className="sv-scroll" style={{ maxHeight:220, overflowY:'auto', marginRight:-4, paddingRight:4, paddingBottom:12 }}>
+
+            {/* 建造商 + 运营商 */}
+            {(card.vendor || (card.owners && card.owners.length > 0)) && (
+              <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:8 }}>
+                {card.vendor && (
+                  <div style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
+                    <span style={{ fontSize:10, color:'rgba(255,255,255,.35)', whiteSpace:'nowrap', minWidth:44 }}>{isZh?'建造商':'Vendor'}</span>
+                    <span style={{ fontSize:11, color:'rgba(255,255,255,.75)' }}>{card.vendor}</span>
+                  </div>
+                )}
+                {card.owners && card.owners.length > 0 && (
+                  <div style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
+                    <span style={{ fontSize:10, color:'rgba(255,255,255,.35)', whiteSpace:'nowrap', minWidth:44 }}>{isZh?'运营商':'Operators'}</span>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:3 }}>
+                      {card.owners.slice(0,4).map(o => (
+                        <span key={o} style={{ fontSize:10, padding:'1px 5px', borderRadius:4,
+                          background:'rgba(42,157,143,.12)', color:'#2A9D8F',
+                          border:'1px solid rgba(42,157,143,.2)' }}>{o}</span>
+                      ))}
+                      {card.owners.length > 4 && <span style={{ fontSize:10, color:'rgba(255,255,255,.3)' }}>+{card.owners.length-4}</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 技术参数 */}
+            {(card.lengthKm || card.fiberPairs) && (
+              <div style={{ display:'flex', gap:10, marginBottom:8 }}>
+                {card.lengthKm && (
+                  <div>
+                    <div style={{ fontSize:9, color:'rgba(255,255,255,.3)' }}>{isZh?'长度':'Length'}</div>
+                    <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,.7)' }}>{card.lengthKm.toLocaleString()} km</div>
+                  </div>
+                )}
+                {card.fiberPairs && (
+                  <div>
+                    <div style={{ fontSize:9, color:'rgba(255,255,255,.3)' }}>{isZh?'光纤对':'Fiber pairs'}</div>
+                    <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,.7)' }}>{card.fiberPairs}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 各段风险评分 */}
+            {card.segments.length > 0 && (
+              <div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,.3)', marginBottom:5, fontWeight:600, letterSpacing:'.05em', textTransform:'uppercase' }}>
+                  {isZh?`涉及子段（${card.segments.length}）`:`Segments (${card.segments.length})`}
+                </div>
+                {card.segments.map((seg, i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
+                    <div style={{ width:6, height:6, borderRadius:'50%', background:riskColor(seg.score), flexShrink:0, boxShadow:`0 0 4px ${riskColor(seg.score)}` }}/>
+                    <span style={{ fontSize:11, color:'rgba(255,255,255,.6)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      {seg.from} → {seg.to}
+                    </span>
+                    <span style={{ fontSize:11, fontWeight:700, color:riskColor(seg.score), flexShrink:0, fontFeatureSettings:'"tnum"' }}>
+                      {seg.score}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 出现路径数 */}
+            <div style={{ marginTop:6, fontSize:10, color:'rgba(255,255,255,.3)' }}>
+              {isZh
+                ? <><strong style={{ color:'rgba(255,255,255,.6)' }}>{card.routeCount}</strong> 条主权路径涉及此缆</>
+                : <>Appears in <strong style={{ color:'rgba(255,255,255,.6)' }}>{card.routeCount}</strong> sovereign routes</>}
+              {!card.locked && <span style={{ marginLeft:8, color:`${C.gold}80` }}>{isZh?'点击展开新闻 ▾':'Click for news ▾'}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 新闻展开区（锁定后显示）── */}
+        {card.locked && (
+          <div style={{ maxHeight:expanded?380:0, overflow:'hidden', transition:'max-height .35s cubic-bezier(.4,0,.2,1)' }}>
+            <div style={{ padding:'10px 14px 14px' }}>
+              <div style={{ fontSize:10, fontWeight:600, letterSpacing:'.08em', textTransform:'uppercase',
+                color:`${C.gold}80`, marginBottom:10 }}>{isZh?'近两年相关新闻':'Recent News (2 years)'}</div>
+
+              {newsLoading && (
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 0', color:'rgba(255,255,255,.35)', fontSize:12 }}>
+                  <div style={{ width:16, height:16, border:'2px solid rgba(255,255,255,.1)', borderTop:`2px solid ${C.gold}`, borderRadius:'50%', animation:'sv-spin .7s linear infinite', flexShrink:0 }}/>
+                  {isZh?'正在搜索最新新闻…':'Searching for latest news…'}
+                </div>
+              )}
+              {newsError && (
+                <div style={{ fontSize:12, color:'#f87171', padding:'8px 0' }}>{isZh?'新闻加载失败，请稍后重试':'Failed to load news, please retry'}</div>
+              )}
+              {!newsLoading && !newsError && news && news.length === 0 && (
+                <div style={{ fontSize:12, color:'rgba(255,255,255,.3)', padding:'8px 0' }}>
+                  {isZh?'暂未找到近两年相关新闻':'No recent news found for this cable'}
+                </div>
+              )}
+              {!newsLoading && news && news.map((item, i) => {
+                const cat = CATEGORY_LABELS[item.category] ?? CATEGORY_LABELS.other;
+                return (
+                  <a key={i} href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
+                    style={{ display:'block', textDecoration:'none', marginBottom:8,
+                      padding:'8px 10px', borderRadius:8,
+                      background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)',
+                      transition:'background .15s,border-color .15s' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background='rgba(255,255,255,.06)'; (e.currentTarget as HTMLAnchorElement).style.borderColor='rgba(255,255,255,.12)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background='rgba(255,255,255,.03)'; (e.currentTarget as HTMLAnchorElement).style.borderColor='rgba(255,255,255,.06)'; }}>
+                    <div style={{ display:'flex', alignItems:'flex-start', gap:6, marginBottom:4 }}>
+                      <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, background:cat.color+'20',
+                        color:cat.color, border:`1px solid ${cat.color}35`, whiteSpace:'nowrap', flexShrink:0, marginTop:2 }}>
+                        {cat.label}
+                      </span>
+                      <span style={{ fontSize:12, fontWeight:600, color:'#E2E8F0', lineHeight:1.4 }}>
+                        {isZh?(item.titleZh||item.title):item.title}
+                      </span>
+                    </div>
+                    {item.summary && (
+                      <p style={{ fontSize:11, color:'rgba(255,255,255,.45)', margin:'0 0 4px', lineHeight:1.5,
+                        overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
+                        {item.summary}
+                      </p>
+                    )}
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:10, color:'rgba(255,255,255,.3)' }}>
+                      <span>{item.sourceName}</span>
+                      <span>{item.publishDate}</span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {/* 出现路径数 */}
-        <div style={{ marginTop: 6, fontSize: 10, color: 'rgba(255,255,255,.3)' }}>
-          {isZh
-            ? <><strong style={{ color: 'rgba(255,255,255,.6)' }}>{card.routeCount}</strong> 条主权路径涉及此缆</>
-            : <>Appears in <strong style={{ color: 'rgba(255,255,255,.6)' }}>{card.routeCount}</strong> sovereign routes</>}
-          {!card.locked && <span style={{ marginLeft: 8, color: `${C.gold}80` }}>{isZh ? '点击展开新闻 ▾' : 'Click for news ▾'}</span>}
-        </div>
+        {/* 展开/收起按钮 */}
+        {card.locked && (
+          <button onClick={() => setExpanded(e => !e)}
+            style={{ display:'block', width:'100%', padding:'8px',
+              background:'rgba(255,255,255,.03)', border:'none',
+              borderTop:'1px solid rgba(255,255,255,.06)',
+              color:'rgba(255,255,255,.45)', cursor:'pointer', fontSize:11,
+              transition:'background .15s', textAlign:'center' }}
+            onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,.07)')}
+            onMouseLeave={e => (e.currentTarget.style.background='rgba(255,255,255,.03)')}>
+            {expanded?(isZh?'▲ 收起新闻':'▲ Collapse news'):(isZh?'▼ 展开近两年新闻':'▼ Show recent news')}
+          </button>
+        )}
       </div>
 
-      {/* ── 新闻展开区（锁定后显示）── */}
-      {card.locked && (
+      {/* ── 登陆站抽屉（卡片右侧/左侧弹出）── */}
+      {drawerOpen && hasStations && (
         <div style={{
-          maxHeight: expanded ? 380 : 0,
-          overflow: 'hidden',
-          transition: 'max-height .35s cubic-bezier(.4,0,.2,1)',
+          position:'absolute', left:drawerLeft, top:0,
+          width:DRAWER_W,
+          background:'rgba(8,18,36,.97)', backdropFilter:'blur(20px)',
+          border:`1px solid ${C.gold}22`, borderRadius:12, overflow:'hidden',
+          boxShadow:'0 8px 40px rgba(0,0,0,.7)',
+          animation:'sv-card-in .18s ease both',
+          maxHeight:480, display:'flex', flexDirection:'column',
         }}>
-          <div style={{ padding: '10px 14px 14px' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase',
-              color: `${C.gold}80`, marginBottom: 10 }}>{isZh ? '近两年相关新闻' : 'Recent News (2 years)'}</div>
-
-            {newsLoading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0', color: 'rgba(255,255,255,.35)', fontSize: 12 }}>
-                <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,.1)', borderTop: `2px solid ${C.gold}`, borderRadius: '50%', animation: 'sv-spin .7s linear infinite', flexShrink: 0 }} />
-                {isZh ? '正在搜索最新新闻…' : 'Searching for latest news…'}
+          {/* 抽屉头部 */}
+          <div style={{ padding:'12px 14px', borderBottom:'1px solid rgba(255,255,255,.06)',
+            display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:C.goldLight }}>
+                {isZh?'登陆站':'Landing Stations'}
               </div>
-            )}
-
-            {newsError && (
-              <div style={{ fontSize: 12, color: '#f87171', padding: '8px 0' }}>{isZh ? '新闻加载失败，请稍后重试' : 'Failed to load news, please retry'}</div>
-            )}
-
-            {!newsLoading && !newsError && news && news.length === 0 && (
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.3)', padding: '8px 0' }}>
-                {isZh ? '暂未找到近两年相关新闻' : 'No recent news found for this cable'}
+              <div style={{ fontSize:10, color:'rgba(255,255,255,.35)', marginTop:2 }}>
+                {sortedStations.length}{isZh?' 个 · 金色 = 子段涉及':' total · gold = in segments'}
               </div>
-            )}
+            </div>
+            <button onClick={() => setDrawerOpen(false)}
+              style={{ background:'none', border:'none', color:'rgba(255,255,255,.4)', cursor:'pointer', fontSize:18, lineHeight:1 }}>‹</button>
+          </div>
 
-            {!newsLoading && news && news.map((item, i) => {
-              const cat = CATEGORY_LABELS[item.category] ?? CATEGORY_LABELS.other;
+          {/* 登陆站列表（可滚动）*/}
+          <div className="sv-scroll" style={{ overflowY:'auto', flex:1, padding:'8px 10px 14px' }}>
+            {sortedStations.map((s, i) => {
+              const isRelevant = s.country ? relevantCCs.has(s.country) : false;
               return (
-                <a key={i} href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'block', textDecoration: 'none', marginBottom: 8,
-                    padding: '8px 10px', borderRadius: 8,
-                    background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)',
-                    transition: 'background .15s, border-color .15s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background='rgba(255,255,255,.06)'; (e.currentTarget as HTMLAnchorElement).style.borderColor='rgba(255,255,255,.12)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background='rgba(255,255,255,.03)'; (e.currentTarget as HTMLAnchorElement).style.borderColor='rgba(255,255,255,.06)'; }}>
-                  {/* 标题行 */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: cat.color + '20',
-                      color: cat.color, border: `1px solid ${cat.color}35`, whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2 }}>
-                      {cat.label}
-                    </span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0', lineHeight: 1.4 }}>
-                      {isZh ? (item.titleZh || item.title) : item.title}
-                    </span>
+                <div key={i} style={{
+                  display:'flex', alignItems:'flex-start', gap:8,
+                  padding:'6px 8px', borderRadius:7, marginBottom:3,
+                  background:isRelevant?`${C.gold}0e`:'rgba(255,255,255,.02)',
+                  border:`1px solid ${isRelevant?C.gold+'28':'rgba(255,255,255,.04)'}`,
+                  transition:'background .1s',
+                }}>
+                  <span style={{ width:7, height:7, borderRadius:'50%', flexShrink:0, marginTop:3,
+                    background:isRelevant?C.gold:'rgba(255,255,255,.2)',
+                    boxShadow:isRelevant?`0 0 6px ${C.gold}80`:'none' }}/>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:11, fontWeight:isRelevant?600:400,
+                      color:isRelevant?'rgba(255,255,255,.88)':'rgba(255,255,255,.45)',
+                      overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      {s.name}
+                    </div>
+                    {(s.city || s.country) && (
+                      <div style={{ fontSize:10, color:'rgba(255,255,255,.3)', marginTop:1 }}>
+                        {[s.city, s.country].filter(Boolean).join(', ')}
+                      </div>
+                    )}
                   </div>
-                  {/* 摘要 */}
-                  {item.summary && (
-                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', margin: '0 0 4px', lineHeight: 1.5,
-                      overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                      {item.summary}
-                    </p>
+                  {isRelevant && (
+                    <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3,
+                      background:`${C.gold}18`, color:C.gold, border:`1px solid ${C.gold}25`,
+                      flexShrink:0, fontWeight:600 }}>
+                      {isZh?'涉及':'Active'}
+                    </span>
                   )}
-                  {/* 来源 + 日期 */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: 'rgba(255,255,255,.3)' }}>
-                    <span>{item.sourceName}</span>
-                    <span>{item.publishDate}</span>
-                  </div>
-                </a>
+                </div>
               );
             })}
           </div>
         </div>
-      )}
-
-      {/* 展开/收起按钮（锁定后显示） */}
-      {card.locked && (
-        <button
-          onClick={() => setExpanded(e => !e)}
-          style={{
-            display: 'block', width: '100%', padding: '8px',
-            background: 'rgba(255,255,255,.03)', border: 'none',
-            borderTop: '1px solid rgba(255,255,255,.06)',
-            color: 'rgba(255,255,255,.45)', cursor: 'pointer', fontSize: 11,
-            transition: 'background .15s', textAlign: 'center',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.07)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}>
-          {expanded
-            ? (isZh ? '▲ 收起新闻' : '▲ Collapse news')
-            : (isZh ? '▼ 展开近两年新闻' : '▼ Show recent news')}
-        </button>
       )}
     </div>
   );
@@ -399,7 +546,7 @@ function FloatingCableCard({
 // ── 主组件 ───────────────────────────────────────────────────────────────────
 export default function SovereignNetworkMap({
   height = '540px', routes, filteredRoutes, selectedRouteId,
-  cableApiData, highlightedCableName, onRouteSelect, onPopup, isZh = true,
+  cableApiData, highlightedCableName, onRouteSelect, onCableDeselect, onPopup, isZh = true,
 }: Props) {
   const containerRef  = useRef<HTMLDivElement>(null);
   const mapRef        = useRef<maplibregl.Map | null>(null);
@@ -480,6 +627,7 @@ export default function SovereignNetworkMap({
         (map.getSource('sv-hl') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:[] });
       if (map.getLayer('sv-default-line')) map.setPaintProperty('sv-default-line','line-opacity',0.65);
       if (map.getLayer('sv-default-glow')) map.setPaintProperty('sv-default-glow','line-opacity',0.06);
+      setFloatingCard(null); // 列表取消选中时同步关闭卡片
       return;
     }
     const target = cableApiData.cables.find(c =>
@@ -498,7 +646,41 @@ export default function SovereignNetworkMap({
       const bbox = computeBbox(coords);
       if (bbox) map.fitBounds(bbox, { padding:80, duration:900, maxZoom:7 });
     }
-  }, [highlightedCableName, cableApiData]);
+
+    // 同步触发浮动卡片（锁定态，固定在地图左上角，效果与直接点击地图上的缆一致）
+    const card = buildCard(highlightedCableName, 20, 80, true);
+    if (card) setFloatingCard(card);
+  }, [highlightedCableName, cableApiData, buildCard]);
+
+  // ── isZh 变化时更新地图国家/节点标注语言 ─────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReadyRef.current) return;
+
+    const memberFeats: GeoJSON.Feature[] = BRICS_MEMBERS.map(code => ({
+      type:'Feature' as const,
+      properties:{ code, name: isZh ? (BRICS_COUNTRY_META[code]?.nameZh ?? code) : (BRICS_COUNTRY_META[code]?.name ?? code) },
+      geometry:{ type:'Point' as const, coordinates: BRICS_COUNTRY_META[code]?.center ?? [0,0] },
+    }));
+    if (map.getSource('bm'))
+      (map.getSource('bm') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:memberFeats });
+
+    const partnerFeats: GeoJSON.Feature[] = BRICS_PARTNERS.map(code => ({
+      type:'Feature' as const,
+      properties:{ code, name: isZh ? (BRICS_COUNTRY_META[code]?.nameZh ?? code) : (BRICS_COUNTRY_META[code]?.name ?? code) },
+      geometry:{ type:'Point' as const, coordinates: BRICS_COUNTRY_META[code]?.center ?? [0,0] },
+    }));
+    if (map.getSource('bp'))
+      (map.getSource('bp') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:partnerFeats });
+
+    const transitFeats: GeoJSON.Feature[] = Object.entries(TRANSIT_NODES).map(([zhName, coord]) => ({
+      type:'Feature' as const,
+      properties:{ name: isZh ? zhName : (TRANSIT_NAMES_EN[zhName] ?? zhName) },
+      geometry:{ type:'Point' as const, coordinates:coord },
+    }));
+    if (map.getSource('transit'))
+      (map.getSource('transit') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:transitFeats });
+  }, [isZh]);
 
   // ── 构造浮动卡片数据 ───────────────────────────────────────────────────────
   const buildCard = useCallback((
@@ -526,14 +708,13 @@ export default function SovereignNetworkMap({
 
     return {
       x, y, name: cableName, slug: db?.slug ?? cableName.toLowerCase().replace(/\s+/g,'-'),
+      status: db?.status ?? null,   // ← 已有
       score: maxScore, routeCount,
-      // vendor 在数据库里是关联的 Company 对象，需要提取 .name 字符串
       vendor: db?.vendor
         ? (typeof db.vendor === 'string'
             ? db.vendor
             : (db.vendor as { name?: string })?.name ?? null)
         : null,
-      // owners 同理，可能是 Company 对象数组
       owners: Array.isArray(db?.owners)
         ? (db!.owners as unknown[]).map(o =>
             typeof o === 'string' ? o : (o as { name?: string })?.name ?? ''
@@ -542,6 +723,7 @@ export default function SovereignNetworkMap({
       lengthKm: db?.lengthKm ?? null,
       capacityTbps: db?.capacityTbps ?? null,
       fiberPairs: db?.fiberPairs ?? null,
+      stations: db?.stations ?? [],   // ← 新增：登陆站数据
       segments, locked,
     };
   }, [routes]);
@@ -791,7 +973,7 @@ export default function SovereignNetworkMap({
           card={floatingCard}
           containerW={W}
           containerH={H}
-          onClose={() => setFloatingCard(null)}
+          onClose={() => { setFloatingCard(null); onCableDeselect?.(); }}
           routes={routes}
           isZh={isZh}
         />
@@ -818,6 +1000,10 @@ export default function SovereignNetworkMap({
       <style>{`
         @keyframes sv-spin   { to { transform: rotate(360deg); } }
         @keyframes sv-card-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .sv-scroll::-webkit-scrollbar { width: 3px; }
+        .sv-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sv-scroll::-webkit-scrollbar-thumb { background: rgba(212,175,55,.2); border-radius: 2px; }
+        .sv-scroll::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,.45); }
         .maplibregl-ctrl-group { background: rgba(10,22,40,.9) !important; border: 1px solid ${C.gold}15 !important; border-radius: 8px !important; }
         .maplibregl-ctrl-group button { background: transparent !important; }
         .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(0.7); }
