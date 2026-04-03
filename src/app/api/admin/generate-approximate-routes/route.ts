@@ -14,6 +14,7 @@
 //   - 完成后自动删除 Redis 里的地图缓存，让地球立即更新
 
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { verifyAdminJWT } from '@/lib/admin-auth';
 
@@ -106,17 +107,8 @@ async function generateForCable(cableId: string): Promise<{
 
 // ── POST 处理器 ───────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  // 支持两种认证方式，适配两个不同的调用场景：
-  //   场景一：管理后台浏览器点击按钮 → Cookie 里带 JWT，走 verifyAdminJWT
-  //   场景二：腾讯云 nightly-sync 脚本调用 → 没有 Cookie，用 CRON_SECRET Bearer Token
-  const authHeader = req.headers.get('authorization') ?? '';
-  const cronSecret = process.env.CRON_SECRET ?? '';
-  const isCronCall = cronSecret !== '' && authHeader === `Bearer ${cronSecret}`;
-
-  if (!isCronCall) {
-    try { await verifyAdminJWT(req); } catch {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  try { await verifyAdminJWT(req); } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // 可选参数 slug：只处理某一条特定海缆（管理后台手动录入后的立即触发场景）
@@ -131,7 +123,7 @@ export async function POST(req: NextRequest) {
   const whereClause = targetSlug
     ? { slug: targetSlug }
     : {
-        routeGeojson:    null,
+        routeGeojson:    { equals: Prisma.DbNull },
         landingStations: { some: {} }, // 有至少一个登陆站
         status:          { not: 'REMOVED' as const },
       };
