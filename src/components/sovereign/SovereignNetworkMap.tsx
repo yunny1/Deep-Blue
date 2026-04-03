@@ -43,6 +43,49 @@ const TRANSIT_NAMES_EN: Record<string, string> = {
   '喀麦隆':'Cameroon','塞舌尔':'Seychelles','索马里':'Somalia','坦桑尼亚':'Tanzania','也门':'Yemen',
 };
 
+// ISO 国家代码 → 中文名（非金砖国家补充，用于登陆站抽屉显示）
+const CC_TO_ZH: Record<string, string> = {
+  'SG':'新加坡','JP':'日本','PH':'菲律宾','KR':'韩国',
+  'CM':'喀麦隆','SC':'塞舌尔','SO':'索马里','TZ':'坦桑尼亚','YE':'也门',
+  'FR':'法国','US':'美国','GB':'英国','AU':'澳大利亚','CA':'加拿大',
+  'PT':'葡萄牙','ES':'西班牙','IT':'意大利','DE':'德国','NL':'荷兰','GR':'希腊',
+  'PK':'巴基斯坦','LK':'斯里兰卡','MV':'马尔代夫','MM':'缅甸','BD':'孟加拉国',
+  'OM':'阿曼','QA':'卡塔尔','KW':'科威特','BH':'巴林','JO':'约旦','IQ':'伊拉克',
+  'DJ':'吉布提','KE':'肯尼亚','MZ':'莫桑比克','MG':'马达加斯加','MU':'毛里求斯',
+  'TN':'突尼斯','LY':'利比亚','DZ':'阿尔及利亚','MA':'摩洛哥',
+  'GH':'加纳','SN':'塞内加尔','CI':'科特迪瓦','AO':'安哥拉','SD':'苏丹',
+  'TW':'台湾','HK':'香港','MO':'澳门',
+  'GU':'关岛','MH':'马绍尔群岛','PW':'帕劳','FM':'密克罗尼西亚',
+  'NZ':'新西兰','FJ':'斐济','WS':'萨摩亚',
+};
+
+/**
+ * ISO 代码 → 显示名称
+ * 中文模式：优先用 BRICS_COUNTRY_META.nameZh，再查 CC_TO_ZH，最后回退到代码本身
+ * 英文模式：直接返回 ISO 代码（用户确认英文模式不需要转换）
+ */
+function ccToDisplay(cc: string | null, isZh: boolean): string {
+  if (!cc) return '';
+  if (!isZh) return cc;
+  const meta = BRICS_COUNTRY_META[cc];
+  if (meta) return meta.nameZh;
+  return CC_TO_ZH[cc] ?? cc;
+}
+
+/**
+ * 中文节点名 → 当前语言的节点名
+ * 用于浮动卡片子段 from/to 的显示，避免英文模式仍显示中文
+ */
+function xlateNode(zh: string, isZh: boolean): string {
+  if (isZh) return zh;
+  // 先查中转节点英文名
+  if (TRANSIT_NAMES_EN[zh]) return TRANSIT_NAMES_EN[zh];
+  // 再通过 NODE_TO_CC 转 ISO 码，查 BRICS 英文名
+  const cc = NODE_TO_CC[zh];
+  if (cc && BRICS_COUNTRY_META[cc]) return BRICS_COUNTRY_META[cc].name;
+  return zh; // 最终兜底：原样返回
+}
+
 const CATEGORY_LABELS_ZH: Record<string, { label: string; color: string }> = {
   cut:        { label: '断缆', color: '#EF4444' },
   repair:     { label: '修复', color: '#F59E0B' },
@@ -381,7 +424,7 @@ function FloatingCableCard({
                   <div key={i} style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
                     <div style={{ width:6, height:6, borderRadius:'50%', background:riskColor(seg.score), flexShrink:0, boxShadow:`0 0 4px ${riskColor(seg.score)}` }}/>
                     <span style={{ fontSize:11, color:'rgba(255,255,255,.6)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                      {seg.from} → {seg.to}
+                      {xlateNode(seg.from, isZh)} → {xlateNode(seg.to, isZh)}
                     </span>
                     <span style={{ fontSize:11, fontWeight:700, color:riskColor(seg.score), flexShrink:0, fontFeatureSettings:'"tnum"' }}>
                       {seg.score}
@@ -522,7 +565,7 @@ function FloatingCableCard({
                     </div>
                     {(s.city || s.country) && (
                       <div style={{ fontSize:10, color:'rgba(255,255,255,.3)', marginTop:1 }}>
-                        {[s.city, s.country].filter(Boolean).join(', ')}
+                        {[s.city, ccToDisplay(s.country, isZh)].filter(Boolean).join(', ')}
                       </div>
                     )}
                   </div>
@@ -779,9 +822,10 @@ export default function SovereignNetworkMap({
           paint:{ 'circle-radius':8,'circle-color':['get','color'],'circle-opacity':0.4,'circle-blur':0.6 } });
       });
 
-      // 成员国/伙伴国/中转节点
+      // 成员国/伙伴国/中转节点（读取当前 locale，确保初始渲染语言正确）
+      const initIsZh = (localStorage.getItem('deep-blue-locale') ?? 'zh') === 'zh';
       const memberFeats: GeoJSON.Feature[] = BRICS_MEMBERS.map(code => ({
-        type:'Feature', properties:{ code, name:BRICS_COUNTRY_META[code]?.nameZh??code },
+        type:'Feature', properties:{ code, name: initIsZh ? (BRICS_COUNTRY_META[code]?.nameZh??code) : (BRICS_COUNTRY_META[code]?.name??code) },
         geometry:{ type:'Point', coordinates:BRICS_COUNTRY_META[code]?.center??[0,0] },
       }));
       map.addSource('bm', { type:'geojson', data:{ type:'FeatureCollection', features:memberFeats } });
@@ -792,7 +836,7 @@ export default function SovereignNetworkMap({
         paint:{ 'text-color':C.goldLight,'text-halo-color':'#040f1e','text-halo-width':1.5 } });
 
       const partnerFeats: GeoJSON.Feature[] = BRICS_PARTNERS.map(code => ({
-        type:'Feature', properties:{ code, name:BRICS_COUNTRY_META[code]?.nameZh??code },
+        type:'Feature', properties:{ code, name: initIsZh ? (BRICS_COUNTRY_META[code]?.nameZh??code) : (BRICS_COUNTRY_META[code]?.name??code) },
         geometry:{ type:'Point', coordinates:BRICS_COUNTRY_META[code]?.center??[0,0] },
       }));
       map.addSource('bp', { type:'geojson', data:{ type:'FeatureCollection', features:partnerFeats } });
@@ -803,7 +847,7 @@ export default function SovereignNetworkMap({
         paint:{ 'text-color':'#93C5FD','text-halo-color':'#040f1e','text-halo-width':1.2 } });
 
       const transitFeats: GeoJSON.Feature[] = Object.entries(TRANSIT_NODES).map(([name,coord]) => ({
-        type:'Feature', properties:{ name }, geometry:{ type:'Point', coordinates:coord },
+        type:'Feature', properties:{ name: initIsZh ? name : (TRANSIT_NAMES_EN[name] ?? name) }, geometry:{ type:'Point', coordinates:coord },
       }));
       map.addSource('transit', { type:'geojson', data:{ type:'FeatureCollection', features:transitFeats } });
       map.addLayer({ id:'transit-dot', type:'circle', source:'transit',
