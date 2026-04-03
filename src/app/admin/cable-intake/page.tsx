@@ -11,6 +11,7 @@ import NewsInitButton from '@/components/admin/NewsInitButton';
 import GenerateRoutesButton from '@/components/admin/GenerateRoutesButton';
 import CableTopologyEditor, { type TopologyResult } from '@/components/admin/CableTopologyEditor';
 import SmoothRouteButton from '@/components/admin/SmoothRouteButton';
+import StationCoordsEditor from '@/components/admin/StationCoordsEditor';
 import { useRouter } from 'next/navigation';
 import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
 
@@ -511,6 +512,9 @@ export default function CableIntakePage() {
               )}
             </div>
           </div>
+
+          {/* 登陆站坐标编辑器 */}
+          <StationCoordsEditor />
 
           {/* 第二步·补充：路由坐标（routeGeojson）输入 */}
           <div style={{ background: CARD, border: `1px solid rgba(59,130,246,.15)`, borderRadius: 14,
