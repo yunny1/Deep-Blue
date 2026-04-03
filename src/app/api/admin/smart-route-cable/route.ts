@@ -1,17 +1,12 @@
 // src/app/api/admin/smart-route-cable/route.ts
 //
-// 智能路由接口：从数据库中已有的、路由坐标正确的海缆里提取参考航路点，
-// 为目标海缆生成更准确的路由路径。同时修复反子午线（太平洋跨越）问题。
+// 智能路由 v2 — 修复参考坐标过多导致蜘蛛网的问题
 //
-// 核心思路：
-//   SEA-ME-WE、PEACE Cable、Asia Link Cable 等主干缆在数据库里
-//   已有精确到几公里级别的真实 routeGeojson，这比任何规则算法都可靠。
-//   我们把目标缆的"骨架坐标"（当前 routeGeojson 的各点）两两配对，
-//   对每一段在数据库里寻找走过相同走廊的参考缆坐标，
-//   将这些坐标插入作为航路点，让路径自然地贴着真实海缆走廊前进。
-//
-//   反子午线修复：从关岛 144°E 到俄勒冈 -124°W，直接用 -124 地图会画反方向。
-//   修复方法：-124 + 360 = 236，地图渲染引擎就会向东跨越太平洋。
+// 核心改动：
+//   - 走廊宽度从 ±9° 压缩到 ±3°（东南亚短段）/ ±4°（跨洋长段）
+//   - 每段最多保留 5 个最接近中心线的参考点（不再收集所有在走廊内的点）
+//   - 去重间距从 0.35° 提高到 1.5°（相邻参考点之间保持足够间隔）
+//   - 这三个变化共同保证参考点"精而不滥"
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
@@ -21,16 +16,14 @@ import { Prisma } from '@prisma/client';
 export const dynamic    = 'force-dynamic';
 export const maxDuration = 60;
 
-type Coord = [number, number]; // [经度, 纬度]
+type Coord = [number, number];
 
-// 陆地多边形特征的类型，只关心 geometry 字段
 interface LandFeature {
   geometry: { type: string; coordinates: unknown };
 }
 
-// ── 几何计算（纯原生，无外部依赖） ───────────────────────────────────────────
+// ── 几何工具 ──────────────────────────────────────────────────────────────────
 
-/** 计算点 P 在线段 A→B 上的投影参数 t，以及垂直距离 */
 function projectToSegment(p: Coord, a: Coord, b: Coord): { t: number; perpDist: number } {
   const abx = b[0]-a[0], aby = b[1]-a[1];
   const len2 = abx*abx + aby*aby;
@@ -40,14 +33,14 @@ function projectToSegment(p: Coord, a: Coord, b: Coord): { t: number; perpDist: 
   return { t, perpDist };
 }
 
-/** 判断点 P 是否在 A→B 走廊内（垂直距离 <= perpTol，沿方向在两端各允许 8% 延伸） */
+// 判断点是否在走廊内（关键参数：perpTol 越小，走廊越窄，收到的参考点越精准）
 function inCorridor(p: Coord, a: Coord, b: Coord, perpTol: number): boolean {
   const { t, perpDist } = projectToSegment(p, a, b);
-  return t >= -0.08 && t <= 1.08 && perpDist <= perpTol;
+  return t >= -0.05 && t <= 1.05 && perpDist <= perpTol;
 }
 
-/** 按投影值排序并空间去重（距离 < minGap 的相邻点合并） */
-function sortAndDedupe(pts: Coord[], a: Coord, b: Coord, minGap = 0.35): Coord[] {
+// 按投影值排序 + 去重（minGap 较大，保证参考点稀疏分布，不产生密集锯齿）
+function sortAndDedupe(pts: Coord[], a: Coord, b: Coord, minGap: number): Coord[] {
   const withT = pts.map(p => ({ p, t: projectToSegment(p, a, b).t }));
   withT.sort((x, y) => x.t - y.t);
   const out: Coord[] = [];
@@ -60,29 +53,23 @@ function sortAndDedupe(pts: Coord[], a: Coord, b: Coord, minGap = 0.35): Coord[]
 }
 
 // ── 反子午线修复 ──────────────────────────────────────────────────────────────
-/**
- * 太平洋跨越时，把 -124°（俄勒冈）改为 236°（= -124+360），
- * 这样坐标系是连续的，地图渲染引擎就会向东画弧线而不是向西穿越大陆。
- * MapLibre 和 CesiumJS 都支持 > 180° 的扩展经度坐标。
- */
+// 从关岛 144°E 到俄勒冈 -124°W：把 -124 改成 236（= -124+360）
+// 这样坐标连续递增，地图渲染引擎向东画弧线穿越太平洋，而不是向西穿越大陆
 function fixAntiMeridian(coords: Coord[]): Coord[] {
   if (!coords.length) return coords;
   const result: Coord[] = [coords[0]];
   for (let i = 1; i < coords.length; i++) {
     let [lng, lat] = coords[i];
     const prev = result[i-1][0];
-    // 从东半球（>100°）到西半球负经度（<-100°）→ 加 360 使坐标连续
-    if (prev > 100 && lng < -100) lng += 360;
-    // 已经在扩展坐标系（>260°），继续加 360
-    else if (prev > 260 && lng < 0) lng += 360;
-    // 反向（从扩展坐标回到正常，极少见）
-    else if (prev < -100 && lng > 100) lng -= 360;
+    if (prev > 100  && lng < -100) lng += 360;  // 东→西半球（太平洋跨越）
+    else if (prev > 260 && lng < 0) lng += 360;  // 已在扩展坐标系，继续延伸
+    else if (prev < -100 && lng > 100) lng -= 360; // 反向（罕见）
     result.push([lng, lat]);
   }
   return result;
 }
 
-// ── 陆地检测（纯原生几何） ────────────────────────────────────────────────────
+// ── 陆地检测（纯原生，无外部依赖） ────────────────────────────────────────────
 function cross2d(ax:number,ay:number,bx:number,by:number,px:number,py:number) {
   return (bx-ax)*(py-ay)-(by-ay)*(px-ax);
 }
@@ -128,7 +115,6 @@ function ptOnLand(pt:Coord,land:LandFeature[]): boolean {
   return false;
 }
 
-// ── 陆地数据内存缓存 ──────────────────────────────────────────────────────────
 let landCache: LandFeature[] | null = null;
 async function getLand(): Promise<LandFeature[]> {
   if (landCache) return landCache;
@@ -142,7 +128,6 @@ async function getLand(): Promise<LandFeature[]> {
   return landCache;
 }
 
-// ── Redis 缓存清除 ────────────────────────────────────────────────────────────
 async function clearCache() {
   const url=process.env.UPSTASH_REDIS_REST_URL, tok=process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url||!tok) return;
@@ -162,7 +147,6 @@ export async function POST(req: NextRequest) {
   const { slug } = await req.json() as { slug?: string };
   if (!slug?.trim()) return NextResponse.json({ error: 'slug 必填' }, { status: 400 });
 
-  // ① 读取目标海缆
   const cable = await prisma.cable.findUnique({
     where: { slug },
     select: {
@@ -174,7 +158,7 @@ export async function POST(req: NextRequest) {
   });
   if (!cable) return NextResponse.json({ error: `找不到：${slug}` }, { status: 404 });
 
-  // ② 提取骨架坐标（当前 routeGeojson 的主干，或退回登陆站经度排序）
+  // ① 提取骨架坐标（当前路由的主干，作为方向指引）
   let skeleton: Coord[] = [];
   if (cable.routeGeojson) {
     const geo = cable.routeGeojson as { type: string; coordinates: unknown };
@@ -192,14 +176,14 @@ export async function POST(req: NextRequest) {
     skeleton = sorted.map(s => [s.longitude!, s.latitude!] as Coord);
   }
 
-  // ③ 从数据库加载参考海缆（限 150 条，跳过无路由的和自身）
+  // ② 加载参考海缆（排除自身，限 150 条）
   const refCables = await prisma.cable.findMany({
     where: { slug: { not: slug }, routeGeojson: { not: Prisma.DbNull }, status: { not: 'REMOVED' } },
     select: { name: true, routeGeojson: true },
     take: 150,
   });
 
-  // 提取参考坐标池（每隔 3 个采样一次，控制内存和计算量）
+  // 提取参考坐标（每隔 5 个采样一次，比之前的每隔 3 个更稀疏，减少噪音）
   const refPool: Coord[] = [];
   for (const rc of refCables) {
     if (!rc.routeGeojson) continue;
@@ -207,38 +191,64 @@ export async function POST(req: NextRequest) {
     try {
       if (geo.type === 'LineString') {
         const cs = geo.coordinates as number[][];
-        for (let i = 0; i < cs.length; i += 3) refPool.push([cs[i][0], cs[i][1]]);
+        for (let i = 0; i < cs.length; i += 5) refPool.push([cs[i][0], cs[i][1]]);
       } else if (geo.type === 'MultiLineString') {
         for (const line of geo.coordinates as number[][][])
-          for (let i = 0; i < line.length; i += 3) refPool.push([line[i][0], line[i][1]]);
+          for (let i = 0; i < line.length; i += 5) refPool.push([line[i][0], line[i][1]]);
       }
     } catch { /* 跳过解析失败的缆 */ }
   }
 
-  // ④ 核心：对每段骨架，在走廊内寻找参考航路点并插入
+  // ③ 核心改进：严格的走廊过滤 + 数量限制
   //
-  //  走廊宽度策略：
-  //   - 骨架段 < 10°（东南亚短段）→ ±3.5°，精确贴合狭窄海峡走廊
-  //   - 骨架段 10–30°（中程段）  → ±5°，平衡精度和覆盖
-  //   - 骨架段 > 30°（跨洋长段）→ ±9°，跨洋区域需要宽走廊才能收到参考点
+  //  关键参数说明（这三个数字决定路由质量）：
+  //  ┌─────────────────────────────────────────────────────────────────────┐
+  //  │ perpTol（走廊宽度）：垂直走廊半宽，越小越严格，越不容易引入旁路噪音    │
+  //  │   短段 <10°: ±2°   （东南亚精细走廊，只取非常贴近的参考点）            │
+  //  │   中段10-30°: ±3°  （中程段，适度宽松）                               │
+  //  │   长段 >30°: ±4°   （跨洋段，宽但可控）                               │
+  //  │                                                                       │
+  //  │ MAX_PER_SEG = 5    ：每段最多插入 5 个参考点（防止爆炸性增长）          │
+  //  │                                                                       │
+  //  │ minGap = 1.5°      ：相邻参考点最小间距（保证分布稀疏均匀）            │
+  //  └─────────────────────────────────────────────────────────────────────┘
+  const MAX_PER_SEG = 5;
+  const MIN_GAP     = 1.5;
+
   const refined: Coord[] = [skeleton[0]];
   for (let i = 0; i < skeleton.length - 1; i++) {
     const a = skeleton[i], b = skeleton[i+1];
     const segLen = Math.hypot(b[0]-a[0], b[1]-a[1]);
-    const perpTol = segLen > 30 ? 9 : segLen > 10 ? 5 : 3.5;
 
+    // 走廊宽度根据段长度动态调整
+    const perpTol = segLen > 30 ? 4 : segLen > 10 ? 3 : 2;
+
+    // 筛选走廊内的参考点
     const hits = refPool.filter(p => inCorridor(p, a, b, perpTol));
+
     if (hits.length > 0) {
-      const sorted = sortAndDedupe(hits, a, b);
-      refined.push(...sorted);
+      // 【关键改进】按垂直距离排序，优先选择最接近中心线的点
+      // 这样选出的参考点是最"代表性"的，而不是随机的走廊内点
+      const byPerp = hits
+        .map(p => ({ p, perp: projectToSegment(p, a, b).perpDist }))
+        .sort((x, y) => x.perp - y.perp)
+        .slice(0, MAX_PER_SEG * 8)  // 先取最近的一批候选
+        .map(({ p }) => p);
+
+      // 按方向排序、去重（间距 1.5°），最终保留不超过 MAX_PER_SEG 个
+      const sorted = sortAndDedupe(byPerp, a, b, MIN_GAP).slice(0, MAX_PER_SEG);
+      if (sorted.length > 0) {
+        refined.push(...sorted);
+      }
     }
+
     refined.push(b);
   }
 
-  // ⑤ 修复反子午线（太平洋段 -124° → 236°）
+  // ④ 修复反子午线（-124°W → 236°，使太平洋段连续向东）
   const amFixed = fixAntiMeridian(refined);
 
-  // ⑥ 最后一轮陆地检测和修复（此时路径已大幅改善，修复量应很小）
+  // ⑤ 最后陆地穿越修复（此时路径已经相当合理，只需处理边缘情况）
   let final = amFixed;
   try {
     const land = await getLand();
@@ -247,7 +257,7 @@ export async function POST(req: NextRequest) {
       let changed = false;
       for (let i = 0; i < final.length - 1; i++) {
         const a = final[i], b = final[i+1];
-        // 归一化到 -180~180 再做陆地检测（因为扩展坐标 land 数据无法直接处理）
+        // 归一化到 -180~180 做陆地检测（land 数据不含扩展坐标）
         const aN: Coord = [((a[0]+180)%360+360)%360-180, a[1]];
         const bN: Coord = [((b[0]+180)%360+360)%360-180, b[1]];
         if (segCrossesLand(aN, bN, land)) {
@@ -269,7 +279,7 @@ export async function POST(req: NextRequest) {
               }
             }
           }
-          if (!found) { /* 无法找到绕行点，保留原始直线 */ }
+          if (!found) { /* 无法绕行，保留原始线段 */ }
         }
         next.push(b);
       }
@@ -280,7 +290,6 @@ export async function POST(req: NextRequest) {
     console.warn('[smart-route] 陆地数据加载失败，跳过陆地检测：', e);
   }
 
-  // ⑦ 写回数据库并清除缓存
   await prisma.cable.update({
     where: { id: cable.id },
     data:  { routeGeojson: { type: 'LineString', coordinates: final }, isApproximateRoute: true },
