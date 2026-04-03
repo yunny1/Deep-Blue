@@ -597,6 +597,10 @@ export default function SovereignNetworkMap({
   const pulseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mapReadyRef   = useRef(false);
   const hoveredSlugRef = useRef<string | null>(null);
+  // 防抖：mouseleave 延迟 150ms 才真正清除高亮，防止鼠标在细线边缘抖动导致闪烁
+  const leaveTimerRef  = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // 标记：刚刚处理了一个 feature click，防止全局 click 立即清除锁定的卡片
+  const featureClickRef = useRef(false);
 
   const [loadState,    setLoadState]    = useState<'loading' | 'ready' | 'error'>('loading');
   const [floatingCard, setFloatingCard] = useState<FloatingCard | null>(null);
@@ -866,6 +870,9 @@ export default function SovereignNetworkMap({
         if (!cableName) return;
         map.getCanvas().style.cursor = 'pointer';
 
+        // 鼠标移动时取消任何待执行的 mouseleave 回调，防止闪烁
+        clearTimeout(leaveTimerRef.current);
+
         // 高亮当前悬浮缆
         if (hoveredSlugRef.current !== slug) {
           hoveredSlugRef.current = slug;
@@ -887,11 +894,15 @@ export default function SovereignNetworkMap({
 
       map.on('mouseleave', 'sv-default-hit', () => {
         map.getCanvas().style.cursor = '';
-        hoveredSlugRef.current = null;
-        // 清除悬浮高亮
-        (map.getSource('sv-hover-hl') as maplibregl.GeoJSONSource)?.setData({ type:'FeatureCollection', features:[] });
-        // 如果没有锁定卡片，清除卡片
-        setFloatingCard(prev => prev?.locked ? prev : null);
+        // 延迟 150ms 才清除，这样：
+        // ① 鼠标在细线边缘抖动时，mousemove 会在 150ms 内再次触发，取消这个清除
+        // ② 点击时 click 事件会在 150ms 内触发，也会取消这个清除
+        // 两种情况都不会看到闪烁或卡片被意外清除
+        leaveTimerRef.current = setTimeout(() => {
+          hoveredSlugRef.current = null;
+          (map.getSource('sv-hover-hl') as maplibregl.GeoJSONSource)?.setData({ type:'FeatureCollection', features:[] });
+          setFloatingCard(prev => prev?.locked ? prev : null);
+        }, 150);
       });
 
       // 默认缆 click：锁定卡片
@@ -899,6 +910,14 @@ export default function SovereignNetworkMap({
         if (!e.features?.length) return;
         const cableName: string = e.features[0].properties?.name ?? '';
         if (!cableName) return;
+
+        // 取消 mouseleave 的延迟清除——click 和 mouseleave 几乎同时触发，
+        // 如果不取消，mouseleave 会在 150ms 后清掉我们刚刚锁定的卡片
+        clearTimeout(leaveTimerRef.current);
+
+        // 标记此次点击已由 feature 层处理，防止全局 click 误清除卡片
+        featureClickRef.current = true;
+        setTimeout(() => { featureClickRef.current = false; }, 0);
 
         setFloatingCard(prev => {
           // 再次点击同一条缆 → 解锁
@@ -924,7 +943,9 @@ export default function SovereignNetworkMap({
       map.on('mouseleave','sv-sel-hit',()=>{ map.getCanvas().style.cursor=''; });
 
       // 点击空白：取消所有选中
+      // featureClickRef 防止 feature 层的 click 被这里立即清除
       map.on('click', e => {
+        if (featureClickRef.current) return; // feature click 刚处理过，不清除
         const hit = map.queryRenderedFeatures(e.point, { layers:['sv-default-hit','sv-sel-hit','bm-dot','bp-dot'] });
         if (!hit.length) {
           onRouteSelect(null); onPopup?.(null);

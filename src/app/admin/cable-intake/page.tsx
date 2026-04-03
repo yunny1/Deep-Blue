@@ -13,6 +13,7 @@ import CableTopologyEditor, { type TopologyResult } from '@/components/admin/Cab
 import SmoothRouteButton from '@/components/admin/SmoothRouteButton';
 import StationCoordsEditor from '@/components/admin/StationCoordsEditor';
 import SmartRouteButton from '@/components/admin/SmartRouteButton';
+import BranchUnitRouteButton from '@/components/admin/BranchUnitRouteButton';
 import { useRouter } from 'next/navigation';
 import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
 
@@ -557,7 +558,9 @@ export default function CableIntakePage() {
                   margin: 0, lineHeight: 1.6 }}>
                   路由保存后如果地图上仍有穿越陆地或跨大陆的问题，使用下方工具修复：
                 </p>
-                {/* 推荐优先使用智能路由 */}
+                {/* 推荐：分支单元路由（真实海缆工程架构） */}
+                <BranchUnitRouteButton slug={fields.slug} />
+                {/* 次选：智能路由（参考数据库其他缆的路径） */}
                 <SmartRouteButton slug={fields.slug} />
                 {/* 备用：纯算法平滑（不依赖参考缆，但对复杂海峡效果有限）*/}
                 <SmoothRouteButton slug={fields.slug} />
