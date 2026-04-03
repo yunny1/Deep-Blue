@@ -147,7 +147,8 @@ export async function POST(req: NextRequest) {
   }
 
   // 清除 Redis 地图缓存（fire and forget，不阻断响应）
-  clearMapCache();
+  // 清除 Redis 地图缓存（await 确保在函数返回前执行完）
+  await clearMapCache();
 
   return NextResponse.json({
     ok: true, slug: finalSlug, cableId,

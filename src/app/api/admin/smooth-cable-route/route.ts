@@ -294,7 +294,10 @@ export async function POST(req: NextRequest) {
     data:  { routeGeojson: { type: 'LineString', coordinates: smoothed }, isApproximateRoute: true },
   });
 
-  clearMapCache(); // fire-and-forget
+  // 清除 Redis 地图缓存（必须 await，确保在函数实例被回收前执行完毕）
+  // 之前用 fire-and-forget 方式调用，在 Vercel serverless 环境下响应发出后
+  // 函数实例即被回收，导致缓存清除操作被中断，地图始终显示旧数据
+  await clearMapCache();
 
   return NextResponse.json({
     message: `平滑完成：${passes} 轮迭代，新增 ${added} 个绕行点，共 ${smoothed.length} 个坐标点`,
