@@ -12,6 +12,7 @@ import GenerateRoutesButton from '@/components/admin/GenerateRoutesButton';
 import CableTopologyEditor, { type TopologyResult } from '@/components/admin/CableTopologyEditor';
 import SmoothRouteButton from '@/components/admin/SmoothRouteButton';
 import StationCoordsEditor from '@/components/admin/StationCoordsEditor';
+import SmartRouteButton from '@/components/admin/SmartRouteButton';
 import { useRouter } from 'next/navigation';
 import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
 
@@ -547,14 +548,18 @@ export default function CableIntakePage() {
               </div>
             )}
 
-            {/* 路由已存在或已保存时，显示"自动平滑"按钮 — 只需要 slug 即可触发 */}
+            {/* 路由工具：智能路由（参考数据库） + 陆地平滑，只需 slug 即可触发 */}
             {fields.slug && (
               <div style={{ marginTop: 14, paddingTop: 14,
-                borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                borderTop: '1px solid rgba(255,255,255,.06)',
+                display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <p style={{ fontSize: 11, color: 'rgba(255,255,255,.3)',
-                  margin: '0 0 10px', lineHeight: 1.6 }}>
-                  保存后如果地图上的路线仍有穿越陆地的情况，点击下方按钮自动检测并插入海洋绕行点：
+                  margin: 0, lineHeight: 1.6 }}>
+                  路由保存后如果地图上仍有穿越陆地或跨大陆的问题，使用下方工具修复：
                 </p>
+                {/* 推荐优先使用智能路由 */}
+                <SmartRouteButton slug={fields.slug} />
+                {/* 备用：纯算法平滑（不依赖参考缆，但对复杂海峡效果有限）*/}
                 <SmoothRouteButton slug={fields.slug} />
               </div>
             )}
