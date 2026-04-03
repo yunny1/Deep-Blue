@@ -10,6 +10,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import NewsInitButton from '@/components/admin/NewsInitButton';
 import GenerateRoutesButton from '@/components/admin/GenerateRoutesButton';
 import CableTopologyEditor, { type TopologyResult } from '@/components/admin/CableTopologyEditor';
+import SmoothRouteButton from '@/components/admin/SmoothRouteButton';
 import { useRouter } from 'next/navigation';
 import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
 
@@ -539,6 +540,18 @@ export default function CableIntakePage() {
                     return <span style={{ color: '#f87171' }}>✗ JSON 格式错误，请检查</span>;
                   }
                 })()}
+              </div>
+            )}
+
+            {/* 路由已存在时，显示"自动平滑"按钮 */}
+            {fields.slug && (fields.routeGeojson || topologyResult?.geojson) && (
+              <div style={{ marginTop: 14, paddingTop: 14,
+                borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,.3)',
+                  margin: '0 0 10px', lineHeight: 1.6 }}>
+                  路由保存后如果仍有线段穿越陆地，点击下方按钮自动检测并插入海洋绕行点：
+                </p>
+                <SmoothRouteButton slug={fields.slug} />
               </div>
             )}
           </div>
