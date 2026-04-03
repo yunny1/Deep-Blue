@@ -1,14 +1,15 @@
 'use client';
-// src/app/admin/cable-intake/page.tsx  v2
+// src/app/admin/cable-intake/page.tsx  v3
 //
-// 新增功能：
-// 1. 登陆站选择器 — 搜索并关联现有库中的登陆站（标准化落库，不重复创建）
-// 2. routeGeojson 输入框 — 粘贴 GeoJSON 坐标使海缆出现在地球地图和搜索中
-// 3. 字段对比合并面板 — 选中合并目标后，逐字段对比"库中现有"与"新提取"，自选保留哪个值
+// 升级：登陆站录入改用鱼骨拓扑编辑器
+//   - 主干按物理顺序排列，支线单独分叉
+//   - 拓扑编辑器自动计算 GeoJSON，无需手动粘贴
+//   - 字段对比合并面板、AI 提取等原有功能保留
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import NewsInitButton from '@/components/admin/NewsInitButton';
 import GenerateRoutesButton from '@/components/admin/GenerateRoutesButton';
+import CableTopologyEditor, { type TopologyResult } from '@/components/admin/CableTopologyEditor';
 import { useRouter } from 'next/navigation';
 import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
 
@@ -42,13 +43,6 @@ interface SimilarCable {
   lengthKm: number | null; vendor: string | null;
 }
 
-interface LandingStationResult {
-  id: string; name: string; nameZh: string | null;
-  city: string | null; countryCode: string;
-  lat: number | null; lng: number | null;
-  cableCount: number;
-}
-
 interface DbCableDetail {
   slug: string; name: string; status: string | null;
   lengthKm: string | null; capacityTbps: string | null;
@@ -56,7 +50,7 @@ interface DbCableDetail {
   vendor: string | null; owners: string | null;
   notes: string | null; hasRouteGeojson: boolean;
   isApproximateRoute: boolean;
-  landingStations: LandingStationResult[];
+  landingStations: { id: string; name: string; nameZh: string | null; city: string | null; countryCode: string; lat: number | null; lng: number | null }[];
 }
 
 // ── 样式常量 ─────────────────────────────────────────────────────────────────
@@ -71,121 +65,6 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 6, color: '#E2E8F0', fontSize: 13, padding: '8px 10px', outline: 'none',
   fontFamily: "'DM Sans',system-ui,sans-serif", boxSizing: 'border-box',
 };
-
-// ── 登陆站选择器子组件 ────────────────────────────────────────────────────────
-// 搜索现有 DB 登陆站，支持多选，选中后以 Tag 形式展示在下方。
-function LandingStationSelector({
-  selected, onAdd, onRemove,
-}: {
-  selected: LandingStationResult[];
-  onAdd: (s: LandingStationResult) => void;
-  onRemove: (id: string) => void;
-}) {
-  const [q,       setQ]       = useState('');
-  const [results, setResults] = useState<LandingStationResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const search = (query: string) => {
-    clearTimeout(timer.current);
-    setQ(query);
-    if (!query.trim()) { setResults([]); return; }
-
-    timer.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res  = await fetch(`/api/admin/landing-station-search?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        // 过滤掉已经选中的站
-        setResults((data.stations ?? []).filter(
-          (s: LandingStationResult) => !selected.find(sel => sel.id === s.id)
-        ));
-      } catch { setResults([]); }
-      finally  { setLoading(false); }
-    }, 300); // 300ms 防抖，避免每个字母都触发请求
-  };
-
-  const pick = (s: LandingStationResult) => {
-    onAdd(s);
-    setQ('');
-    setResults([]);
-  };
-
-  return (
-    <div>
-      {/* 搜索输入框 */}
-      <div style={{ position: 'relative' }}>
-        <input
-          value={q}
-          onChange={e => search(e.target.value)}
-          placeholder="搜索登陆站名称、城市或国家代码（如 SG）…"
-          style={inputStyle}
-        />
-        {loading && (
-          <span style={{ position: 'absolute', right: 10, top: 9,
-            fontSize: 11, color: 'rgba(255,255,255,.35)' }}>搜索中…</span>
-        )}
-
-        {/* 下拉结果列表 */}
-        {results.length > 0 && (
-          <div style={{
-            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 60,
-            background: '#0d1f3c', border: `1px solid ${BORDER}`, borderRadius: 8,
-            maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 28px rgba(0,0,0,.6)',
-            marginTop: 2,
-          }}>
-            {results.map(s => (
-              <div key={s.id} onClick={() => pick(s)}
-                style={{
-                  padding: '9px 14px', cursor: 'pointer',
-                  borderBottom: '1px solid rgba(255,255,255,.04)', transition: 'background .1s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = `${GOLD}10`)}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.85)', fontWeight: 500 }}>
-                  {s.name}
-                  {s.nameZh && <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginLeft: 6 }}>({s.nameZh})</span>}
-                </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginTop: 2,
-                  display: 'flex', gap: 10 }}>
-                  <span>{[s.city, s.countryCode].filter(Boolean).join(', ')}</span>
-                  {s.cableCount > 0 && (
-                    <span style={{ color: `${GOLD}80` }}>已关联 {s.cableCount} 条缆</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 已选站点 Tag 列表 */}
-      {selected.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-          {selected.map(s => (
-            <div key={s.id} style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '3px 10px', borderRadius: 20,
-              background: `${GOLD}12`, border: `1px solid ${GOLD}30`,
-              fontSize: 11, color: GOLD,
-            }}>
-              <span>{s.name}{s.city ? `, ${s.city}` : ''} ({s.countryCode})</span>
-              <span onClick={() => onRemove(s.id)}
-                style={{ cursor: 'pointer', color: 'rgba(255,255,255,.4)',
-                  marginLeft: 2, fontSize: 14, lineHeight: 1, fontWeight: 700 }}>×</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {selected.length === 0 && (
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,.25)', marginTop: 6, margin: '6px 0 0' }}>
-          登陆站会通过关联表 CableLandingStation 写入，不会创建重复记录
-        </p>
-      )}
-    </div>
-  );
-}
 
 // ── 字段对比面板子组件 ────────────────────────────────────────────────────────
 // 左列：DB 中的现有值；右列：表单中的新值。
@@ -316,8 +195,8 @@ export default function CableIntakePage() {
   const [saveMsg,     setSaveMsg]     = useState('');
   const [xlsxMsg,     setXlsxMsg]     = useState('');
 
-  // 登陆站状态
-  const [selectedStations, setSelectedStations] = useState<LandingStationResult[]>([]);
+  // 登陆站拓扑状态（鱼骨编辑器输出）
+  const [topologyResult, setTopologyResult] = useState<TopologyResult | null>(null);
 
   // 字段对比面板状态（只有选了 mergeTarget 才会有数据）
   const [dbCableData,  setDbCableData]  = useState<DbCableDetail | null>(null);
@@ -339,17 +218,13 @@ export default function CableIntakePage() {
       .then(r => r.json())
       .then((data: DbCableDetail) => {
         setDbCableData(data);
-        // 初始化每个字段的选择：库里有值就默认选库，否则默认选新值
         const init: Record<string, 'db' | 'new'> = {};
         COMPARE_FIELDS.forEach(f => {
           const dbVal = (data as unknown as Record<string, string | null>)[f.key];
           init[f.key] = dbVal ? 'db' : 'new';
         });
         setFieldChoices(init);
-        // 把 DB 里的登陆站合并进已选列表（追加，不替换用户已选的）
-        const existingIds = new Set(selectedStations.map(s => s.id));
-        const toAdd = data.landingStations.filter(ls => !existingIds.has(ls.id));
-        if (toAdd.length > 0) setSelectedStations(prev => [...prev, ...toAdd]);
+        // 注意：DB 里的登陆站现在通过拓扑编辑器管理，不再自动注入 selectedStations
       })
       .catch(console.error)
       .finally(() => setLoadingDb(false));
@@ -417,11 +292,17 @@ export default function CableIntakePage() {
     const finalFields = buildFinalFields();
     if (!finalFields.name?.trim()) { setSaveMsg('✗ 海缆名称为必填项'); return; }
 
+    // 如果拓扑编辑器已经生成了 GeoJSON，优先使用它（比手动粘贴的更可靠）
+    const geojsonStr = topologyResult?.geojson
+      ? JSON.stringify(topologyResult.geojson)
+      : finalFields.routeGeojson;
+
     setSaving(true); setSaveMsg('');
     try {
       const payload = {
         ...finalFields,
-        landingStationIds: selectedStations.map(s => s.id),
+        routeGeojson:      geojsonStr,
+        landingStationIds: topologyResult?.allStationIds ?? [],
         mergeIntoSlug:     mergeTarget,
       };
       const res = await fetch('/api/admin/cable-save', {
@@ -434,7 +315,7 @@ export default function CableIntakePage() {
       setSaveMsg(`✓ 已保存（slug: ${data.slug}）。该条目已打上 MANUALLY_ADDED 标记，nightly-sync 不会覆盖。`);
       setTimeout(() => {
         setFields({}); setSimilar([]); setMergeTarget(null);
-        setSaveMsg(''); setSelectedStations([]);
+        setSaveMsg(''); setTopologyResult(null);
         setDbCableData(null); setFieldChoices({});
       }, 4000);
     } catch (e: unknown) {
@@ -578,23 +459,26 @@ export default function CableIntakePage() {
             </button>
           </div>
 
-          {/* 第二步·补充：登陆站选择器（独立卡片，视觉上与字段表单平级）*/}
+          {/* 第二步·补充：海缆路径拓扑结构（鱼骨编辑器）*/}
           <div style={{ background: CARD, border: `1px solid rgba(255,255,255,.06)`, borderRadius: 14,
             backdropFilter: 'blur(12px)', padding: '20px 24px' }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.08em',
               textTransform: 'uppercase', color: `${GOLD}80`, marginBottom: 6 }}>
-              关联登陆站
+              海缆路径拓扑结构
             </div>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 14, lineHeight: 1.6 }}>
-              搜索并关联现有登陆站记录。选中后会通过 CableLandingStation 关联表落库，不创建重复记录。
-              如果库里没有该站点，请先通过管理后台添加登陆站，再回来关联。
+              按物理顺序在<strong style={{ color: 'rgba(255,255,255,.55)' }}>主干</strong>上添加登陆站（从一端到另一端）。
+              有 spur 支线的话点站点下方的 <strong style={{ color: '#34D399' }}>↓</strong> 添加支线。
+              系统会自动计算路由 GeoJSON，保存时直接写入数据库，地球立即显示。
             </p>
-            <LandingStationSelector
-              selected={selectedStations}
-              onAdd={s => setSelectedStations(prev =>
-                prev.find(p => p.id === s.id) ? prev : [...prev, s]
-              )}
-              onRemove={id => setSelectedStations(prev => prev.filter(s => s.id !== id))}
+            <CableTopologyEditor
+              onChange={result => {
+                setTopologyResult(result);
+                // 同步更新 routeGeojson 预览框（方便用户验证和手动微调）
+                if (result.geojson) {
+                  setField('routeGeojson', JSON.stringify(result.geojson, null, 2));
+                }
+              }}
             />
 
             {/* 根据已选登陆站坐标立即生成近似路由 — 始终显示，slug 缺失时给出提示 */}
@@ -604,8 +488,7 @@ export default function CableIntakePage() {
                 <>
                   <p style={{ fontSize: 11, color: 'rgba(255,255,255,.3)',
                     marginBottom: 10, lineHeight: 1.6 }}>
-                    已关联登陆站后点击按钮，系统会按坐标自动绘制近似路由并写入数据库，
-                    主页地球将立即显示（虚线样式）。
+                    如果需要跳过拓扑编辑器、直接用登陆站坐标生成近似路由（经度排序），也可点击下方按钮。
                   </p>
                   <GenerateRoutesButton slug={fields.slug} />
                 </>
@@ -617,10 +500,10 @@ export default function CableIntakePage() {
                   <span style={{ fontSize: 20, opacity: 0.3 }}>⚡</span>
                   <div>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,.3)', fontWeight: 500 }}>
-                      根据登陆站坐标立即生成路由
+                      快速生成近似路由（经度排序）
                     </div>
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,.2)', marginTop: 3 }}>
-                      请先在上方"第二步"表单里填写 <strong style={{ color: 'rgba(255,255,255,.35)' }}>Slug 字段</strong>，按钮即可激活
+                      请先填写上方 Slug 字段后激活，或使用上面的拓扑编辑器指定精确顺序
                     </div>
                   </div>
                 </div>
@@ -789,11 +672,11 @@ export default function CableIntakePage() {
               {mergeTarget
                 ? '将对比结果写入已有记录，登陆站追加关联，routeGeojson 覆盖（如已输入）。'
                 : '作为全新海缆记录保存，打上 MANUALLY_ADDED 标记，nightly-sync 不会覆盖。'}
-              {selectedStations.length > 0 && (
-                <><br />将关联 {selectedStations.length} 个登陆站。</>
+              {topologyResult && topologyResult.allStationIds.length > 0 && (
+                <><br />将关联 {topologyResult.allStationIds.length} 个登陆站（来自拓扑编辑器）。</>
               )}
-              {fields.routeGeojson && (
-                <><br /><span style={{ color: GREEN }}>✓ 含路由坐标，保存后地球地图将显示该缆。</span></>
+              {topologyResult?.geojson && (
+                <><br /><span style={{ color: GREEN }}>✓ 拓扑编辑器已生成路由，保存后地球将显示该缆。</span></>
               )}
             </div>
 
