@@ -597,19 +597,35 @@ export default function CableIntakePage() {
               onRemove={id => setSelectedStations(prev => prev.filter(s => s.id !== id))}
             />
 
-            {/* 根据已选登陆站坐标立即生成近似路由 */}
-            {/* 只有填了 slug 才能触发（slug 是数据库唯一标识，没有它接口不知道更新哪条缆）*/}
-            {fields.slug && (
-              <div style={{ marginTop: 16, paddingTop: 14,
-                borderTop: '1px solid rgba(255,255,255,.06)' }}>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,.3)',
-                  marginBottom: 10, lineHeight: 1.6 }}>
-                  已填写 slug 且已关联登陆站？点击下方按钮根据登陆站坐标自动绘制近似路由，
-                  保存后主页地球将立即显示这条缆（虚线样式，表示近似路径）。
-                </p>
-                <GenerateRoutesButton slug={fields.slug} />
-              </div>
-            )}
+            {/* 根据已选登陆站坐标立即生成近似路由 — 始终显示，slug 缺失时给出提示 */}
+            <div style={{ marginTop: 16, paddingTop: 14,
+              borderTop: '1px solid rgba(255,255,255,.06)' }}>
+              {fields.slug ? (
+                <>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,.3)',
+                    marginBottom: 10, lineHeight: 1.6 }}>
+                    已关联登陆站后点击按钮，系统会按坐标自动绘制近似路由并写入数据库，
+                    主页地球将立即显示（虚线样式）。
+                  </p>
+                  <GenerateRoutesButton slug={fields.slug} />
+                </>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 14px', borderRadius: 8,
+                  background: 'rgba(255,255,255,.02)',
+                  border: '1px solid rgba(255,255,255,.06)' }}>
+                  <span style={{ fontSize: 20, opacity: 0.3 }}>⚡</span>
+                  <div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,.3)', fontWeight: 500 }}>
+                      根据登陆站坐标立即生成路由
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,.2)', marginTop: 3 }}>
+                      请先在上方"第二步"表单里填写 <strong style={{ color: 'rgba(255,255,255,.35)' }}>Slug 字段</strong>，按钮即可激活
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 第二步·补充：路由坐标（routeGeojson）输入 */}
