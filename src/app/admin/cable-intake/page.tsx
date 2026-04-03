@@ -8,6 +8,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import NewsInitButton from '@/components/admin/NewsInitButton';
+import GenerateRoutesButton from '@/components/admin/GenerateRoutesButton';
 import { useRouter } from 'next/navigation';
 import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
 
@@ -83,7 +84,7 @@ function LandingStationSelector({
   const [q,       setQ]       = useState('');
   const [results, setResults] = useState<LandingStationResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
 
   const search = (query: string) => {
     clearTimeout(timer.current);
@@ -595,6 +596,20 @@ export default function CableIntakePage() {
               )}
               onRemove={id => setSelectedStations(prev => prev.filter(s => s.id !== id))}
             />
+
+            {/* 根据已选登陆站坐标立即生成近似路由 */}
+            {/* 只有填了 slug 才能触发（slug 是数据库唯一标识，没有它接口不知道更新哪条缆）*/}
+            {fields.slug && (
+              <div style={{ marginTop: 16, paddingTop: 14,
+                borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,.3)',
+                  marginBottom: 10, lineHeight: 1.6 }}>
+                  已填写 slug 且已关联登陆站？点击下方按钮根据登陆站坐标自动绘制近似路由，
+                  保存后主页地球将立即显示这条缆（虚线样式，表示近似路径）。
+                </p>
+                <GenerateRoutesButton slug={fields.slug} />
+              </div>
+            )}
           </div>
 
           {/* 第二步·补充：路由坐标（routeGeojson）输入 */}
