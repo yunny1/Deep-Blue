@@ -618,69 +618,7 @@ export default function SovereignNetworkMap({
     }
   }, [filteredRoutes, selectedRouteId, highlightedCableName, cableApiData, updateDefaultLayer]);
 
-  // ── highlightedCableName 高亮单条缆 ───────────────────────────────────────
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapReadyRef.current || !cableApiData) return;
-    if (!highlightedCableName) {
-      if (map.getSource('sv-hl'))
-        (map.getSource('sv-hl') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:[] });
-      if (map.getLayer('sv-default-line')) map.setPaintProperty('sv-default-line','line-opacity',0.65);
-      if (map.getLayer('sv-default-glow')) map.setPaintProperty('sv-default-glow','line-opacity',0.06);
-      setFloatingCard(null); // 列表取消选中时同步关闭卡片
-      return;
-    }
-    const target = cableApiData.cables.find(c =>
-      c.name.toLowerCase() === highlightedCableName.toLowerCase() ||
-      Array.from(c.name.matchAll(/\(([^)]+)\)/g)).some(m => m[1].toLowerCase() === highlightedCableName.toLowerCase())
-    );
-    if (target?.routeGeojson) {
-      if (map.getSource('sv-hl'))
-        (map.getSource('sv-hl') as maplibregl.GeoJSONSource).setData({
-          type:'FeatureCollection',
-          features:[{ type:'Feature', properties:{}, geometry:target.routeGeojson }],
-        });
-      if (map.getLayer('sv-default-line')) map.setPaintProperty('sv-default-line','line-opacity',0.1);
-      if (map.getLayer('sv-default-glow')) map.setPaintProperty('sv-default-glow','line-opacity',0.02);
-      const coords = flattenCoords(target.routeGeojson);
-      const bbox = computeBbox(coords);
-      if (bbox) map.fitBounds(bbox, { padding:80, duration:900, maxZoom:7 });
-    }
-
-    // 同步触发浮动卡片（锁定态，固定在地图左上角，效果与直接点击地图上的缆一致）
-    const card = buildCard(highlightedCableName, 20, 80, true);
-    if (card) setFloatingCard(card);
-  }, [highlightedCableName, cableApiData, buildCard]);
-
-  // ── isZh 变化时更新地图国家/节点标注语言 ─────────────────────────────────
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapReadyRef.current) return;
-
-    const memberFeats: GeoJSON.Feature[] = BRICS_MEMBERS.map(code => ({
-      type:'Feature' as const,
-      properties:{ code, name: isZh ? (BRICS_COUNTRY_META[code]?.nameZh ?? code) : (BRICS_COUNTRY_META[code]?.name ?? code) },
-      geometry:{ type:'Point' as const, coordinates: BRICS_COUNTRY_META[code]?.center ?? [0,0] },
-    }));
-    if (map.getSource('bm'))
-      (map.getSource('bm') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:memberFeats });
-
-    const partnerFeats: GeoJSON.Feature[] = BRICS_PARTNERS.map(code => ({
-      type:'Feature' as const,
-      properties:{ code, name: isZh ? (BRICS_COUNTRY_META[code]?.nameZh ?? code) : (BRICS_COUNTRY_META[code]?.name ?? code) },
-      geometry:{ type:'Point' as const, coordinates: BRICS_COUNTRY_META[code]?.center ?? [0,0] },
-    }));
-    if (map.getSource('bp'))
-      (map.getSource('bp') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:partnerFeats });
-
-    const transitFeats: GeoJSON.Feature[] = Object.entries(TRANSIT_NODES).map(([zhName, coord]) => ({
-      type:'Feature' as const,
-      properties:{ name: isZh ? zhName : (TRANSIT_NAMES_EN[zhName] ?? zhName) },
-      geometry:{ type:'Point' as const, coordinates:coord },
-    }));
-    if (map.getSource('transit'))
-      (map.getSource('transit') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:transitFeats });
-  }, [isZh]);
+  // highlightedCableName effect and isZh map-label effect are declared after buildCard (below)
 
   // ── 构造浮动卡片数据 ───────────────────────────────────────────────────────
   const buildCard = useCallback((
@@ -727,6 +665,65 @@ export default function SovereignNetworkMap({
       segments, locked,
     };
   }, [routes]);
+
+  // ── highlightedCableName 高亮单条缆（必须在 buildCard 之后，否则 TS 块作用域报错）
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReadyRef.current || !cableApiData) return;
+    if (!highlightedCableName) {
+      if (map.getSource('sv-hl'))
+        (map.getSource('sv-hl') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:[] });
+      if (map.getLayer('sv-default-line')) map.setPaintProperty('sv-default-line','line-opacity',0.65);
+      if (map.getLayer('sv-default-glow')) map.setPaintProperty('sv-default-glow','line-opacity',0.06);
+      setFloatingCard(null);
+      return;
+    }
+    const target = cableApiData.cables.find(c =>
+      c.name.toLowerCase() === highlightedCableName.toLowerCase() ||
+      Array.from(c.name.matchAll(/\(([^)]+)\)/g)).some(m => m[1].toLowerCase() === highlightedCableName.toLowerCase())
+    );
+    if (target?.routeGeojson) {
+      if (map.getSource('sv-hl'))
+        (map.getSource('sv-hl') as maplibregl.GeoJSONSource).setData({
+          type:'FeatureCollection',
+          features:[{ type:'Feature', properties:{}, geometry:target.routeGeojson }],
+        });
+      if (map.getLayer('sv-default-line')) map.setPaintProperty('sv-default-line','line-opacity',0.1);
+      if (map.getLayer('sv-default-glow')) map.setPaintProperty('sv-default-glow','line-opacity',0.02);
+      const coords = flattenCoords(target.routeGeojson);
+      const bbox = computeBbox(coords);
+      if (bbox) map.fitBounds(bbox, { padding:80, duration:900, maxZoom:7 });
+    }
+    const card = buildCard(highlightedCableName, 20, 80, true);
+    if (card) setFloatingCard(card);
+  }, [highlightedCableName, cableApiData, buildCard]);
+
+  // ── isZh 变化时更新地图国家/节点标注语言 ─────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReadyRef.current) return;
+    const memberFeats: GeoJSON.Feature[] = BRICS_MEMBERS.map(code => ({
+      type:'Feature' as const,
+      properties:{ code, name: isZh ? (BRICS_COUNTRY_META[code]?.nameZh ?? code) : (BRICS_COUNTRY_META[code]?.name ?? code) },
+      geometry:{ type:'Point' as const, coordinates: BRICS_COUNTRY_META[code]?.center ?? [0,0] },
+    }));
+    if (map.getSource('bm'))
+      (map.getSource('bm') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:memberFeats });
+    const partnerFeats: GeoJSON.Feature[] = BRICS_PARTNERS.map(code => ({
+      type:'Feature' as const,
+      properties:{ code, name: isZh ? (BRICS_COUNTRY_META[code]?.nameZh ?? code) : (BRICS_COUNTRY_META[code]?.name ?? code) },
+      geometry:{ type:'Point' as const, coordinates: BRICS_COUNTRY_META[code]?.center ?? [0,0] },
+    }));
+    if (map.getSource('bp'))
+      (map.getSource('bp') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:partnerFeats });
+    const transitFeats: GeoJSON.Feature[] = Object.entries(TRANSIT_NODES).map(([zhName, coord]) => ({
+      type:'Feature' as const,
+      properties:{ name: isZh ? zhName : (TRANSIT_NAMES_EN[zhName] ?? zhName) },
+      geometry:{ type:'Point' as const, coordinates:coord },
+    }));
+    if (map.getSource('transit'))
+      (map.getSource('transit') as maplibregl.GeoJSONSource).setData({ type:'FeatureCollection', features:transitFeats });
+  }, [isZh]);
 
   // ── 地图初始化 ────────────────────────────────────────────────────────────
   useEffect(() => {
