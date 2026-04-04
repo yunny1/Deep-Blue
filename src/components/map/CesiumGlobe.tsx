@@ -79,6 +79,8 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   // 这样 useEffect（监听面板关闭）也能访问到，而不只是 initCesium 闭包内部
   const lastHoveredRef     = useRef<any>(null);
   const lastHoveredSlugRef = useRef<string | null>(null);
+  // flyTo 하이라이트 중인 slug 추적 (검색 effect가 덮어쓰지 않도록)
+  const flyHighlightRef    = useRef<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats]     = useState({ total: 0, rendered: 0 });
@@ -388,9 +390,12 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   useEffect(() => {
     const Cesium = cesiumRef.current;
     if (!Cesium || allEntitiesRef.current.length === 0) return;
+    const flySlug = flyHighlightRef.current;   // flyTo 正在高亮的缆，跳过不干预
     for (const entity of allEntitiesRef.current) {
       const meta = entityMetaRef.current.get(entity);
       if (!meta || !entity.polyline) continue;
+      // flyTo 高亮保护：当 flyTo 正在高亮某条缆时，搜索 effect 不覆盖它
+      if (flySlug && meta.slug === flySlug) continue;
       if (searchHoverSlug) {
         if (meta.slug === searchHoverSlug) {
           entity.polyline.material = new Cesium.Color(1, 1, 1, 1);
@@ -547,6 +552,8 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
           try { entity.polyline.material = new Cesium.Color(0.3, 0.3, 0.3, DIM_ALPHA); entity.polyline.width = new Cesium.ConstantProperty(0.5); } catch (e) {}
         }
       }
+      // 记录当前 flyTo 高亮的 slug，防止搜索 effect 在 clearFlyTo 触发重渲染时覆盖高亮
+      flyHighlightRef.current = flyToSlug!;
       for (const entity of targetEntities) {
         try { entity.polyline.material = new Cesium.Color(1, 1, 1, 1); entity.polyline.width = new Cesium.ConstantProperty(4); } catch (e) {}
       }
@@ -594,10 +601,9 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
         });
       }
 
-      // ── Bug Fix 2: 8秒后恢复时感知当前搜索高亮状态 ──────────────────────────
-      // 旧方案直接 restoreCableMaterial 全部覆盖，导致搜索高亮被清除。
-      // 新方案：有搜索高亮则重新应用，没有才恢复原色。
+      // ── 8秒后恢复：优先保留搜索高亮，无搜索则恢复原色 ──────────────────────
       setTimeout(() => {
+        flyHighlightRef.current = null;   // 解除 flyTo 高亮保护
         const { searchHighlightSlugs: hlSlugs, searchHoverSlug: hvSlug, colorMode: cm } = useMapStore.getState();
         for (const entity of allEntitiesRef.current) {
           const meta = entityMetaRef.current.get(entity);
