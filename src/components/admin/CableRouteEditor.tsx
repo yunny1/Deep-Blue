@@ -159,6 +159,7 @@ export default function CableRouteEditor({ slug, orderedStationIds, onChange }: 
   const stationsRef                 = useRef<StationInfo[]>([]);
   const [showRef, setShowRef]       = useState(true);
   const [loadMsg, setLoadMsg]       = useState('');
+  const [loadTrigger, setLoadTrigger] = useState(0);   // 重新加载触发器
   const [saving, setSaving]         = useState(false);
   const [saveMsg, setSaveMsg]       = useState('');
 
@@ -174,7 +175,10 @@ export default function CableRouteEditor({ slug, orderedStationIds, onChange }: 
   useEffect(() => { buRef.current    = pendingBu; }, [pendingBu]);
   useEffect(() => { stationsRef.current = stations; }, [stations]);
 
-  // ── 历史操作 ─────────────────────────────────────────────────────────────
+  const retryLoad = useCallback(() => {
+    setLoadMsg('');
+    setLoadTrigger(t => t + 1);
+  }, []);
 
   const commit = useCallback((next: RouteState) => {
     setHistory(h => [...h, routeRef.current]);
@@ -252,8 +256,8 @@ export default function CableRouteEditor({ slug, orderedStationIds, onChange }: 
         }
         setLoadMsg('');
       })
-      .catch(() => setLoadMsg('⚠ 该 slug 在数据库中不存在，请先执行第四步保存'));
-  }, [slug, syncRoute]);
+      .catch(() => setLoadMsg('⚠ 该 slug 在数据库中不存在，请先执行第四步保存，然后点击下方「重新加载」'));
+  }, [slug, loadTrigger, syncRoute]);
 
   // ── 更新地图 sources ────────────────────────────────────────────────────────
 
@@ -335,7 +339,7 @@ export default function CableRouteEditor({ slug, orderedStationIds, onChange }: 
   // ── 地图初始化 ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current || !slug) return;
+    if (!containerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -749,27 +753,44 @@ export default function CableRouteEditor({ slug, orderedStationIds, onChange }: 
         {hint}
       </div>
 
-      {/* ── 地图区域 ── */}
-      {loadMsg ? (
-        <div style={{
-          height:520, display:'flex', alignItems:'center', justifyContent:'center',
-          flexDirection:'column', gap:10,
-          background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.06)',
-          borderRadius:12, color:'rgba(255,255,255,.4)', fontSize:13, textAlign:'center',
-          padding:24,
-        }}>
-          <span style={{ fontSize:20 }}>⚠️</span>
-          <span>{loadMsg}</span>
-        </div>
-      ) : (
-        <div ref={containerRef}
-          style={{ height:520, borderRadius:12, overflow:'hidden',
-            border:'1px solid rgba(255,255,255,.08)',
-            cursor: mode==='addWaypoint' ? 'crosshair'
-              : mode==='addSpur' ? (spurStep===1?'cell':'crosshair')
-              : 'grab',
-          }} />
-      )}
+      {/* ── 地图区域（始终挂载，警告以浮层形式覆盖）── */}
+      <div style={{ position: 'relative' }}>
+        {!slug ? (
+          <div style={{
+            height:520, display:'flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(255,255,255,.02)', border:'1px solid rgba(255,255,255,.06)',
+            borderRadius:12, color:'rgba(255,255,255,.25)', fontSize:13,
+          }}>
+            请先填写上方 Slug 字段后激活地图编辑器
+          </div>
+        ) : (
+          <>
+            <div ref={containerRef}
+              style={{ height:520, borderRadius:12, overflow:'hidden',
+                border:'1px solid rgba(255,255,255,.08)',
+                cursor: mode==='addWaypoint' ? 'crosshair'
+                  : mode==='addSpur' ? (spurStep===1?'cell':'crosshair')
+                  : 'grab',
+              }} />
+            {loadMsg && (
+              <div style={{
+                position:'absolute', inset:0, display:'flex', alignItems:'center',
+                justifyContent:'center', flexDirection:'column', gap:12,
+                background:'rgba(6,14,30,.92)', borderRadius:12,
+              }}>
+                <span style={{ fontSize:22 }}>⚠️</span>
+                <span style={{ fontSize:13, color:'rgba(255,255,255,.5)', textAlign:'center',
+                  maxWidth:320, lineHeight:1.6 }}>{loadMsg}</span>
+                <button onClick={retryLoad} style={{
+                  padding:'8px 20px', borderRadius:8, cursor:'pointer',
+                  background:'rgba(212,175,55,.15)', border:'1px solid rgba(212,175,55,.4)',
+                  color:GOLD, fontSize:13, fontWeight:500,
+                }}>🔄 重新加载</button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* ── 保存消息 ── */}
       {saveMsg && (
