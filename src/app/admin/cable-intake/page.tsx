@@ -10,10 +10,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import NewsInitButton from '@/components/admin/NewsInitButton';
 import GenerateRoutesButton from '@/components/admin/GenerateRoutesButton';
 import CableTopologyEditor, { type TopologyResult } from '@/components/admin/CableTopologyEditor';
-import SmoothRouteButton from '@/components/admin/SmoothRouteButton';
-import StationCoordsEditor from '@/components/admin/StationCoordsEditor';
-import SmartRouteButton from '@/components/admin/SmartRouteButton';
-import BranchUnitRouteButton from '@/components/admin/BranchUnitRouteButton';
+import CableRouteEditor from '@/components/admin/CableRouteEditor';
 import { useRouter } from 'next/navigation';
 import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
 
@@ -202,6 +199,9 @@ export default function CableIntakePage() {
   // 登陆站拓扑状态（鱼骨编辑器输出）
   const [topologyResult, setTopologyResult] = useState<TopologyResult | null>(null);
 
+  // 地图路线编辑器输出的 GeoJSON（优先于拓扑编辑器的简单直线路由）
+  const [routeEditorGeoJson, setRouteEditorGeoJson] = useState<object | null>(null);
+
   // 字段对比面板状态（只有选了 mergeTarget 才会有数据）
   const [dbCableData,  setDbCableData]  = useState<DbCableDetail | null>(null);
   const [fieldChoices, setFieldChoices] = useState<Record<string, 'db' | 'new'>>({});
@@ -296,10 +296,12 @@ export default function CableIntakePage() {
     const finalFields = buildFinalFields();
     if (!finalFields.name?.trim()) { setSaveMsg('✗ 海缆名称为必填项'); return; }
 
-    // 如果拓扑编辑器已经生成了 GeoJSON，优先使用它（比手动粘贴的更可靠）
-    const geojsonStr = topologyResult?.geojson
-      ? JSON.stringify(topologyResult.geojson)
-      : finalFields.routeGeojson;
+    // 路由 GeoJSON：地图编辑器优先，其次拓扑编辑器，最后手动输入
+    const geojsonStr = routeEditorGeoJson
+      ? JSON.stringify(routeEditorGeoJson)
+      : topologyResult?.geojson
+        ? JSON.stringify(topologyResult.geojson)
+        : finalFields.routeGeojson;
 
     setSaving(true); setSaveMsg('');
     try {
@@ -478,10 +480,6 @@ export default function CableIntakePage() {
             <CableTopologyEditor
               onChange={result => {
                 setTopologyResult(result);
-                // 同步更新 routeGeojson 预览框（方便用户验证和手动微调）
-                if (result.geojson) {
-                  setField('routeGeojson', JSON.stringify(result.geojson, null, 2));
-                }
               }}
             />
 
@@ -515,57 +513,26 @@ export default function CableIntakePage() {
             </div>
           </div>
 
-          {/* 登陆站坐标编辑器 */}
-          <StationCoordsEditor />
-
-          {/* 第二步·补充：路由坐标（routeGeojson）输入 */}
-          <div style={{ background: CARD, border: `1px solid rgba(59,130,246,.15)`, borderRadius: 14,
+          {/* 第三步：2D 地图路线编辑器 */}
+          <div style={{ background: CARD, border: `1px solid rgba(255,255,255,.06)`, borderRadius: 14,
             backdropFilter: 'blur(12px)', padding: '20px 24px' }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.08em',
-              textTransform: 'uppercase', color: 'rgba(147,197,253,.8)', marginBottom: 6 }}>
-              路由坐标 GeoJSON（使海缆出现在地球 + 搜索）
+              textTransform: 'uppercase', color: `${GOLD}80`, marginBottom: 4 }}>
+              第三步：绘制海缆路线（2D 地图编辑器）
             </div>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 12, lineHeight: 1.6 }}>
-              粘贴从 TeleGeography 或其他来源获取的 GeoJSON Geometry 对象（LineString 或 MultiLineString）。
-              保存后海缆线路将显示在主页 3D 地球和自主权图谱地图上，并可被搜索索引到。
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 14, lineHeight: 1.6 }}>
+              先完成第四步保存，再在此绘制精确路线。
+              <strong style={{ color:'rgba(255,255,255,.5)' }}>🖱 移动</strong>模式下可拖动白点调整路点；
+              <strong style={{ color:'rgba(255,255,255,.5)' }}>➕ 路点</strong>模式点击地图插入航路坐标；
+              <strong style={{ color:'rgba(255,255,255,.5)' }}>🔀 支缆</strong>模式先点主干确定 BU，再点登陆站建立支线。
+              点击「🤖 自动生成初稿」可基于拓扑编辑器的站点顺序生成起始路线供手工调整。
+              保存后自动打上 <code style={{ color:GREEN }}>ROUTE_FIXED</code> 标记，nightly-sync 不会覆盖。
             </p>
-            <textarea
-              value={fields.routeGeojson ?? ''}
-              onChange={e => setField('routeGeojson', e.target.value)}
-              rows={5}
-              placeholder={'{"type":"LineString","coordinates":[[lon,lat],[lon,lat],...]}'}
-              style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, fontFamily: 'monospace', fontSize: 11 }}
+            <CableRouteEditor
+              slug={fields.slug ?? ''}
+              orderedStationIds={topologyResult?.allStationIds}
+              onChange={setRouteEditorGeoJson}
             />
-            {fields.routeGeojson && (
-              <div style={{ marginTop: 6, fontSize: 11 }}>
-                {(() => {
-                  try {
-                    JSON.parse(fields.routeGeojson);
-                    return <span style={{ color: '#4ade80' }}>✓ JSON 格式合法</span>;
-                  } catch {
-                    return <span style={{ color: '#f87171' }}>✗ JSON 格式错误，请检查</span>;
-                  }
-                })()}
-              </div>
-            )}
-
-            {/* 路由工具：智能路由（参考数据库） + 陆地平滑，只需 slug 即可触发 */}
-            {fields.slug && (
-              <div style={{ marginTop: 14, paddingTop: 14,
-                borderTop: '1px solid rgba(255,255,255,.06)',
-                display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,.3)',
-                  margin: 0, lineHeight: 1.6 }}>
-                  路由保存后如果地图上仍有穿越陆地或跨大陆的问题，使用下方工具修复：
-                </p>
-                {/* 推荐：分支单元路由（真实海缆工程架构） */}
-                <BranchUnitRouteButton slug={fields.slug} />
-                {/* 次选：智能路由（参考数据库其他缆的路径） */}
-                <SmartRouteButton slug={fields.slug} />
-                {/* 备用：纯算法平滑（不依赖参考缆，但对复杂海峡效果有限）*/}
-                <SmoothRouteButton slug={fields.slug} />
-              </div>
-            )}
           </div>
         </div>
 
@@ -751,37 +718,6 @@ export default function CableIntakePage() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* 新闻初始化 */}
-      <div style={{ marginTop: 24, background: CARD, border: '1px solid rgba(139,92,246,.2)',
-        borderRadius: 14, padding: '20px 24px' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.08em',
-          textTransform: 'uppercase', color: '#8B5CF6', marginBottom: 8 }}>
-          海缆新闻初始化（首次部署执行一次）
-        </div>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 14, lineHeight: 1.6 }}>
-          为全部保留海缆搜索近两年新闻并缓存到 Redis。约需 1-2 分钟，之后每天凌晨 2 点自动更新。
-        </p>
-        <button id="init-news-btn"
-          onClick={async () => {
-            if (!confirm('确认触发新闻初始化？约需 1-2 分钟。')) return;
-            const btn = document.getElementById('init-news-btn') as HTMLButtonElement;
-            btn.disabled = true; btn.textContent = '初始化中，请耐心等待…';
-            try {
-              const res  = await fetch('/api/admin/init-cable-news', { method: 'POST' });
-              const data = await res.json();
-              alert(data.success
-                ? `✓ 完成！已为 ${data.initialized} 条海缆初始化新闻缓存。`
-                : `失败：${data.error}`);
-            } catch { alert('网络错误，请检查控制台'); }
-            finally { btn.disabled = false; btn.textContent = '触发新闻初始化'; }
-          }}
-          style={{ padding: '9px 20px', borderRadius: 8, cursor: 'pointer',
-            background: 'rgba(139,92,246,.15)', border: '1px solid rgba(139,92,246,.4)',
-            color: '#8B5CF6', fontSize: 13, fontWeight: 500 }}>
-          触发新闻初始化
-        </button>
       </div>
 
       <SovereignRouteCompare />
