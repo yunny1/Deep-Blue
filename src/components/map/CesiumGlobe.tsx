@@ -601,25 +601,10 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
         });
       }
 
-      // ── 8秒后恢复：优先保留搜索高亮，无搜索则恢复原色 ──────────────────────
+      // 8秒后解除 flyTo 高亮保护，后续由搜索状态自然管理
+      // 不做材质恢复 —— 高亮持续到用户下一次操作（搜索/点击/关闭面板）
       setTimeout(() => {
-        flyHighlightRef.current = null;   // 解除 flyTo 高亮保护
-        const { searchHighlightSlugs: hlSlugs, searchHoverSlug: hvSlug, colorMode: cm } = useMapStore.getState();
-        for (const entity of allEntitiesRef.current) {
-          const meta = entityMetaRef.current.get(entity);
-          if (!meta || !entity.polyline) continue;
-          try {
-            if (hvSlug) {
-              entity.polyline.material = new Cesium.Color(1,1,1, meta.slug === hvSlug ? 1 : DIM_ALPHA);
-              entity.polyline.width    = new Cesium.ConstantProperty(meta.slug === hvSlug ? 4 : 0.5);
-            } else if (hlSlugs.length > 0) {
-              entity.polyline.material = new Cesium.Color(1,1,1, hlSlugs.includes(meta.slug) ? 0.9 : DIM_ALPHA);
-              entity.polyline.width    = new Cesium.ConstantProperty(hlSlugs.includes(meta.slug) ? 3 : 0.5);
-            } else {
-              restoreCableMaterial(cesiumRef.current, entity, meta, cm);
-            }
-          } catch (e) {}
-        }
+        flyHighlightRef.current = null;
       }, 8000);
       clearFlyTo();
     }
