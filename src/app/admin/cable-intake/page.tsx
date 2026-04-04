@@ -13,6 +13,7 @@ import CableTopologyEditor, { type TopologyResult } from '@/components/admin/Cab
 import CableRouteEditor from '@/components/admin/CableRouteEditor';
 import { useRouter } from 'next/navigation';
 import SovereignRouteCompare from '@/components/admin/SovereignRouteCompare';
+import DeleteCablePanel from '@/components/admin/DeleteCablePanel';
 
 // ── 可编辑的基础字段 ─────────────────────────────────────────────────────────
 const CABLE_FIELDS: {
@@ -722,6 +723,7 @@ export default function CableIntakePage() {
 
       <SovereignRouteCompare />
       <NewsInitButton />
+      <DeleteCablePanel />
     </div>
   );
 }
