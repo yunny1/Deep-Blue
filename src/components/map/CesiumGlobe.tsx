@@ -551,34 +551,68 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
         try { entity.polyline.material = new Cesium.Color(1, 1, 1, 1); entity.polyline.width = new Cesium.ConstantProperty(4); } catch (e) {}
       }
 
-      let minLon = 180, maxLon = -180, minLat = 90, maxLat = -90;
+      // ── Bug Fix 1: 反子午线安全的 bbox 计算 ──────────────────────────────────
+      // 旧方案用 Cartographic 把经度归一化到 -180~180，跨太平洋缆（如 MYUS）的
+      // minLon=-124°(Oregon) maxLon=144°(Guam)，Rectangle 被解释为向东穿越大西洋。
+      // 新方案：连续经度追踪，每个点相对前一个点做 ±360 调整，保持路线连续性。
+      let prevLon: number | null = null;
+      let cMinLon = Infinity, cMaxLon = -Infinity, minLat = 90, maxLat = -90;
       for (const entity of targetEntities) {
         try {
           const positions = entity.polyline.positions.getValue(Cesium.JulianDate.now());
           if (!positions) continue;
           for (const pos of positions) {
-            const c = Cesium.Cartographic.fromCartesian(pos);
-            const lon = Cesium.Math.toDegrees(c.longitude);
-            const lat = Cesium.Math.toDegrees(c.latitude);
-            if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon;
-            if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+            const cart = Cesium.Cartographic.fromCartesian(pos);
+            let lon = Cesium.Math.toDegrees(cart.longitude);
+            const lat = Cesium.Math.toDegrees(cart.latitude);
+            // 调整经度使其与前一个点差值 ≤ 180°（跨子午线时不回绕）
+            if (prevLon !== null) {
+              while (lon - prevLon >  180) lon -= 360;
+              while (prevLon - lon >  180) lon += 360;
+            }
+            prevLon = lon;
+            if (lon < cMinLon) cMinLon = lon; if (lon > cMaxLon) cMaxLon = lon;
+            if (lat < minLat) minLat = lat;   if (lat > maxLat) maxLat = lat;
           }
         } catch (e) {}
       }
 
-      if (minLon < maxLon && minLat < maxLat) {
-        const lp = (maxLon - minLon) * 0.3 + 2, ap = (maxLat - minLat) * 0.3 + 2;
+      if (isFinite(cMinLon) && minLat < maxLat) {
+        let centerLon = (cMinLon + cMaxLon) / 2;
+        const centerLat = (minLat + maxLat) / 2;
+        const lonSpan = cMaxLon - cMinLon;
+        const latSpan = maxLat - minLat;
+        // 根据跨度估算所需高度（最小 800km，最大 15000km）
+        const spanKm = Math.max(lonSpan * 111 * Math.cos(centerLat * Math.PI / 180), latSpan * 111);
+        const altitude = Math.min(Math.max(spanKm * 1500, 800000), 15000000);
+        // 把连续经度归回 [-180, 180]
+        while (centerLon >  180) centerLon -= 360;
+        while (centerLon < -180) centerLon += 360;
         viewer.camera.flyTo({
-          destination: Cesium.Rectangle.fromDegrees(minLon - lp, minLat - ap, maxLon + lp, maxLat + ap),
+          destination: Cesium.Cartesian3.fromDegrees(centerLon, centerLat, altitude),
           duration: 2.0, easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
         });
       }
 
+      // ── Bug Fix 2: 8秒后恢复时感知当前搜索高亮状态 ──────────────────────────
+      // 旧方案直接 restoreCableMaterial 全部覆盖，导致搜索高亮被清除。
+      // 新方案：有搜索高亮则重新应用，没有才恢复原色。
       setTimeout(() => {
-        const currentMode = useMapStore.getState().colorMode;
+        const { searchHighlightSlugs: hlSlugs, searchHoverSlug: hvSlug, colorMode: cm } = useMapStore.getState();
         for (const entity of allEntitiesRef.current) {
-          const meta = entityMetaRef.current.get(entity); if (!meta) continue;
-          restoreCableMaterial(cesiumRef.current, entity, meta, currentMode);
+          const meta = entityMetaRef.current.get(entity);
+          if (!meta || !entity.polyline) continue;
+          try {
+            if (hvSlug) {
+              entity.polyline.material = new Cesium.Color(1,1,1, meta.slug === hvSlug ? 1 : DIM_ALPHA);
+              entity.polyline.width    = new Cesium.ConstantProperty(meta.slug === hvSlug ? 4 : 0.5);
+            } else if (hlSlugs.length > 0) {
+              entity.polyline.material = new Cesium.Color(1,1,1, hlSlugs.includes(meta.slug) ? 0.9 : DIM_ALPHA);
+              entity.polyline.width    = new Cesium.ConstantProperty(hlSlugs.includes(meta.slug) ? 3 : 0.5);
+            } else {
+              restoreCableMaterial(cesiumRef.current, entity, meta, cm);
+            }
+          } catch (e) {}
         }
       }, 8000);
       clearFlyTo();
