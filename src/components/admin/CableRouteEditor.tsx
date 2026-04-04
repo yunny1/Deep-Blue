@@ -107,6 +107,13 @@ function buildBuRoute(stations: StationInfo[], orderedIds: string[]): RouteState
   return { trunk, spurs };
 }
 
+/** 防反子午线跳变：调整 newLng 使其与 prevLng 差值 ≤ 180°（保持路线连续向东或向西）*/
+function fixAM(prevLng: number, newLng: number): number {
+  while (newLng - prevLng >  180) newLng -= 360;
+  while (prevLng - newLng >  180) newLng += 360;
+  return newLng;
+}
+
 /** 从 RouteState 生成保存用的 MultiLineString GeoJSON */
 function toGeoJson(state: RouteState): object {
   return {
@@ -473,8 +480,12 @@ export default function CableRouteEditor({ slug, orderedStationIds, onChange }: 
             : click;
 
           const s = routeRef.current;
+          // 反子午线修复：调整经度使路线连续，避免绕地球另一侧
+          const lastLng = s.trunk.length > 0 ? s.trunk[s.trunk.length - 1][0] : pt[0];
+          const fixedPt: Pt = [fixAM(lastLng, pt[0]), pt[1]];
+
           // 追加到末尾（顺序连接，不插入中间）
-          const next = { ...s, trunk: [...s.trunk, pt] };
+          const next = { ...s, trunk: [...s.trunk, fixedPt] };
           setHistory(h => [...h, s]);
           setFuture([]);
           routeRef.current = next;
