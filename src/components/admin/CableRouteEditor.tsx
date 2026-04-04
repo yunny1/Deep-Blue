@@ -460,13 +460,21 @@ export default function CableRouteEditor({ slug, orderedStationIds, onChange }: 
         const m = modeRef.current;
         const click: Pt = [e.lngLat.lng, e.lngLat.lat];
 
-        // ── addWaypoint：插入路点 ──
+        // ── addWaypoint：依次追加路点（按点击顺序连接，点登陆站自动吸附）──
         if (m === 'addWaypoint') {
-          // 如果点在登陆站或路点上就跳过
-          const hit = map.queryRenderedFeatures(e.point, { layers: ['re-st-dot','re-wpt-dot'] });
-          if (hit.length) return;
+          // 点到已有路点上 → 跳过（避免重复）
+          const wptHit = map.queryRenderedFeatures(e.point, { layers: ['re-wpt-dot'] });
+          if (wptHit.length) return;
+
+          // 点到登陆站 → 吸附到站点精确坐标
+          const stHit = map.queryRenderedFeatures(e.point, { layers: ['re-st-dot'] });
+          const pt: Pt = stHit.length
+            ? ((stHit[0].geometry as GeoJSON.Point).coordinates as Pt)
+            : click;
+
           const s = routeRef.current;
-          const next = { ...s, trunk: insertWaypoint(s.trunk, click) };
+          // 追加到末尾（顺序连接，不插入中间）
+          const next = { ...s, trunk: [...s.trunk, pt] };
           setHistory(h => [...h, s]);
           setFuture([]);
           routeRef.current = next;
@@ -651,7 +659,7 @@ export default function CableRouteEditor({ slug, orderedStationIds, onChange }: 
   // ── 提示文案 ─────────────────────────────────────────────────────────────
 
   const hint = mode === 'addWaypoint'
-    ? '点击地图空白处添加路点（自动插入到最近主干段）'
+    ? '依次点击地图追加路点（按顺序连接）| 点击蓝色/金色登陆站标记自动吸附到站点坐标'
     : mode === 'addSpur'
       ? spurStep === 0
         ? '点击主干线（或空白处）确定分支单元 BU 位置'
