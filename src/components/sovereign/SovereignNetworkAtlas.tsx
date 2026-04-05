@@ -219,6 +219,8 @@ export default function SovereignNetworkAtlas() {
   const [filterSafety, setFilterSafety] = useState('');
   const [filterFrom,   setFilterFrom]   = useState('');
   const [filterTo,     setFilterTo]     = useState('');
+  // Phase 4：左侧面板的两个 tab（路径列表 / 海缆汇总）
+  const [leftTab,      setLeftTab]      = useState<'routes' | 'cables'>('routes');
   const [normalizing,  setNormalizing]  = useState(false);
   const [normalizeMsg, setNormalizeMsg] = useState('');
   const [cableApi,     setCableApi]     = useState<CableApiResponse | null>(null);
@@ -336,9 +338,8 @@ export default function SovereignNetworkAtlas() {
   }, []);
 
   const handleTableCableClick = useCallback((name: string, _score: number, _routeCount: number) => {
-    // 不再打开旧的 CableDetailModal，改为触发地图浮动卡片
+    // 全屏布局下，地图始终可见，无需 scrollIntoView — 直接高亮海缆
     setHighlightedCable(name);
-    mapContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
   const handleSelect = useCallback((id: string | null) => {
@@ -361,109 +362,126 @@ export default function SovereignNetworkAtlas() {
     .sna-route{background:transparent;border:1px solid rgba(255,255,255,.06);border-radius:9px;cursor:pointer;margin-bottom:4px;padding:9px 11px;text-align:left;transition:all .13s;width:100%}
     .sna-route:hover{background:rgba(212,175,55,.06);border-color:${GOLD}22}
     .sna-route.sel{background:rgba(212,175,55,.1);border-color:${GOLD}48}
-    .sna-sel{background:rgba(10,22,40,.85);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:rgba(255,255,255,.7);font-size:12px;outline:none;padding:7px 9px;transition:border-color .15s;width:100%}
+    .sna-sel{background:rgba(10,22,40,.85);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:rgba(255,255,255,.7);font-size:12px;outline:none;padding:6px 8px;transition:border-color .15s;width:100%}
     .sna-sel:focus{border-color:${GOLD}55}
     .sna ::-webkit-scrollbar{width:4px}.sna ::-webkit-scrollbar-track{background:transparent}
     .sna ::-webkit-scrollbar-thumb{background:${GOLD}28;border-radius:2px}
+    /* Phase 4 panel overlay styles */
+    .sna-panel{background:rgba(8,16,30,0.93);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+    .sna-chip{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;
+      background:rgba(8,16,30,0.78);border:1px solid rgba(255,255,255,.1);
+      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+    .sna-tab-btn{flex:1;padding:9px 4px;background:none;border:none;cursor:pointer;font-size:11px;font-weight:600;
+      transition:all .15s;font-family:'DM Sans',system-ui,sans-serif;white-space:nowrap}
+    @keyframes sna-drawer-in{from{transform:translateX(100%);opacity:.5}to{transform:translateX(0);opacity:1}}
+    .sna-drawer{animation:sna-drawer-in .28s cubic-bezier(0.16,1,0.3,1) both}
   `;
 
   return (
-    <div className="sna" style={{ minHeight:'100vh', background:NAVY, color:'#E8E0D0' }}>
+    // Phase 4 全屏战情室布局：
+    // 地图铺满全屏作为背景（z-index:0），左侧面板和右侧抽屉作为浮层叠加（z-index:20-30）。
+    // 使用 position:fixed 让整个页面不可滚动，所有内容都在视口内。
+    <div className="sna" style={{ position:'fixed', inset:0, overflow:'hidden', background:NAVY, color:'#E8E0D0' }}>
       <style>{CSS}</style>
-      <div style={{ display:'flex', height:8, position:'sticky', top:0, zIndex:100 }}>
-        {FLAGS.map(c => <div key={c} style={{ flex:1, background:c }} />)}
+
+      {/* ── Layer 0：全屏地图背景 ─────────────────────────────────── */}
+      {/* 地图容器铺满整个视口，height="100%" 配合父容器的绝对定位生效 */}
+      <div style={{ position:'absolute', inset:0, zIndex:0 }} ref={mapContainerRef}>
+        <SovereignNetworkMap
+          height="100%"
+          routes={routes}
+          filteredRoutes={filtered}
+          selectedRouteId={selectedId}
+          cableApiData={cableApi}
+          highlightedCableName={highlightedCable}
+          onRouteSelect={handleSelect}
+          onCableDeselect={() => setHighlightedCable(null)}
+          onPopup={handlePopup}
+          isZh={isZh}
+        />
       </div>
-      <div style={{ maxWidth:1400, margin:'0 auto', padding:'32px 32px 48px' }}>
 
-        {/* Hero */}
-        <div className="sna-up" style={{ marginBottom:28 }}>
+      {/* ── Layer 1：左侧面板（宽 340px，全高，玻璃拟态）────────── */}
+      <div className="sna-panel" style={{
+        position:'absolute', top:0, left:0, bottom:0, width:340, zIndex:20,
+        borderRight:`1px solid ${GOLD}18`,
+        display:'flex', flexDirection:'column', overflow:'hidden',
+      }}>
 
-          {/* 顶部操作栏：badge 左，返回地图 + 语言切换 右 */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            {/* Badge（仅当前语言，不再双语并列）*/}
-            <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 14px',
-              background:`${GOLD}08`, border:`1px solid ${GOLD}1e`, borderRadius:20 }}>
-              <span style={{ width:8, height:8, borderRadius:'50%', background:GOLD, boxShadow:`0 0 8px ${GOLD}80`, display:'inline-block' }}/>
-              <span style={{ fontSize:11, color:`${GOLD}BB`, letterSpacing:'.1em', textTransform:'uppercase' as const, fontWeight:600 }}>{t.badge}</span>
-            </div>
-            {/* 右侧：返回地图 + 语言切换 */}
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <a href="/" style={{
-                display:'inline-flex', alignItems:'center', gap:6,
-                padding:'5px 14px', borderRadius:20,
-                background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.12)',
-                color:'rgba(255,255,255,.7)', fontSize:12, fontWeight:500,
-                textDecoration:'none', transition:'background .15s',
-                fontFamily:"'DM Sans',system-ui,sans-serif",
-              }}>
-                ← {isZh ? '返回地图' : 'Back to Map'}
-              </a>
-              <button
-                onClick={toggleLang}
-                style={{
-                  display:'inline-flex', alignItems:'center', gap:6,
-                  padding:'5px 14px', borderRadius:20, cursor:'pointer',
-                  background:'rgba(212,175,55,.1)', border:'1px solid rgba(212,175,55,.3)',
-                  color:'#D4AF37', fontSize:12, fontWeight:600,
-                  fontFamily:"'DM Sans',system-ui,sans-serif",
-                  transition:'background .15s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,.18)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,.1)'; }}
-              >
-                {isZh ? '🌐 EN' : '🌐 中文'}
-              </button>
-            </div>
-          </div>
-
-          <h1 style={{ fontSize:36, fontWeight:800, color:GOLD_LIGHT, margin:'0 0 8px', lineHeight:1.1 }}>{t.title}</h1>
-          {/* 副标题描述已移除 */}
+        {/* 五色签名条（品牌标识）*/}
+        <div style={{ display:'flex', height:4, flexShrink:0 }}>
+          {FLAGS.map(c => <div key={c} style={{ flex:1, background:c }} />)}
         </div>
 
-        {/* AI 去重提示 */}
+        {/* 面板头部：badge + 标题 + 上传按钮 */}
+        <div style={{ padding:'16px 18px 14px', flexShrink:0, borderBottom:`1px solid ${GOLD}10` }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+            <div style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'4px 12px',
+              background:`${GOLD}08`, border:`1px solid ${GOLD}22`, borderRadius:20 }}>
+              <span style={{ width:6, height:6, borderRadius:'50%', background:GOLD,
+                boxShadow:`0 0 8px ${GOLD}80`, display:'inline-block' }}/>
+              <span style={{ fontSize:10, color:`${GOLD}BB`, letterSpacing:'.1em',
+                textTransform:'uppercase' as const, fontWeight:600 }}>{t.badge}</span>
+            </div>
+            {/* xlsx 上传按钮：紧凑版，放右上角 */}
+            <label style={{ cursor:'pointer', fontSize:10, color:`${GOLD}80`,
+              padding:'3px 8px', borderRadius:6, border:`1px solid ${GOLD}20`,
+              background:`${GOLD}06`, transition:'all .15s' }}
+              title={t.uploadBtn}>
+              ↑ xlsx
+              <input type="file" accept=".xlsx" onChange={handleUpload} style={{ display:'none' }} />
+            </label>
+          </div>
+          <h1 style={{ fontSize:18, fontWeight:800, color:GOLD_LIGHT, margin:0, lineHeight:1.1 }}>{t.title}</h1>
+        </div>
+
+        {/* AI 去重消息提示 */}
         {normalizeMsg && (
-          <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:8,
-            background: normalizeMsg.startsWith('✓') ? 'rgba(16,112,86,.15)' : normalizeMsg.startsWith('⚠') ? 'rgba(120,90,10,.15)' : 'rgba(26,45,74,.6)',
+          <div style={{
+            margin:'8px 12px 0', padding:'8px 12px', borderRadius:8, fontSize:11, flexShrink:0,
+            background: normalizeMsg.startsWith('✓') ? 'rgba(16,112,86,.15)'
+              : normalizeMsg.startsWith('⚠') ? 'rgba(120,90,10,.15)' : 'rgba(26,45,74,.6)',
             border:`1px solid ${normalizeMsg.startsWith('✓')?'rgba(74,222,128,.2)':normalizeMsg.startsWith('⚠')?'rgba(251,191,36,.2)':GOLD_DIM}`,
-            fontSize:12, color: normalizeMsg.startsWith('✓')?'#4ade80':normalizeMsg.startsWith('⚠')?'#fbbf24':'rgba(255,255,255,.6)',
-            display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <span>{normalizing ? '⏳ ' : ''}{normalizeMsg}</span>
-            <button onClick={() => setNormalizeMsg('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,.3)', cursor:'pointer', fontSize:16 }}>×</button>
+            color: normalizeMsg.startsWith('✓')?'#4ade80':normalizeMsg.startsWith('⚠')?'#fbbf24':'rgba(255,255,255,.6)',
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+          }}>
+            <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              {normalizing ? '⏳ ' : ''}{normalizeMsg}
+            </span>
+            <button onClick={() => setNormalizeMsg('')}
+              style={{ background:'none', border:'none', color:'rgba(255,255,255,.3)', cursor:'pointer', fontSize:14, flexShrink:0 }}>×</button>
           </div>
         )}
 
-        {/* 统计卡片 */}
-        <div className="sna-up" style={{ display:'grid', gridTemplateColumns:'repeat(4,minmax(0,1fr))', gap:14, marginBottom:28, animationDelay:'.06s' }}>
-          {[
-            { l:t.stat1l, v:routes.length,  c:GOLD_LIGHT, s:t.stat1s },
-            { l:t.stat2l, v:totalLow,        c:'#22C55E',  s:t.stat2s },
-            { l:t.stat3l, v:totalMid,        c:'#EAB308',  s:t.stat3s },
-            { l:t.stat4l, v:totalHigh,       c:'#EF4444',  s:t.stat4s },
-          ].map(({ l, v, c, s }) => (
-            <div key={l} className="sna-card" style={{ padding:20, display:'flex', flexDirection:'column', gap:5 }}>
-              <span style={{ fontSize:11, fontWeight:600, letterSpacing:'.08em', textTransform:'uppercase', color:`${GOLD}80` }}>{l}</span>
-              <span style={{ fontSize:32, fontWeight:700, lineHeight:1.1, fontFeatureSettings:'"tnum"' }}><AnimNum n={v} color={c}/></span>
-              <span style={{ fontSize:12, color:'rgba(255,255,255,.3)' }}>{s}</span>
-            </div>
+        {/* Tab 切换器：路径列表 | 海缆汇总 */}
+        <div style={{ display:'flex', borderBottom:`1px solid ${GOLD}10`, flexShrink:0, padding:'0 8px' }}>
+          {([
+            { id:'routes' as const, label: isZh ? `路径 (${filtered.length})` : `Routes (${filtered.length})` },
+            { id:'cables' as const, label: isZh ? `海缆 (${allUniqueCables.length})` : `Cables (${allUniqueCables.length})` },
+          ] as const).map(({ id, label }) => (
+            <button key={id} className="sna-tab-btn" onClick={() => setLeftTab(id)} style={{
+              color: leftTab===id ? GOLD : 'rgba(255,255,255,.35)',
+              borderBottom: leftTab===id ? `2px solid ${GOLD}` : '2px solid transparent',
+            }}>{label}</button>
           ))}
         </div>
 
-        {/* 主体 */}
-        <div className="sna-up" style={{ display:'flex', gap:16, animationDelay:'.12s', alignItems:'flex-start' }}>
-
-          {/* 侧边栏 */}
-          <div style={{ width:264, flexShrink:0, display:'flex', flexDirection:'column', gap:12 }}>
-            <div className="sna-card" style={{ padding:16 }}>
-              <div style={{ fontSize:11, fontWeight:600, letterSpacing:'.08em', textTransform:'uppercase', color:`${GOLD}80`, marginBottom:12 }}>{t.filterTitle}</div>
+        {/* ── Tab 内容：路径 ─────────────────────────── */}
+        {leftTab === 'routes' && (
+          <>
+            {/* 筛选控件（紧凑版）*/}
+            <div style={{ padding:'10px 14px', borderBottom:`1px solid rgba(255,255,255,.04)`, flexShrink:0 }}>
               {[
                 { label:t.filterSafety, val:filterSafety, set:setFilterSafety, opts:[
                   {v:'相对低暴露优先路径',l:t.filterLow},{v:'较优备选路径',l:t.filterOpt},
                   {v:'中等暴露路径',l:t.filterMid},{v:'高暴露路径',l:t.filterHigh}]},
-                { label:t.filterFrom, val:filterFrom, set:(v:string)=>{setFilterFrom(v);setFilterTo('');}, opts:fromOpts.map(c=>({v:c,l:xlate(c,isZh)})) },
-                { label:t.filterTo,   val:filterTo,   set:setFilterTo, opts:toOpts.map(c=>({v:c,l:xlate(c,isZh)})) },
+                { label:t.filterFrom, val:filterFrom, set:(v:string)=>{setFilterFrom(v);setFilterTo('');},
+                  opts:fromOpts.map(c=>({v:c,l:xlate(c,isZh)})) },
+                { label:t.filterTo,   val:filterTo,   set:setFilterTo,
+                  opts:toOpts.map(c=>({v:c,l:xlate(c,isZh)})) },
               ].map(({ label, val, set, opts }) => (
-                <div key={label} style={{ marginBottom:8 }}>
-                  <div style={{ fontSize:11, color:'rgba(255,255,255,.3)', marginBottom:4 }}>{label}</div>
+                <div key={label} style={{ marginBottom:6 }}>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,.28)', marginBottom:2 }}>{label}</div>
                   <select value={val} onChange={e => set(e.target.value)} className="sna-sel">
                     <option value="">{t.filterAll}</option>
                     {opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
@@ -471,102 +489,199 @@ export default function SovereignNetworkAtlas() {
                 </div>
               ))}
               {(filterSafety || filterFrom || filterTo) && (
-                <div style={{ marginTop:8, display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:12, color:`${GOLD}BB` }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:11, color:`${GOLD}BB`, marginTop:4 }}>
                   <span>{filtered.length}/{routes.length}</span>
                   <button onClick={() => { setFilterSafety(''); setFilterFrom(''); setFilterTo(''); setSelectedId(null); setHighlightedCable(null); }}
-                    style={{ background:'none', border:'none', color:`${GOLD}80`, cursor:'pointer', fontSize:13 }}>{t.filterClear}</button>
+                    style={{ background:'none', border:'none', color:`${GOLD}80`, cursor:'pointer', fontSize:12 }}>{t.filterClear}</button>
                 </div>
               )}
             </div>
 
-            <div style={{ overflowY:'auto', maxHeight:420 }}>
+            {/* 路径列表（可滚动，填满剩余空间）*/}
+            <div style={{ flex:1, overflowY:'auto', padding:'6px 8px' }}>
               {filtered.length === 0
-                ? <div className="sna-card" style={{ padding:20, textAlign:'center', fontSize:13, color:'rgba(255,255,255,.3)' }}>{t.noRoute}</div>
+                ? <div style={{ padding:24, textAlign:'center', fontSize:13, color:'rgba(255,255,255,.3)' }}>{t.noRoute}</div>
                 : filtered.map(r => {
                   const isSel = selectedId === r.id;
                   return (
                     <button key={r.id} className={`sna-route${isSel?' sel':''}`} onClick={() => handleSelect(isSel?null:r.id)}>
                       <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
                         <Dot score={r.maxRisk}/>
-                        <span style={{ fontSize:12, fontWeight:600, color:isSel?GOLD_LIGHT:'#CBD5E1', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        <span style={{ fontSize:12, fontWeight:600,
+                          color:isSel?GOLD_LIGHT:'#CBD5E1', flex:1,
+                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                           {xlate(r.from,isZh)} → {xlate(r.to,isZh)}
                         </span>
                         <Badge safety={r.safety} isZh={isZh}/>
                       </div>
-                      <div style={{ fontSize:10, color:'rgba(255,255,255,.22)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:'monospace' }}>{xlatePath(r.path,isZh)}</div>
+                      <div style={{ fontSize:10, color:'rgba(255,255,255,.22)',
+                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                        fontFamily:'monospace' }}>{xlatePath(r.path,isZh)}</div>
                     </button>
                   );
-                })}
+                })
+              }
             </div>
 
-            <div className="sna-card" style={{ padding:16 }}>
-              <div style={{ fontSize:11, fontWeight:600, letterSpacing:'.08em', textTransform:'uppercase', color:`${GOLD}80`, marginBottom:10 }}>{t.riskLegend}</div>
-              {[['#0F6E56','0–20'],['#639922','21–40'],['#BA7517','41–60'],['#D85A30','61–75'],['#A32D2D','76+']].map(([c,r],i) => (
-                <div key={r} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:5 }}>
-                  <span style={{ width:22, height:3, background:c, borderRadius:2, boxShadow:`0 0 4px ${c}55`, flexShrink:0 }}/>
-                  <span style={{ fontSize:10, color:'rgba(255,255,255,.45)', minWidth:32 }}>{r}</span>
-                  <span style={{ fontSize:10, color:'rgba(255,255,255,.25)' }}>{t.riskLabels[i]}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 地图 + 详情 */}
-          <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:12 }}>
-          
-
-            {highlightedCable && !selectedRoute && (
-              <div style={{ padding:'8px 14px', borderRadius:8, background:'rgba(255,215,0,.08)', border:'1px solid rgba(255,215,0,.3)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontSize:12, color:'#FFD700' }}>
-                  {t.hlPrefix}{highlightedCable}
-                  <span style={{ color:'rgba(255,255,255,.35)', marginLeft:8, fontSize:11 }}>{t.hlCancel}</span>
-                </span>
-                <button onClick={() => setHighlightedCable(null)} style={{ background:'none', border:'none', color:'#FFD700', cursor:'pointer', fontSize:16 }}>✕</button>
+            {/* 风险色阶（固定在面板底部）*/}
+            <div style={{ padding:'10px 14px', borderTop:`1px solid rgba(255,255,255,.04)`, flexShrink:0 }}>
+              <div style={{ fontSize:9, fontWeight:600, letterSpacing:'.08em',
+                textTransform:'uppercase' as const, color:`${GOLD}60`, marginBottom:6 }}>{t.riskLegend}</div>
+              <div style={{ display:'flex', gap:6 }}>
+                {[['#0F6E56','0–20'],['#639922','21–40'],['#BA7517','41–60'],['#D85A30','61–75'],['#A32D2D','76+']].map(([c,r],i) => (
+                  <div key={r} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                    <div style={{ width:'100%', height:3, background:c, borderRadius:2, boxShadow:`0 0 4px ${c}55` }}/>
+                    <span style={{ fontSize:8, color:'rgba(255,255,255,.3)', whiteSpace:'nowrap' }}>{t.riskLabels[i]}</span>
+                  </div>
+                ))}
               </div>
-            )}
-
-            {selectedRoute && (
-              <div style={{ padding:'8px 14px', borderRadius:8, background:`${GOLD}0e`, border:`1px solid ${GOLD}28`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontSize:12, color:GOLD }}>
-                  {xlate(selectedRoute.from,isZh)} → {xlate(selectedRoute.to,isZh)}
-                  <span style={{ color:'rgba(255,255,255,.3)', marginLeft:10 }}>{t.routeMaxRisk}</span>
-                  <span style={{ color:riskColor(selectedRoute.maxRisk), fontWeight:700, marginLeft:4 }}>{selectedRoute.maxRisk}</span>
-                </span>
-                <button onClick={() => handleSelect(null)} style={{ background:'none', border:'none', color:GOLD, cursor:'pointer', fontSize:16 }}>✕</button>
-              </div>
-            )}
-
-            <div ref={mapContainerRef}>
-              <SovereignNetworkMap
-                height="520px"
-                routes={routes}
-                filteredRoutes={filtered}
-                selectedRouteId={selectedId}
-                cableApiData={cableApi}
-                highlightedCableName={highlightedCable}
-                onRouteSelect={handleSelect}
-                onCableDeselect={() => setHighlightedCable(null)}
-                onPopup={handlePopup}
-                isZh={isZh}
-              />
             </div>
+          </>
+        )}
 
-            {selectedRoute
-              ? <SelectedRouteDetail route={selectedRoute} isZh={isZh} t={t} onCableClick={openCableModal} allCables={allUniqueCables}/>
-              : <AllCablesTable cables={allUniqueCables} total={routes.length} filtered={filtered.length} isZh={isZh} t={t} onCableClick={handleTableCableClick}/>}
+        {/* ── Tab 内容：海缆汇总 ────────────────────── */}
+        {leftTab === 'cables' && (
+          <div style={{ flex:1, overflowY:'auto' }}>
+            <AllCablesTable
+              cables={allUniqueCables}
+              total={routes.length}
+              filtered={filtered.length}
+              isZh={isZh}
+              t={t}
+              onCableClick={handleTableCableClick}
+            />
           </div>
-        </div>
-
-        <footer style={{ marginTop:40, paddingTop:18, borderTop:`1px solid ${GOLD}0e` }}>
-          <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'rgba(255,255,255,.18)', marginBottom:8 }}>
-            <span>{t.footerSrc}</span>
-            <span>{t.footerNote(CANONICAL_CABLE_NAMES.length)}</span>
-          </div>
-        </footer>
+        )}
       </div>
 
+      {/* ── Layer 2：顶部浮动信息栏（左侧面板右侧开始）───────────── */}
+      {/* pointerEvents:none 让底层地图仍然可以接收鼠标事件，
+          内部的交互元素单独设 pointerEvents:auto */}
+      <div style={{
+        position:'absolute', top:0,
+        left:340, right: selectedRoute ? 380 : 0,
+        zIndex:25, padding:'14px 20px',
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        background:'linear-gradient(180deg, rgba(8,16,30,0.72) 0%, transparent 100%)',
+        pointerEvents:'none',
+      }}>
+        {/* 统计胶囊：路径数 / 低暴露数 / 中等暴露数 / 高暴露数 */}
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', pointerEvents:'auto' }}>
+          {[
+            { l:t.stat1l, v:routes.length,  c:GOLD_LIGHT },
+            { l:t.stat2l, v:totalLow,        c:'#22C55E'  },
+            { l:t.stat3l, v:totalMid,        c:'#EAB308'  },
+            { l:t.stat4l, v:totalHigh,       c:'#EF4444'  },
+          ].map(({ l, v, c }) => (
+            <div key={l} className="sna-chip">
+              <span style={{ fontSize:14, fontWeight:700, color:c,
+                fontFeatureSettings:'"tnum"', lineHeight:1 }}>{v}</span>
+              <span style={{ fontSize:10, color:'rgba(255,255,255,.4)',
+                letterSpacing:'.04em' }}>{l}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 返回地图 + 语言切换 */}
+        <div style={{ display:'flex', gap:8, pointerEvents:'auto' }}>
+          <a href="/" style={{
+            display:'inline-flex', alignItems:'center', gap:6,
+            padding:'6px 14px', borderRadius:20,
+            background:'rgba(8,16,30,0.78)', border:'1px solid rgba(255,255,255,.15)',
+            backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)',
+            color:'rgba(255,255,255,.75)', fontSize:12, fontWeight:500,
+            textDecoration:'none',
+          }}>← {isZh ? '返回地图' : 'Back'}</a>
+          <button onClick={toggleLang} style={{
+            display:'inline-flex', alignItems:'center', gap:6,
+            padding:'6px 14px', borderRadius:20, cursor:'pointer',
+            background:'rgba(8,16,30,0.78)', border:`1px solid ${GOLD}38`,
+            backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)',
+            color:GOLD, fontSize:12, fontWeight:600,
+          }}>{isZh ? '🌐 EN' : '🌐 中文'}</button>
+        </div>
+      </div>
+
+      {/* ── Layer 3：右侧抽屉（选中路径后从右侧滑入）─────────────── */}
+      {selectedRoute && (
+        <div className="sna-panel sna-drawer" style={{
+          position:'absolute', top:0, right:0, bottom:0, width:380, zIndex:20,
+          borderLeft:`1px solid ${GOLD}18`,
+          display:'flex', flexDirection:'column', overflow:'hidden',
+        }}>
+          {/* 抽屉头部：路径标识 + 关闭按钮 */}
+          <div style={{ padding:'16px 18px', borderBottom:`1px solid ${GOLD}10`,
+            display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexShrink:0 }}>
+            <div style={{ flex:1, overflow:'hidden', paddingRight:8 }}>
+              <div style={{ fontSize:10, fontWeight:600, letterSpacing:'.08em',
+                textTransform:'uppercase' as const, color:`${GOLD}80`, marginBottom:4 }}>{t.detailTitle}</div>
+              <div style={{ fontSize:14, fontWeight:700, color:GOLD_LIGHT, lineHeight:1.2 }}>
+                {xlate(selectedRoute.from,isZh)} → {xlate(selectedRoute.to,isZh)}
+              </div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,.25)', fontFamily:'monospace', marginTop:2 }}>
+                {xlatePath(selectedRoute.path,isZh)}
+              </div>
+            </div>
+            <button onClick={() => handleSelect(null)} style={{
+              background:'none', border:'none', color:'rgba(255,255,255,.4)',
+              cursor:'pointer', fontSize:22, lineHeight:1, flexShrink:0 }}>×</button>
+          </div>
+          {/* 路径详情（可滚动）*/}
+          <div style={{ flex:1, overflowY:'auto' }}>
+            <SelectedRouteDetail
+              route={selectedRoute} isZh={isZh} t={t}
+              onCableClick={openCableModal} allCables={allUniqueCables}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── 浮动提示条：高亮海缆 / 选中路径状态（底部居中）─────── */}
+      {(highlightedCable || selectedRoute) && (
+        <div style={{
+          position:'absolute', bottom:20,
+          left: 360, right: selectedRoute ? 400 : 20,
+          zIndex:25, display:'flex', gap:8,
+        }}>
+          {highlightedCable && !selectedRoute && (
+            <div style={{
+              flex:1, padding:'8px 14px', borderRadius:8,
+              background:'rgba(255,215,0,.1)', border:'1px solid rgba(255,215,0,.3)',
+              backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
+              display:'flex', justifyContent:'space-between', alignItems:'center',
+            }}>
+              <span style={{ fontSize:12, color:'#FFD700' }}>
+                {t.hlPrefix}{highlightedCable}
+                <span style={{ color:'rgba(255,255,255,.35)', marginLeft:8, fontSize:11 }}>{t.hlCancel}</span>
+              </span>
+              <button onClick={() => setHighlightedCable(null)}
+                style={{ background:'none', border:'none', color:'#FFD700', cursor:'pointer', fontSize:16 }}>✕</button>
+            </div>
+          )}
+          {selectedRoute && (
+            <div style={{
+              flex:1, padding:'8px 14px', borderRadius:8,
+              background:`${GOLD}0e`, border:`1px solid ${GOLD}28`,
+              backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
+              display:'flex', justifyContent:'space-between', alignItems:'center',
+            }}>
+              <span style={{ fontSize:12, color:GOLD }}>
+                {xlate(selectedRoute.from,isZh)} → {xlate(selectedRoute.to,isZh)}
+                <span style={{ color:'rgba(255,255,255,.3)', marginLeft:10 }}>{t.routeMaxRisk}</span>
+                <span style={{ color:riskColor(selectedRoute.maxRisk), fontWeight:700, marginLeft:4 }}>
+                  {selectedRoute.maxRisk}
+                </span>
+              </span>
+              <button onClick={() => handleSelect(null)}
+                style={{ background:'none', border:'none', color:GOLD, cursor:'pointer', fontSize:16 }}>✕</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Modals（最高层，不受面板影响）────────────────────────── */}
       {routePopup && <RoutePopup info={routePopup} onClose={() => setRoutePopup(null)} isZh={isZh}/>}
-      {cableModal && <CableDetailModal data={cableModal} onClose={() => setCableModal(null)} isZh={isZh} t={t}/>}
+      {cableModal  && <CableDetailModal data={cableModal} onClose={() => setCableModal(null)} isZh={isZh} t={t}/>}
     </div>
   );
 }
