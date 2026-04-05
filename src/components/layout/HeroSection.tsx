@@ -197,38 +197,82 @@ export default function HeroSection() {
           ? 'db-up 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards'
           : 'none',
       }}>
-        <h1 style={{
-          fontFamily: "'Playfair Display', Georgia, serif",
-          // clamp: 手机 40px，宽屏最大 88px
-          fontSize: 'clamp(40px, 7vw, 88px)',
-          fontWeight: 800,
-          color: '#F0E6C8',
-          lineHeight: 1.08,
-          margin: '0 0 20px',
-          letterSpacing: '-0.02em',
-        }}>
-          {zh ? (
-            <>谁控制着连接，<br />谁就控制着<em style={{ fontStyle:'italic', color:'#D4AF37' }}>信息流动</em></>
-          ) : (
-            <>Whoever controls<br />the connection,{' '}
-              <em style={{ fontStyle:'italic', color:'#D4AF37' }}>controls the flow.</em>
-            </>
-          )}
-        </h1>
+        
 
-        {/* 副标题：小字高对比度 */}
-        <p style={{
-          fontSize: 'clamp(12px, 1.4vw, 15px)',
-          color: 'rgba(240,230,200,0.38)',
-          fontWeight: 400,
-          margin: 0,
-          letterSpacing: '0.07em',
-          lineHeight: 1.6,
-        }}>
-          {zh
-            ? '全球 877 条海底光缆 · 实时主权情报 · AI 战略分析'
-            : '877 cables monitored globally · Real-time sovereignty intelligence · AI-powered strategy'}
-        </p>
+        {/* 诗句第一行：日月之行，若出其中 */}
+          <div style={{
+            fontFamily: '"STSong", "SimSun", "Source Han Serif", "Noto Serif SC", serif',
+            fontSize: 'clamp(24px, 3.8vw, 50px)',
+            fontWeight: 700,
+            color: '#D4AF37',
+            // 多层辉光：仿佛从深海透出的光
+            textShadow:
+              '0 0 16px rgba(212,175,55,0.9),' +
+              '0 0 40px rgba(212,175,55,0.45),' +
+              '0 0 90px rgba(212,175,55,0.2)',
+            letterSpacing: '0.22em',
+            lineHeight: 1.9,
+            marginBottom: 0,
+            opacity: 0,
+            // 缓慢、庄重地浮现——不是砸出来，是从深处透上来
+            animation: phase >= 2 ? 'db-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
+          }}>
+            日月之行，若出其中；
+          </div>
+
+          {/* 诗句第二行：星汉灿烂，若出其里 — 延迟 0.65s 后出现 */}
+          <div style={{
+            fontFamily: '"STSong", "SimSun", "Source Han Serif", "Noto Serif SC", serif',
+            fontSize: 'clamp(24px, 3.8vw, 50px)',
+            fontWeight: 700,
+            color: '#D4AF37',
+            textShadow:
+              '0 0 16px rgba(212,175,55,0.9),' +
+              '0 0 40px rgba(212,175,55,0.45),' +
+              '0 0 90px rgba(212,175,55,0.2)',
+            letterSpacing: '0.22em',
+            lineHeight: 1.9,
+            marginBottom: 20,
+            opacity: 0,
+            animation: phase >= 2 ? 'db-up 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.65s forwards' : 'none',
+          }}>
+            星汉灿烂，若出其里。
+          </div>
+
+          {/* 出处：同色系但透明度低，不抢戏 */}
+          <div style={{
+            fontFamily: '"STSong", "SimSun", serif',
+            fontSize: 'clamp(11px, 1.1vw, 13px)',
+            color: 'rgba(212,175,55,0.4)',
+            letterSpacing: '0.18em',
+            marginBottom: 20,
+            opacity: 0,
+            animation: phase >= 2 ? 'db-in 1s ease 1.3s forwards' : 'none',
+          }}>
+            {zh
+              ? '—— 曹操《观沧海》'
+              : '—— 曹操《观沧海》· Cao Cao, Gazing at the Sea'}
+          </div>
+
+          {/* 品台统计行：数据锚定现实 */}
+          <p style={{
+            fontFamily: 'monospace',
+            fontSize: 'clamp(10px, 1vw, 12px)',
+            color: 'rgba(240,230,200,0.28)',
+            fontWeight: 400,
+            margin: 0,
+            letterSpacing: '0.1em',
+            lineHeight: 1.6,
+            opacity: 0,
+            animation: phase >= 2 ? 'db-in 1s ease 1.7s forwards' : 'none',
+          }}>
+            {zh
+              ? '全球 877 条海底光缆 · 实时主权情报 · AI 战略分析'
+              : '877 cables globally · Sovereignty intelligence · AI-powered strategy'}
+          </p>
+
+
+
       </div>
 
       {/* ── CTA 按钮区 ────────────────────────────────────────────── */}
