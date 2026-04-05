@@ -20,7 +20,7 @@ const FLAGS = ['#0066B3','#D32F2F','#FFC107','#388E3C','#F57C00'];
 const T = {
   zh: {
     back: '← 金砖仪表盘',
-    badge: 'Strategic Intelligence · 战略情报',
+    badge: '战略情报',
     title: '自主权网络图谱',
     desc: '主权威胁框架下的金砖可用通信路径 · 排除核心西方体系 · 共 {n} 条保留海缆 · AI 语义去重',
     stat1l: '路径总数', stat1s: '覆盖所有国家对',
@@ -370,46 +370,54 @@ export default function SovereignNetworkAtlas() {
   return (
     <div className="sna" style={{ minHeight:'100vh', background:NAVY, color:'#E8E0D0' }}>
       <style>{CSS}</style>
-      <div style={{ display:'flex', height:4, position:'sticky', top:0, zIndex:100 }}>
+      <div style={{ display:'flex', height:8, position:'sticky', top:0, zIndex:100 }}>
         {FLAGS.map(c => <div key={c} style={{ flex:1, background:c }} />)}
       </div>
       <div style={{ maxWidth:1400, margin:'0 auto', padding:'32px 32px 48px' }}>
 
         {/* Hero */}
         <div className="sna-up" style={{ marginBottom:28 }}>
-         
 
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          {/* 语言切换按钮 */}
-          <button
-            onClick={toggleLang}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
-              background: 'rgba(212,175,55,.1)', border: '1px solid rgba(212,175,55,.3)',
-              color: '#D4AF37', fontSize: 12, fontWeight: 600,
-              fontFamily: "'DM Sans',system-ui,sans-serif",
-              transition: 'background .15s',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,.18)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,.1)'; }}
-          >
-            {isZh ? '🌐 EN' : '🌐 中文'}
-          </button>
-          {/* 原来的 badge */}
-          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 14px',
-            background:`${GOLD}08`, border:`1px solid ${GOLD}1e`, borderRadius:20 }}>
-            <span style={{ width:8, height:8, borderRadius:'50%', background:GOLD, boxShadow:`0 0 8px ${GOLD}80` }}/>
-            <span style={{ fontSize:11, color:`${GOLD}BB`, letterSpacing:'.1em', textTransform:'uppercase', fontWeight:600 }}>{t.badge}</span>
+          {/* 顶部操作栏：badge 左，返回地图 + 语言切换 右 */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+            {/* Badge（仅当前语言，不再双语并列）*/}
+            <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 14px',
+              background:`${GOLD}08`, border:`1px solid ${GOLD}1e`, borderRadius:20 }}>
+              <span style={{ width:8, height:8, borderRadius:'50%', background:GOLD, boxShadow:`0 0 8px ${GOLD}80`, display:'inline-block' }}/>
+              <span style={{ fontSize:11, color:`${GOLD}BB`, letterSpacing:'.1em', textTransform:'uppercase' as const, fontWeight:600 }}>{t.badge}</span>
+            </div>
+            {/* 右侧：返回地图 + 语言切换 */}
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <a href="/" style={{
+                display:'inline-flex', alignItems:'center', gap:6,
+                padding:'5px 14px', borderRadius:20,
+                background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.12)',
+                color:'rgba(255,255,255,.7)', fontSize:12, fontWeight:500,
+                textDecoration:'none', transition:'background .15s',
+                fontFamily:"'DM Sans',system-ui,sans-serif",
+              }}>
+                ← {isZh ? '返回地图' : 'Back to Map'}
+              </a>
+              <button
+                onClick={toggleLang}
+                style={{
+                  display:'inline-flex', alignItems:'center', gap:6,
+                  padding:'5px 14px', borderRadius:20, cursor:'pointer',
+                  background:'rgba(212,175,55,.1)', border:'1px solid rgba(212,175,55,.3)',
+                  color:'#D4AF37', fontSize:12, fontWeight:600,
+                  fontFamily:"'DM Sans',system-ui,sans-serif",
+                  transition:'background .15s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,.18)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,.1)'; }}
+              >
+                {isZh ? '🌐 EN' : '🌐 中文'}
+              </button>
+            </div>
           </div>
-        </div>
-
-
 
           <h1 style={{ fontSize:36, fontWeight:800, color:GOLD_LIGHT, margin:'0 0 8px', lineHeight:1.1 }}>{t.title}</h1>
-          <p style={{ fontSize:14, color:'rgba(255,255,255,.4)', margin:0, maxWidth:640, lineHeight:1.75 }}>
-            {t.desc.replace('{n}', String(CANONICAL_CABLE_NAMES.length))}
-          </p>
+          {/* 副标题描述已移除 */}
         </div>
 
         {/* AI 去重提示 */}
