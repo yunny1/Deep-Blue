@@ -946,7 +946,27 @@ async function main() {
     summary: `TG 写入 ${stats.tgWritten} 条 · SN 合并 ${stats.snMatched} / 新增 ${stats.snNewAdded} / 待审 ${stats.snPendingReview} · 活跃海缆 ${activeCableCount} 条 · 耗时 ${elapsed}s`,
     details: { ...stats, activeCableCount, elapsed },
   });
-  
+
+  // 触发近似路由生成（为没有真实路线的海缆生成大圆弧近似路由）
+  // 生成结果会进入 /admin/governance 的"近似路由审核"队列，由管理员确认后生效
+  // 非致命：失败只记录警告，不中断同步
+  try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.deep-cloud.org';
+    const res = await fetch(`${siteUrl}/api/admin/generate-approximate-routes`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+      body: JSON.stringify({ generateAll: true }),
+    });
+    if (res.ok) {
+      const d = await res.json();
+      log('OK', `近似路由生成完成：${d.generated ?? '?'} 条新增，${d.skipped ?? '?'} 条跳过`);
+    } else {
+      log('WARN', `近似路由生成失败：HTTP ${res.status}`);
+    }
+  } catch (e: any) {
+    log('WARN', `近似路由触发失败（非致命）: ${e.message}`);
+  }
+
   await prisma.$disconnect();
 }
 

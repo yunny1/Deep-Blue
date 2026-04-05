@@ -23,6 +23,41 @@ import {
 } from '@/lib/brics-constants';
 
 export const dynamic = 'force-dynamic';
+// 路径枚举计算量大（10-20 秒），结果缓存 6 小时
+// 用 maxDuration 确保 Vercel 不会在计算完成前超时中断
+export const maxDuration = 60;
+
+// ── Redis 缓存工具 ─────────────────────────────────────────────────
+const CACHE_KEY = 'transit:analysis:v1';
+const CACHE_TTL = 6 * 60 * 60; // 6 小时
+
+async function redisGet(key: string): Promise<string | null> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const tok = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !tok) return null;
+  try {
+    const res = await fetch(`${url}/pipeline`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([['get', key]]),
+    });
+    const [{ result }] = await res.json();
+    return result ?? null;
+  } catch { return null; }
+}
+
+async function redisSet(key: string, value: string, ttl: number): Promise<void> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const tok = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !tok) return;
+  try {
+    await fetch(`${url}/pipeline`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([['set', key, value, 'ex', ttl]]),
+    });
+  } catch {}
+}
 
 // ── 主权分级（与 cable-matrix 路由保持一致） ───────────────────────
 
@@ -173,6 +208,14 @@ function enumeratePaths(
 
 export async function GET() {
   try {
+    // ── 缓存命中：直接返回，跳过 10-20 秒的路径枚举计算 ────────────
+    const cached = await redisGet(CACHE_KEY);
+    if (cached) {
+      return NextResponse.json(JSON.parse(cached), {
+        headers: { 'X-Cache': 'HIT' },
+      });
+    }
+
     const ACTIVE_FILTER = {
       mergedInto: null,
       status: { notIn: ['PENDING_REVIEW', 'REMOVED', 'RETIRED', 'DECOMMISSIONED'] as string[] },
@@ -434,7 +477,7 @@ export async function GET() {
       landlocked: pairResults.filter(p => p.isLandlocked).length,
     };
 
-    return NextResponse.json({
+    const result = {
       pairs: pairResults,
       members: memberCodes.map(code => ({
         code,
@@ -443,7 +486,12 @@ export async function GET() {
       })),
       summary,
       generatedAt: new Date().toISOString(),
-    });
+    };
+
+    // ── 写入缓存（非致命：写失败不影响本次响应）────────────────────
+    await redisSet(CACHE_KEY, JSON.stringify(result), CACHE_TTL);
+
+    return NextResponse.json(result, { headers: { 'X-Cache': 'MISS' } });
 
   } catch (e) {
     console.error('[TransitAnalysis]', e);

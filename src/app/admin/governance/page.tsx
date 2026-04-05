@@ -1,6 +1,6 @@
 'use client';
 // src/app/admin/governance/page.tsx
-// 数据治理面板：待绘制路线 / 同步冲突 / 更新日志
+// 数据治理面板：待绘制路线 / 同步冲突 / 更新日志 / 近似路由审核
 
 import { useEffect, useState, useCallback } from 'react';
 
@@ -12,6 +12,16 @@ interface PendingCable {
   slug: string;
   status: string;
   rfsDate: string | null;
+  reviewStatus: string | null;
+  updatedAt: string;
+  _count: { landingStations: number };
+}
+
+interface ApproxCable {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
   reviewStatus: string | null;
   updatedAt: string;
   _count: { landingStations: number };
@@ -84,16 +94,21 @@ const BADGE = (color: string): React.CSSProperties => ({
 // ── 主组件 ───────────────────────────────────────────────────────────────────
 
 export default function GovernancePage() {
-  const [tab, setTab] = useState<'pending' | 'conflicts' | 'log'>('pending');
+  const [tab, setTab] = useState<'pending' | 'conflicts' | 'log' | 'approx'>('pending');
 
-  const [pending, setPending]     = useState<PendingCable[]>([]);
+  const [pending,   setPending]   = useState<PendingCable[]>([]);
+  const [approx,    setApprox]    = useState<ApproxCable[]>([]);
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
-  const [logs, setLogs]           = useState<SyncLogEntry[]>([]);
+  const [logs,      setLogs]      = useState<SyncLogEntry[]>([]);
   const [unresolvedCount, setUnresolvedCount] = useState(0);
 
   const [loadingPending,   setLoadingPending]   = useState(false);
+  const [loadingApprox,    setLoadingApprox]    = useState(false);
   const [loadingLog,       setLoadingLog]       = useState(false);
   const [resolvingId,      setResolvingId]      = useState<string | null>(null);
+  const [confirmingApprox, setConfirmingApprox] = useState(false);
+  const [clearingCache,    setClearingCache]    = useState(false);
+  const [cacheMsg,         setCacheMsg]         = useState('');
 
   // 拉取待绘制路线
   const fetchPending = useCallback(async () => {
@@ -103,6 +118,16 @@ export default function GovernancePage() {
       const d = await r.json();
       setPending(d.cables || []);
     } finally { setLoadingPending(false); }
+  }, []);
+
+  // 拉取待审核近似路由
+  const fetchApprox = useCallback(async () => {
+    setLoadingApprox(true);
+    try {
+      const r = await fetch('/api/admin/approximate-routes');
+      const d = await r.json();
+      setApprox(d.cables || []);
+    } finally { setLoadingApprox(false); }
   }, []);
 
   // 拉取日志和冲突
@@ -117,7 +142,7 @@ export default function GovernancePage() {
     } finally { setLoadingLog(false); }
   }, []);
 
-  useEffect(() => { fetchPending(); fetchLog(); }, [fetchPending, fetchLog]);
+  useEffect(() => { fetchPending(); fetchApprox(); fetchLog(); }, [fetchPending, fetchApprox, fetchLog]);
 
   // 解决冲突
   const resolveConflict = async (conflictId: string) => {
@@ -130,6 +155,31 @@ export default function GovernancePage() {
       });
       await fetchLog();
     } finally { setResolvingId(null); }
+  };
+
+  // 确认全部近似路由
+  const confirmAllApprox = async () => {
+    setConfirmingApprox(true);
+    try {
+      await fetch('/api/admin/approximate-routes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true }),
+      });
+      await fetchApprox();
+    } finally { setConfirmingApprox(false); }
+  };
+
+  // 清除路径分析缓存
+  const clearTransitCache = async () => {
+    setClearingCache(true);
+    setCacheMsg('');
+    try {
+      const r = await fetch('/api/admin/transit-cache', { method: 'DELETE' });
+      const d = await r.json();
+      setCacheMsg(d.ok ? '✓ 缓存已清除，下次请求将重新计算' : `✗ ${d.error}`);
+    } catch { setCacheMsg('✗ 请求失败'); }
+    finally { setClearingCache(false); setTimeout(() => setCacheMsg(''), 5000); }
   };
 
   // 导航到路线编辑器
@@ -157,15 +207,16 @@ export default function GovernancePage() {
           <span style={{ color: '#374151' }}>|</span>
           <h1 style={{ fontSize: 16, fontWeight: 700, color: '#EDF2F7', margin: 0 }}>数据治理</h1>
         </div>
-        <button onClick={() => { fetchPending(); fetchLog(); }} style={{ fontSize: 12, color: '#2A9D8F', background: 'none', border: '1px solid rgba(42,157,143,0.3)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer' }}>
+        <button onClick={() => { fetchPending(); fetchApprox(); fetchLog(); }} style={{ fontSize: 12, color: '#2A9D8F', background: 'none', border: '1px solid rgba(42,157,143,0.3)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer' }}>
           刷新
         </button>
       </div>
 
       {/* 摘要数字 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, padding: '24px 32px 0' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, padding: '24px 32px 0' }}>
         {[
           { label: '待绘制路线', value: pending.length, color: '#E9C46A', desc: '入库但无路线数据' },
+          { label: '近似路由待审', value: approx.length, color: '#8B5CF6', desc: 'nightly-sync 自动生成' },
           { label: '未处理冲突', value: unresolvedPending, color: '#EF4444', desc: '同步数据与人工记录冲突' },
           { label: '近期同步记录', value: logs.length, color: '#2A9D8F', desc: '最近 50 条运行日志' },
         ].map(s => (
@@ -177,17 +228,38 @@ export default function GovernancePage() {
         ))}
       </div>
 
+      {/* 系统维护：路径分析缓存 */}
+      <div style={{ padding: '16px 32px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 12, color: '#6B7280' }}>路径分析缓存（TTL 6h）：</span>
+        <button
+          onClick={clearTransitCache}
+          disabled={clearingCache}
+          style={{
+            fontSize: 12, padding: '5px 14px', borderRadius: 6, cursor: 'pointer',
+            backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+            color: '#EF4444', opacity: clearingCache ? 0.5 : 1,
+          }}
+        >
+          {clearingCache ? '清除中...' : '× 清除缓存'}
+        </button>
+        {cacheMsg && <span style={{ fontSize: 12, color: cacheMsg.startsWith('✓') ? '#06D6A0' : '#EF4444' }}>{cacheMsg}</span>}
+      </div>
+
       {/* Tab 栏 */}
       <div style={{ display: 'flex', padding: '20px 32px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <button style={tabStyle(tab === 'pending')}   onClick={() => setTab('pending')}>
+        <button style={tabStyle(tab === 'pending')} onClick={() => setTab('pending')}>
           待绘制路线
           {pending.length > 0 && <span style={{ marginLeft: 6, ...BADGE('#E9C46A'), fontSize: 9 }}>{pending.length}</span>}
+        </button>
+        <button style={tabStyle(tab === 'approx')} onClick={() => setTab('approx')}>
+          近似路由审核
+          {approx.length > 0 && <span style={{ marginLeft: 6, ...BADGE('#8B5CF6'), fontSize: 9 }}>{approx.length}</span>}
         </button>
         <button style={tabStyle(tab === 'conflicts')} onClick={() => setTab('conflicts')}>
           同步冲突
           {unresolvedPending > 0 && <span style={{ marginLeft: 6, ...BADGE('#EF4444'), fontSize: 9 }}>{unresolvedPending}</span>}
         </button>
-        <button style={tabStyle(tab === 'log')}       onClick={() => setTab('log')}>
+        <button style={tabStyle(tab === 'log')} onClick={() => setTab('log')}>
           更新日志
         </button>
       </div>
@@ -245,6 +317,93 @@ export default function GovernancePage() {
                     >
                       绘制路线 →
                     </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── 近似路由审核 ──────────────────────────────────────── */}
+        {tab === 'approx' && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0, maxWidth: 600 }}>
+                以下海缆由 nightly-sync 自动生成了大圆弧近似路由（虚线显示在地球上）。
+                确认后标记为 <code style={{ color: '#8B5CF6' }}>ROUTE_REVIEWED</code>，
+                从队列中移除。如需替换为精确路线，请前往路线编辑器绘制。
+              </p>
+              {approx.length > 0 && (
+                <button
+                  onClick={confirmAllApprox}
+                  disabled={confirmingApprox}
+                  style={{
+                    padding: '8px 18px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', flexShrink: 0, marginLeft: 16,
+                    backgroundColor: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)',
+                    color: '#8B5CF6', opacity: confirmingApprox ? 0.5 : 1,
+                  }}
+                >
+                  {confirmingApprox ? '确认中...' : `✓ 全部确认（${approx.length} 条）`}
+                </button>
+              )}
+            </div>
+
+            {loadingApprox ? (
+              <div style={{ color: '#6B7280', fontSize: 13 }}>加载中...</div>
+            ) : approx.length === 0 ? (
+              <div style={{ ...CARD, textAlign: 'center', padding: 40 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                <div style={{ fontSize: 14, color: '#2A9D8F', fontWeight: 600 }}>没有待审核的近似路由</div>
+                <div style={{ fontSize: 12, color: '#6B7280', marginTop: 8 }}>
+                  nightly-sync 运行后，新生成的近似路由会出现在这里
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {approx.map(cable => (
+                  <div key={cable.slug} style={{ ...CARD, display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: STATUS_COLORS[cable.status] || '#6B7280', flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#EDF2F7', marginBottom: 3 }}>{cable.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+                        <span style={{ fontSize: 11, color: '#6B7280', fontFamily: 'monospace' }}>{cable.slug}</span>
+                        <span style={BADGE(STATUS_COLORS[cable.status] || '#6B7280')}>{STATUS_LABELS[cable.status] || cable.status}</span>
+                        <span style={{ fontSize: 11, color: '#6B7280' }}>{cable._count.landingStations} 个登陆站</span>
+                        <span style={{ fontSize: 11, color: '#6B7280' }}>
+                          更新于 {new Date(cable.updatedAt).toLocaleDateString('zh-CN')}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <button
+                        onClick={() => goToRouteEditor(cable.slug)}
+                        style={{
+                          padding: '6px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                          backgroundColor: 'rgba(42,157,143,0.1)', border: '1px solid rgba(42,157,143,0.25)',
+                          color: '#2A9D8F',
+                        }}
+                      >
+                        精确绘制
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/admin/approximate-routes', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ slugs: [cable.slug] }),
+                          });
+                          await fetchApprox();
+                        }}
+                        style={{
+                          padding: '6px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                          backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)',
+                          color: '#8B5CF6',
+                        }}
+                      >
+                        确认此条
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

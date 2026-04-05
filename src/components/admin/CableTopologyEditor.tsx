@@ -94,49 +94,79 @@ function computeGeojson(topology: CableTopology): object | null {
 
 // ── 内联搜索框 ────────────────────────────────────────────────────────────────
 // 出现在点击 + 或 ↓ 的位置旁边，输入内容后实时请求 landing-station-search API
+// 搜索支持：英文名、中文名（nameZh）、拼音首字母（基础匹配）
+// 无结果时：显示"手动输入坐标"表单，允许创建临时站点节点
 function StationSearchInline({ onSelect, onCancel, excludeIds }: {
   onSelect: (s: StationNode) => void;
   onCancel: () => void;
   excludeIds: Set<string>;
 }) {
-  const [q,       setQ]       = useState('');
-  const [results, setResults] = useState<StationNode[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [q,          setQ]          = useState('');
+  const [results,    setResults]    = useState<StationNode[]>([]);
+  const [loading,    setLoading]    = useState(false);
+  const [showManual, setShowManual] = useState(false);
+  // 手动输入表单状态
+  const [manualName, setManualName] = useState('');
+  const [manualLat,  setManualLat]  = useState('');
+  const [manualLng,  setManualLng]  = useState('');
+  const [manualErr,  setManualErr]  = useState('');
+
   const timer    = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 弹出时立即聚焦，让用户直接开始打字
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const search = (query: string) => {
     clearTimeout(timer.current);
     setQ(query);
+    setShowManual(false);
+    setManualErr('');
     if (!query.trim()) { setResults([]); return; }
     timer.current = setTimeout(async () => {
       setLoading(true);
       try {
         const res  = await fetch(`/api/admin/landing-station-search?q=${encodeURIComponent(query)}`);
         const data = await res.json();
-        // 过滤掉已经在拓扑中的站点，避免重复
         setResults((data.stations ?? []).filter((s: StationNode) => !excludeIds.has(s.id)));
       } catch { setResults([]); }
       finally  { setLoading(false); }
     }, 300);
   };
 
+  // 提交手动坐标表单
+  const submitManual = () => {
+    const lat = parseFloat(manualLat);
+    const lng = parseFloat(manualLng);
+    if (!manualName.trim()) { setManualErr('请输入站点名称'); return; }
+    if (isNaN(lat) || lat < -90 || lat > 90) { setManualErr('纬度范围 -90 ~ 90'); return; }
+    if (isNaN(lng) || lng < -180 || lng > 180) { setManualErr('经度范围 -180 ~ 180'); return; }
+    // 创建临时站点节点（ID 以 manual- 开头，不在数据库中，仅用于本次编辑会话）
+    onSelect({
+      id:          `manual-${Date.now()}`,
+      name:        manualName.trim(),
+      nameZh:      null,
+      lat,
+      lng,
+      countryCode: '',
+      city:        null,
+      cableCount:  0,
+    });
+  };
+
   return (
     <div style={{
       background: '#0b1930', border: `1px solid ${TRUNK_COLOR}50`,
-      borderRadius: 10, padding: 10, minWidth: 220, maxWidth: 260,
+      borderRadius: 10, padding: 10, minWidth: 240, maxWidth: 280,
       boxShadow: '0 10px 32px rgba(0,0,0,.7)', zIndex: 500,
     }}>
+      {/* 搜索输入 */}
       <div style={{ position: 'relative', marginBottom: 6 }}>
         <input
           ref={inputRef}
           value={q}
           onChange={e => search(e.target.value)}
           onKeyDown={e => e.key === 'Escape' && onCancel()}
-          placeholder="搜索登陆站名称、城市、国家…"
+          placeholder="搜索站点名称、城市、国家、拼音…"
           style={{
             width: '100%', background: 'rgba(255,255,255,.06)',
             border: `1px solid rgba(255,255,255,.15)`, borderRadius: 6,
@@ -150,6 +180,7 @@ function StationSearchInline({ onSelect, onCancel, excludeIds }: {
         )}
       </div>
 
+      {/* 搜索结果列表 */}
       {results.length > 0 && (
         <div style={{ maxHeight: 200, overflowY: 'auto' }}>
           {results.map(s => (
@@ -169,8 +200,66 @@ function StationSearchInline({ onSelect, onCancel, excludeIds }: {
         </div>
       )}
 
-      {q && !loading && results.length === 0 && (
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', padding: '4px 8px' }}>无匹配结果</div>
+      {/* 无结果时：提示手动输入 */}
+      {q && !loading && results.length === 0 && !showManual && (
+        <div style={{ padding: '4px 8px' }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', marginBottom: 6 }}>无匹配结果</div>
+          <button
+            onClick={() => { setShowManual(true); setManualName(q); }}
+            style={{
+              width: '100%', padding: '5px 0', borderRadius: 5, cursor: 'pointer',
+              background: `${TRUNK_COLOR}18`, border: `1px solid ${TRUNK_COLOR}40`,
+              color: TRUNK_COLOR, fontSize: 11, fontWeight: 500,
+            }}>
+            + 手动输入坐标新增站点
+          </button>
+        </div>
+      )}
+
+      {/* 手动坐标输入表单 */}
+      {showManual && (
+        <div style={{ borderTop: `1px solid rgba(255,255,255,.08)`, paddingTop: 8, marginTop: 4 }}>
+          <div style={{ fontSize: 10, color: `${TRUNK_COLOR}90`, marginBottom: 6, fontWeight: 600, letterSpacing: 0.5 }}>
+            手动输入坐标
+          </div>
+          {[
+            { label: '站点名称', value: manualName, set: setManualName, placeholder: '如：Singapore Cable Station', type: 'text' },
+            { label: '纬度 Lat', value: manualLat,  set: setManualLat,  placeholder: '如：1.352', type: 'number' },
+            { label: '经度 Lng', value: manualLng,  set: setManualLng,  placeholder: '如：103.820', type: 'number' },
+          ].map(({ label, value, set, placeholder, type }) => (
+            <div key={label} style={{ marginBottom: 5 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', marginBottom: 2 }}>{label}</div>
+              <input
+                type={type}
+                value={value}
+                onChange={e => { set(e.target.value); setManualErr(''); }}
+                placeholder={placeholder}
+                onKeyDown={e => { if (e.key === 'Enter') submitManual(); if (e.key === 'Escape') onCancel(); }}
+                style={{
+                  width: '100%', background: 'rgba(255,255,255,.05)',
+                  border: `1px solid rgba(255,255,255,.12)`, borderRadius: 5,
+                  color: '#E2E8F0', fontSize: 11, padding: '5px 7px',
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          ))}
+          {manualErr && (
+            <div style={{ fontSize: 10, color: '#EF4444', marginBottom: 5 }}>{manualErr}</div>
+          )}
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            <button onClick={submitManual} style={{
+              flex: 1, padding: '5px 0', borderRadius: 5, cursor: 'pointer',
+              background: TRUNK_COLOR, border: 'none',
+              color: '#0b1930', fontSize: 11, fontWeight: 700,
+            }}>确认添加</button>
+            <button onClick={() => setShowManual(false)} style={{
+              padding: '5px 10px', borderRadius: 5, cursor: 'pointer',
+              background: 'none', border: `1px solid rgba(255,255,255,.15)`,
+              color: 'rgba(255,255,255,.4)', fontSize: 11,
+            }}>返回搜索</button>
+          </div>
+        </div>
       )}
 
       <button onClick={onCancel}
