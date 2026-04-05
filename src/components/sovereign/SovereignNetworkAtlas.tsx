@@ -229,6 +229,8 @@ export default function SovereignNetworkAtlas() {
   const [filterTo,     setFilterTo]     = useState('');
   // Phase 4：左侧面板的两个 tab（路径列表 / 海缆汇总）
   const [leftTab,      setLeftTab]      = useState<'routes' | 'cables'>('routes');
+  // 左侧面板的折叠状态：true=展开（默认），false=收起只剩 16px 触发条
+  const [panelOpen,    setPanelOpen]    = useState(true);
   const [normalizing,  setNormalizing]  = useState(false);
   const [normalizeMsg, setNormalizeMsg] = useState('');
   const [cableApi,     setCableApi]     = useState<CableApiResponse | null>(null);
@@ -423,12 +425,25 @@ export default function SovereignNetworkAtlas() {
         />
       </div>
 
-      {/* ── Layer 1：左侧面板（宽 340px，全高，玻璃拟态）────────── */}
-      <div className="sna-panel" style={{
-        position:'absolute', top:0, left:0, bottom:0, width:340, zIndex:20,
-        borderRight:`1px solid ${GOLD}18`,
-        display:'flex', flexDirection:'column', overflow:'hidden',
+      {/* ── Layer 1：左侧面板外层容器（负责宽度过渡动画）──────────── */}
+      {/* 外层容器宽度从 356（340面板+16触发条）过渡到 16（只剩触发条）。
+          overflow:hidden 保证面板内容在收起时被干净裁切。
+          触发条用 position:absolute; right:0 钉在容器右边缘，
+          这样它永远可见，不论容器是展开还是收起状态。 */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, bottom: 0,
+        width: panelOpen ? 356 : 16,
+        zIndex: 20,
+        overflow: 'hidden',
+        transition: 'width 0.42s cubic-bezier(0.16, 1, 0.3, 1)',
       }}>
+
+        {/* 面板主体（宽度固定 340，被外层容器裁切实现收起效果）*/}
+        <div className="sna-panel" style={{
+          position:'absolute', top:0, left:0, bottom:0, width:340,
+          borderRight:`1px solid ${GOLD}18`,
+          display:'flex', flexDirection:'column', overflow:'hidden',
+        }}>
 
         {/* 五色签名条（品牌标识）*/}
         <div style={{ display:'flex', height:4, flexShrink:0 }}>
@@ -586,16 +601,54 @@ export default function SovereignNetworkAtlas() {
         )}
       </div>
 
-      {/* ── Layer 2：顶部浮动信息栏（左侧面板右侧开始）───────────── */}
+        {/* ── 折叠触发条：始终钉在外层容器右边缘 ─────────────────────
+            当面板展开时它在 x=340–356，当面板收起时它在 x=0–16。
+            箭头随状态旋转 180°，给用户明确的方向提示。 */}
+        <div
+          onClick={() => setPanelOpen(p => !p)}
+          style={{
+            position: 'absolute', top: 0, right: 0, bottom: 0, width: 16,
+            cursor: 'pointer', zIndex: 21,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(8,16,30,0.55)',
+            borderRight: '1px solid rgba(255,255,255,.05)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLDivElement).style.background = `rgba(${panelOpen ? '8,16,30' : '212,175,55'},0.18)`;
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLDivElement).style.background = 'rgba(8,16,30,0.55)';
+          }}
+          title={panelOpen ? (isZh ? '收起面板' : 'Collapse panel') : (isZh ? '展开面板' : 'Expand panel')}
+        >
+          <span style={{
+            fontSize: 12,
+            color: `${GOLD}70`,
+            display: 'inline-block',
+            lineHeight: 1,
+            userSelect: 'none' as const,
+            // 展开时箭头指左（‹），收起时旋转 180° 指右（›）
+            transform: panelOpen ? 'rotate(0deg)' : 'rotate(180deg)',
+            transition: 'transform 0.42s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}>‹</span>
+        </div>
+      </div>{/* 外层容器结束 */}
+      {/* ── Layer 2：顶部浮动信息栏 ──────────────────────────────── */}
       {/* pointerEvents:none 让底层地图仍然可以接收鼠标事件，
           内部的交互元素单独设 pointerEvents:auto */}
       <div style={{
         position:'absolute', top:0,
-        left:340, right: selectedRoute ? 380 : 0,
+        // left 与面板外层容器宽度同步过渡（356=展开 / 16=收起）
+        left: panelOpen ? 356 : 16,
+        right: selectedRoute ? 380 : 0,
         zIndex:25, padding:'14px 20px',
         display:'flex', alignItems:'center', justifyContent:'space-between',
         background:'linear-gradient(180deg, rgba(8,16,30,0.72) 0%, transparent 100%)',
         pointerEvents:'none',
+        transition: 'left 0.42s cubic-bezier(0.16, 1, 0.3, 1)',
       }}>
         {/* 统计胶囊：路径数 / 低暴露数 / 中等暴露数 / 高暴露数 */}
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', pointerEvents:'auto' }}>
@@ -672,7 +725,10 @@ export default function SovereignNetworkAtlas() {
       {(highlightedCable || selectedRoute) && (
         <div style={{
           position:'absolute', bottom:20,
-          left: 360, right: selectedRoute ? 400 : 20,
+          // left 与顶部信息栏保持一致（面板宽度+边距）
+          left: panelOpen ? 376 : 36,
+          right: selectedRoute ? 400 : 20,
+          transition: 'left 0.42s cubic-bezier(0.16, 1, 0.3, 1)',
           zIndex:25, display:'flex', gap:8,
         }}>
           {highlightedCable && !selectedRoute && (
