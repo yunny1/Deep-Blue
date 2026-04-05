@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import { verifyAdminJWT } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
   }
 
   const cables = await prisma.cable.findMany({
-    where: { routeGeojson: null },
+    where: { routeGeojson: { equals: Prisma.DbNull } },
     select: {
       id: true,
       name: true,
