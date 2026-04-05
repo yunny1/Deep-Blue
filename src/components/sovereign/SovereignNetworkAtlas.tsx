@@ -722,12 +722,24 @@ export default function SovereignNetworkAtlas() {
 function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
   route: SovereignRoute; isZh: boolean; t: typeof T.zh;
   onCableClick: (n: string, s: number, r: number) => void;
-  allCables: { name: string; score: number; routeCount: number }[];
+  // isCancelled 字段与 allUniqueCables 保持一致，用于路径详情里的视觉降权
+  allCables: { name: string; score: number; routeCount: number; isCancelled?: boolean }[];
 }) {
   const { bg, text, label } = safetyCfg(route.safety);
   const enLabel: Record<string,string> = { '低风险':'Low Risk','较优备选':'Alternative','中等风险':'Medium','高暴露':'High Exposure' };
   const segData: RouteSegment[] | undefined = ROUTE_SEGMENT_MAP[route.id];
   const getRc = (n: string) => allCables.find(c => c.name.toLowerCase()===n.toLowerCase())?.routeCount ?? 1;
+
+  // 判断一条海缆是否已取消的辅助函数，与全局 CANCELLED_CABLES 集合保持一致
+  const isCancelled = (name: string) => CANCELLED_CABLES.has(name.trim());
+
+  // 生成取消状态下的视觉样式：灰色替代风险色、名称降暗
+  const cancelledStyle = {
+    background: 'rgba(55,65,81,.12)',
+    border: '1px solid rgba(55,65,81,.25)',
+    opacity: 0.6,
+  };
+
   return (
     <div style={{ background:CARD_BG, border:`1px solid ${GOLD_DIM}`, borderRadius:14, backdropFilter:'blur(12px)', padding:'20px 24px' }}>
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20 }}>
@@ -775,37 +787,96 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
                   {hasMulti ? (
                     <div style={{ position:'relative', paddingLeft:16 }}>
                       <div style={{ position:'absolute', left:0, top:4, bottom:4, width:2, background:`${segColor}30`, borderRadius:1 }}/>
-                      {seg.cables.map((cable, ci) => (
-                        <div key={ci} style={{ position:'relative', marginBottom:ci<seg.cables.length-1?6:0 }}>
-                          <div style={{ position:'absolute', left:-16, top:'50%', width:14, height:2, background:`${riskColor(cable.score)}60` }}/>
-                          <button onClick={() => onCableClick(cable.name, cable.score, getRc(cable.name))}
-                            style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', padding:'7px 12px', cursor:'pointer', textAlign:'left',
-                              background:cable.isBest?`${riskColor(cable.score)}12`:'rgba(255,255,255,.03)',
-                              border:`1px solid ${cable.isBest?riskColor(cable.score)+'30':'rgba(255,255,255,.06)'}`, borderRadius:7, transition:'border-color .15s' }}>
-                            <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, overflow:'hidden' }}>
-                              {cable.isBest && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:4, background:`${riskColor(cable.score)}20`, color:riskColor(cable.score), border:`1px solid ${riskColor(cable.score)}40`, fontWeight:700, flexShrink:0 }}>{t.segBest}</span>}
-                              <span style={{ fontSize:12, color:cable.isBest?'rgba(255,255,255,.85)':'rgba(255,255,255,.55)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{cable.name}</span>
-                            </div>
-                            <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0, marginLeft:10 }}>
-                              <div style={{ width:44, height:3, background:'rgba(255,255,255,.08)', borderRadius:2, overflow:'hidden' }}><div style={{ width:`${cable.score}%`, height:'100%', background:riskColor(cable.score), borderRadius:2 }}/></div>
-                              <span style={{ fontSize:12, fontWeight:700, color:riskColor(cable.score), minWidth:22, textAlign:'right', fontFeatureSettings:'"tnum"' }}>{cable.score}</span>
-                            </div>
-                          </button>
-                        </div>
-                      ))}
+                      {seg.cables.map((cable, ci) => {
+                        const cancelled = isCancelled(cable.name);
+                        const cColor = cancelled ? 'rgba(107,114,128,.5)' : riskColor(cable.score);
+                        return (
+                          <div key={ci} style={{ position:'relative', marginBottom:ci<seg.cables.length-1?6:0 }}>
+                            <div style={{ position:'absolute', left:-16, top:'50%', width:14, height:2, background:`${cColor}60` }}/>
+                            <button onClick={() => onCableClick(cable.name, cable.score, getRc(cable.name))}
+                              style={{
+                                display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%',
+                                padding:'7px 12px', cursor:'pointer', textAlign:'left',
+                                ...(cancelled ? cancelledStyle : {
+                                  background: cable.isBest ? `${riskColor(cable.score)}12` : 'rgba(255,255,255,.03)',
+                                  border: `1px solid ${cable.isBest ? riskColor(cable.score)+'30' : 'rgba(255,255,255,.06)'}`,
+                                }),
+                                borderRadius:7, transition:'border-color .15s',
+                              }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, overflow:'hidden' }}>
+                                {/* 已取消 badge 优先显示，替代"最优"badge */}
+                                {cancelled ? (
+                                  <span style={{ fontSize:9, padding:'1px 5px', borderRadius:4,
+                                    background:'rgba(55,65,81,.25)', color:'rgba(156,163,175,.8)',
+                                    border:'1px solid rgba(55,65,81,.4)', fontWeight:700, flexShrink:0 }}>
+                                    {isZh ? '已取消' : 'CANCELLED'}
+                                  </span>
+                                ) : cable.isBest ? (
+                                  <span style={{ fontSize:9, padding:'1px 5px', borderRadius:4, background:`${riskColor(cable.score)}20`, color:riskColor(cable.score), border:`1px solid ${riskColor(cable.score)}40`, fontWeight:700, flexShrink:0 }}>{t.segBest}</span>
+                                ) : null}
+                                <span style={{
+                                  fontSize:12, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                                  color: cancelled ? 'rgba(107,114,128,.6)' : cable.isBest ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.55)',
+                                  textDecoration: cancelled ? 'line-through' : 'none',
+                                  textDecorationColor: 'rgba(107,114,128,.5)',
+                                }}>{cable.name}</span>
+                              </div>
+                              {/* 已取消时评分显示"—"，不显示风险条形 */}
+                              {cancelled ? (
+                                <span style={{ fontSize:11, color:'rgba(107,114,128,.5)', flexShrink:0, marginLeft:10 }}>—</span>
+                              ) : (
+                                <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0, marginLeft:10 }}>
+                                  <div style={{ width:44, height:3, background:'rgba(255,255,255,.08)', borderRadius:2, overflow:'hidden' }}><div style={{ width:`${cable.score}%`, height:'100%', background:cColor, borderRadius:2 }}/></div>
+                                  <span style={{ fontSize:12, fontWeight:700, color:cColor, minWidth:22, textAlign:'right', fontFeatureSettings:'"tnum"' }}>{cable.score}</span>
+                                </div>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    seg.cables.map((cable, ci) => (
-                      <button key={ci} onClick={() => onCableClick(cable.name, cable.score, getRc(cable.name))}
-                        style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', padding:'7px 12px', cursor:'pointer', textAlign:'left',
-                          background:`${riskColor(cable.score)}10`, border:`1px solid ${riskColor(cable.score)}28`, borderRadius:7, transition:'border-color .15s' }}>
-                        <span style={{ fontSize:12, color:'rgba(255,255,255,.82)' }}>{cable.name}</span>
-                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          <div style={{ width:44, height:3, background:'rgba(255,255,255,.08)', borderRadius:2, overflow:'hidden' }}><div style={{ width:`${cable.score}%`, height:'100%', background:riskColor(cable.score), borderRadius:2 }}/></div>
-                          <span style={{ fontSize:13, fontWeight:700, color:riskColor(cable.score), fontFeatureSettings:'"tnum"' }}>{cable.score}</span>
-                        </div>
-                      </button>
-                    ))
+                    // 单条海缆的段落渲染
+                    seg.cables.map((cable, ci) => {
+                      const cancelled = isCancelled(cable.name);
+                      const cColor = cancelled ? 'rgba(107,114,128,.5)' : riskColor(cable.score);
+                      return (
+                        <button key={ci} onClick={() => onCableClick(cable.name, cable.score, getRc(cable.name))}
+                          style={{
+                            display:'flex', alignItems:'center', justifyContent:'space-between',
+                            width:'100%', padding:'7px 12px', cursor:'pointer', textAlign:'left',
+                            ...(cancelled ? cancelledStyle : {
+                              background: `${riskColor(cable.score)}10`,
+                              border: `1px solid ${riskColor(cable.score)}28`,
+                            }),
+                            borderRadius:7, transition:'border-color .15s',
+                          }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, overflow:'hidden' }}>
+                            {cancelled && (
+                              <span style={{ fontSize:9, padding:'1px 5px', borderRadius:4,
+                                background:'rgba(55,65,81,.25)', color:'rgba(156,163,175,.8)',
+                                border:'1px solid rgba(55,65,81,.4)', fontWeight:700, flexShrink:0 }}>
+                                {isZh ? '已取消' : 'CANCELLED'}
+                              </span>
+                            )}
+                            <span style={{
+                              fontSize:12, color: cancelled ? 'rgba(107,114,128,.6)' : 'rgba(255,255,255,.82)',
+                              textDecoration: cancelled ? 'line-through' : 'none',
+                              textDecorationColor: 'rgba(107,114,128,.5)',
+                              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                            }}>{cable.name}</span>
+                          </div>
+                          {cancelled ? (
+                            <span style={{ fontSize:11, color:'rgba(107,114,128,.5)', flexShrink:0 }}>—</span>
+                          ) : (
+                            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                              <div style={{ width:44, height:3, background:'rgba(255,255,255,.08)', borderRadius:2, overflow:'hidden' }}><div style={{ width:`${cable.score}%`, height:'100%', background:cColor, borderRadius:2 }}/></div>
+                              <span style={{ fontSize:13, fontWeight:700, color:cColor, fontFeatureSettings:'"tnum"' }}>{cable.score}</span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -813,14 +884,34 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
           })}
         </div>
       ) : (
+        // Fallback：没有精确段落数据时，从路径字符串拆分渲染
         <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
           {(route.cables ?? '').split(' | ').map((cable, i) => {
             const scores = (route.riskScores ?? '').split(' | ').map(Number);
             const score = scores[i] ?? route.maxRisk;
+            const cancelled = isCancelled(cable.trim());
+            const cColor = cancelled ? 'rgba(107,114,128,.5)' : riskColor(score);
             return (
               <button key={i} onClick={() => onCableClick(cable.trim(), score, getRc(cable.trim()))}
-                style={{ display:'inline-flex', alignItems:'center', gap:6, background:`${riskColor(score)}10`, border:`1px solid ${riskColor(score)}28`, borderRadius:6, padding:'4px 10px', fontSize:11, color:'rgba(255,255,255,.75)', fontFamily:'monospace', cursor:'pointer' }}>
-                <span style={{ width:5, height:5, borderRadius:'50%', background:riskColor(score), flexShrink:0 }}/>{cable.trim()}<span style={{ color:riskColor(score), fontWeight:700, fontSize:10 }}>{score}</span>
+                style={{
+                  display:'inline-flex', alignItems:'center', gap:6,
+                  ...(cancelled ? cancelledStyle : {
+                    background: `${riskColor(score)}10`,
+                    border: `1px solid ${riskColor(score)}28`,
+                  }),
+                  borderRadius:6, padding:'4px 10px', fontSize:11,
+                  color: cancelled ? 'rgba(107,114,128,.6)' : 'rgba(255,255,255,.75)',
+                  fontFamily:'monospace', cursor:'pointer',
+                }}>
+                <span style={{ width:5, height:5, borderRadius:'50%', background:cColor, flexShrink:0 }}/>
+                <span style={{
+                  textDecoration: cancelled ? 'line-through' : 'none',
+                  textDecorationColor: 'rgba(107,114,128,.5)',
+                }}>{cable.trim()}</span>
+                {cancelled
+                  ? <span style={{ color:'rgba(107,114,128,.5)', fontWeight:700, fontSize:10 }}>—</span>
+                  : <span style={{ color:cColor, fontWeight:700, fontSize:10 }}>{score}</span>
+                }
               </button>
             );
           })}
