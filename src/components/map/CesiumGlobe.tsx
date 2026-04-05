@@ -332,7 +332,90 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
     }
     initCesium();
     return () => { if (viewerRef.current) { viewerRef.current.destroy(); viewerRef.current = null; } };
-  }, []);
+     }, []);
+
+      // ── 英雄动效：响应 HeroSection 派发的阶段事件 ──────────────────────────────
+      // 与 deep-blue-locale-changed 完全一样的事件总线模式。
+      // 使用 refs 访问 Cesium 对象，确保闭包不过期，也不会触发任何 React 重渲染。
+      useEffect(() => {
+        const handleHeroPhase = (e: Event) => {
+          const Cesium  = cesiumRef.current;
+          const viewer  = viewerRef.current;
+          if (!Cesium || !viewer) return;
+
+          const phase = (e as CustomEvent).detail?.phase ?? 0;
+
+          switch (phase) {
+            case 2: {
+              // Act 2："日月之行" — 开启大气光照，晨昏线自然浮现
+              if (viewer.scene.globe) viewer.scene.globe.enableLighting = true;
+              if (viewer.scene.sun)   viewer.scene.sun.show = true;
+              // 将时钟定格在亚太地区黎明时分，让晨昏线落在亚太/印度洋之间
+              try {
+                viewer.clock.currentTime = Cesium.JulianDate.fromIso8601('2026-04-05T22:00:00Z');
+                viewer.clock.shouldAnimate = false;
+              } catch {}
+              break;
+            }
+
+            case 3: {
+              // Act 3："星汉灿烂" — 所有海缆切换为 PolylineGlowMaterial，发光如星河
+              for (const entity of allEntitiesRef.current) {
+                if (!entity.polyline) continue;
+                try {
+                  entity.polyline.material = new Cesium.PolylineGlowMaterialProperty({
+                    glowPower: 0.22,       // 辉光强度：足够耀眼但不过曝
+                    taperPower: 0.8,       // 线段两端轻微收细，更像光纤
+                    color: new Cesium.Color(0.02, 0.84, 0.63, 1.0), // 海鸥绿 #06D6A0
+                  });
+                  entity.polyline.width = new Cesium.ConstantProperty(3.5);
+                } catch {}
+              }
+              break;
+            }
+
+            case 4: {
+              // Act 4："权力掌控，系统就绪" — 镜头飞向亚太枢纽上空
+              try {
+                viewer.camera.flyTo({
+                  // 南海 / 东南亚枢纽区域：新加坡、香港、吕宋海峡一带
+                  destination: Cesium.Cartesian3.fromDegrees(112, 12, 6500000),
+                  duration: 3.5,
+                  easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+                });
+              } catch {}
+              break;
+            }
+
+            case 0: {
+              // 英雄结束：恢复全部默认设置
+              if (viewer.scene.globe) viewer.scene.globe.enableLighting = false;
+              if (viewer.scene.sun)   viewer.scene.sun.show = false;
+              try {
+                // 恢复相机到初始全球视角
+                viewer.camera.flyTo({
+                  destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000),
+                  duration: 1.5,
+                });
+              } catch {}
+              // 恢复所有海缆材质
+              for (const entity of allEntitiesRef.current) {
+                const meta = entityMetaRef.current.get(entity);
+                if (!meta || !entity.polyline) continue;
+                try {
+                  restoreCableMaterial(Cesium, entity, meta, useMapStore.getState().colorMode);
+                } catch {}
+              }
+              break;
+            }
+          }
+        };
+
+        window.addEventListener('deep-blue-hero-phase', handleHeroPhase);
+        return () => window.removeEventListener('deep-blue-hero-phase', handleHeroPhase);
+      }, []); // 只注册一次，refs 保证拿到最新 Cesium 对象
+
+  // ── 面板关闭时清除高亮 ─────────────────────────────────────────
 
   // ── 面板关闭时清除高亮 ─────────────────────────────────────────
   // 当用户点击 CableDetailPanel 的关闭按钮时，selectedCableId 变为 null。
