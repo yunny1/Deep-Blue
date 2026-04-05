@@ -256,30 +256,29 @@ export default function HeroSection() {
         </div>
 
         {/* 平台统计行：极低透明度，仅作数据锚点 */}
-        {phase >= 5 && (
-          <p style={{
-            fontFamily: 'monospace',
-            fontSize: 'clamp(9px, 0.95vw, 11px)',
-            color: 'rgba(200,220,240,0.30)',
-            letterSpacing: '0.1em',
-            margin: '0 0 32px',
-            lineHeight: 1.8,
-            animation: 'fade-gentle 1s ease forwards',
-            opacity: 0,
-          }}>
-            {zh
-              ? '全球 877 条海底光缆 · 实时主权情报 · AI 战略分析'
-              : '877 cables monitored globally · Sovereignty intelligence · AI strategy'}
-          </p>
-        )}
+        <p style={{
+          fontFamily: 'monospace',
+          fontSize: 'clamp(9px, 0.95vw, 11px)',
+          color: 'rgba(200,220,240,0.30)',
+          letterSpacing: '0.1em',
+          margin: '0 0 32px',
+          lineHeight: 1.8,
+          opacity: 0,
+          pointerEvents: 'none',
+          animation: phase >= 5 ? 'fade-gentle 1s ease forwards' : 'none',
+        }}>
+          {zh
+            ? '全球 877 条海底光缆 · 实时主权情报 · AI 战略分析'
+            : '877 cables monitored globally · Sovereignty intelligence · AI strategy'}
+        </p>
 
-        {/* 进入系统按钮：呼吸光动效 */}
-        {phase >= 5 && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 20,
-            animation: 'fade-gentle 0.8s ease 0.3s forwards',
-            opacity: 0,
-          }}>
+        {/* 进入系统按钮：始终在 DOM 里占位，phase < 5 时 pointerEvents 关闭 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 20,
+          opacity: 0,
+          pointerEvents: phase >= 5 ? 'auto' : 'none',
+          animation: phase >= 5 ? 'fade-gentle 0.8s ease 0.3s forwards' : 'none',
+        }}>
             <button
               onClick={dismiss}
               style={{
