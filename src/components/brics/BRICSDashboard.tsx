@@ -32,6 +32,20 @@ export default function BRICSDashboard(){
   const[sov,setSov]=useState<SovD|null>(null);
   const[loading,setLoading]=useState(true);
   const[selection,setSelection]=useState<Selection>({kind:'none'});
+
+  // 语言切换本地状态：与 SovereignNetworkAtlas 保持一致的模式
+  // 读 localStorage 初始值，toggle 时写回并广播事件
+  const [isZhLocal, setIsZhLocal] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? (localStorage.getItem('deep-blue-locale') ?? 'zh') === 'zh' : true
+  );
+  const toggleLang = useCallback(() => {
+    setIsZhLocal(prev => {
+      const next = !prev;
+      localStorage.setItem('deep-blue-locale', next ? 'zh' : 'en');
+      window.dispatchEvent(new Event('deep-blue-locale-changed'));
+      return next;
+    });
+  }, []);
   const mapRef=useRef<HTMLDivElement>(null);
 
   useEffect(()=>{
@@ -92,30 +106,35 @@ export default function BRICSDashboard(){
         @media print{.no-print{display:none!important} .bp{background:white!important;color:black!important} .bc{border-color:#ddd!important;background:white!important}}
       `}</style>
       <div className="bp">
-        <div style={{position:'sticky',top:0,zIndex:100,display:'flex',height:4}}>{FLAGS.map(c=><div key={c} style={{flex:1,background:c}} />)}</div>
+        <div style={{position:'sticky',top:0,zIndex:100,display:'flex',height:8}}>{FLAGS.map(c=><div key={c} style={{flex:1,background:c}} />)}</div>
 
-        {/* Hero */}
-        <section className="bs" style={{padding:'48px 32px 28px',maxWidth:1400,margin:'0 auto'}}>
-          <div style={{display:'flex',flexWrap:'wrap',gap:12,marginBottom:20,alignItems:'center'}}>
-            <a href="/" style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 12px',background:`${C.gold}10`,border:`1px solid ${C.gold}25`,borderRadius:20,textDecoration:'none'}}>
-              <span style={{fontSize:11,color:'#9CA3AF'}}>← {tb('back')}</span>
-            </a>
+        {/* Hero — 统一为自主权网络 header 风格：badge 左，返回地图 + 语言切换 右，无副标题 */}
+        <section className="bs" style={{padding:'36px 32px 24px',maxWidth:1400,margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+            {/* Badge：locale-aware，不再双语并列 */}
             <div style={{display:'inline-flex',alignItems:'center',gap:8,padding:'6px 14px',background:`${C.gold}08`,border:`1px solid ${C.gold}20`,borderRadius:20}}>
-              <span style={{width:8,height:8,borderRadius:'50%',background:C.gold}} />
-              <span style={{fontSize:12,fontWeight:600,letterSpacing:'.06em',color:C.gold,textTransform:'uppercase'}}>{tb('badge')}</span>
+              <span style={{width:8,height:8,borderRadius:'50%',background:C.gold,display:'inline-block'}} />
+              <span style={{fontSize:11,fontWeight:600,letterSpacing:'.08em',color:C.gold,textTransform:'uppercase' as const}}>
+                {isZhLocal ? '战略情报' : 'Strategic Intelligence'}
+              </span>
             </div>
-            {/* PDF 导出按钮 */}
-            <button className="no-print" onClick={handlePrint} style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:8,border:`1px solid ${C.gold}25`,background:'rgba(255,255,255,.03)',color:'rgba(255,255,255,.4)',cursor:'pointer',fontSize:11,fontWeight:600,transition:'all .2s'}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=`${C.gold}50`;e.currentTarget.style.color=C.gold;}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=`${C.gold}25`;e.currentTarget.style.color='rgba(255,255,255,.4)';}}>
-              📄 {isZh?'导出 PDF':'Export PDF'}
-            </button>
+            {/* 右侧：返回地图 + 语言切换 */}
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <a href="/" style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 14px',borderRadius:20,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.12)',color:'rgba(255,255,255,.7)',fontSize:12,fontWeight:500,textDecoration:'none',fontFamily:"'DM Sans',system-ui,sans-serif",transition:'background .15s'}}>
+                ← {isZhLocal ? '返回地图' : 'Back to Map'}
+              </a>
+              <button onClick={toggleLang}
+                style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 14px',borderRadius:20,cursor:'pointer',background:`${C.gold}10`,border:`1px solid ${C.gold}30`,color:C.gold,fontSize:12,fontWeight:600,fontFamily:"'DM Sans',system-ui,sans-serif",transition:'background .15s'}}
+                onMouseEnter={e=>{(e.currentTarget as HTMLButtonElement).style.background=`${C.gold}18`;}}
+                onMouseLeave={e=>{(e.currentTarget as HTMLButtonElement).style.background=`${C.gold}10`;}}>
+                {isZhLocal ? '🌐 EN' : '🌐 中文'}
+              </button>
+            </div>
           </div>
-          <h1 style={{fontSize:'clamp(28px,4.5vw,46px)',fontWeight:800,lineHeight:1.12,margin:'0 0 14px',color:'#F0E6C8',letterSpacing:'-.02em'}}>
-            <span style={{background:`linear-gradient(135deg,${C.gold},${C.goldLight})`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{isZh?'金砖':'BRICS'} </span>
-            {isZh?'海缆战略仪表盘':'Submarine Cable Strategic Dashboard'}
+          {/* 标题："金砖"两字已移除，副标题已移除 */}
+          <h1 style={{fontSize:'clamp(28px,4.5vw,46px)',fontWeight:800,lineHeight:1.12,margin:0,color:'#F0E6C8',letterSpacing:'-.02em'}}>
+            {isZhLocal ? '海缆战略仪表盘' : 'Submarine Cable Strategic Dashboard'}
           </h1>
-          <p style={{fontSize:15,color:'rgba(255,255,255,.4)',maxWidth:750,lineHeight:1.7,margin:0}}>{tb('subtitle')}</p>
         </section>
 
         {/* Stats */}
