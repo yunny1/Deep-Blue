@@ -106,7 +106,7 @@ export default function BRICSDashboard(){
         />
 
         {/* Stats */}
-        <section className="bs" style={{padding:'0 32px 24px',maxWidth:1400,margin:'0 auto',animationDelay:'.1s'}}>
+        <section className="bs" style={{padding:'32px 32px 28px',maxWidth:1400,margin:'0 auto',animationDelay:'.1s'}}>
           <SH t={tb('stats.title')} />
           {ov?(<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))',gap:12}}>
             <SC l={tb('stats.cables')} v={ov.brics.relatedCables} s={tb('stats.globalPct',{pct:cPct,n:ov.global.totalCables})} p={parseFloat(cPct)} c={C.gold} />
@@ -234,11 +234,51 @@ export default function BRICSDashboard(){
   );
 }
 
-function SH({t,s}:{t:string;s?:string}){return<div style={{marginBottom:20}}><h2 style={{fontSize:22,fontWeight:700,color:'#F0E6C8',margin:'0 0 4px'}}>{t}</h2>{s&&<p style={{fontSize:13,color:'rgba(255,255,255,.3)',margin:0,lineHeight:1.6}}>{s}</p>}</div>;}
-function SC({l,v,s,p,c}:{l:string;v:number;s?:string;p?:number;c:string}){return<div className="bc" style={{padding:20,display:'flex',flexDirection:'column',gap:5}}>
-  <span style={{fontSize:11,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:`${C.gold}80`}}>{l}</span>
-  <span style={{fontSize:32,fontWeight:700,color:'#F0E6C8',lineHeight:1.1,fontFeatureSettings:'"tnum"'}}><AN n={v} /></span>
-  {s&&<span style={{fontSize:12,color:'rgba(255,255,255,.35)'}}>{s}</span>}
-  {p!==undefined&&<div style={{marginTop:4,height:4,borderRadius:2,background:'rgba(255,255,255,.06)',overflow:'hidden'}}><div style={{width:`${Math.min(100,p)}%`,height:'100%',borderRadius:2,background:`linear-gradient(90deg,${c},${c}88)`,transition:'width 1s cubic-bezier(.22,1,.36,1)'}} /></div>}
-</div>;}
+function SH({t,s}:{t:string;s?:string}){
+  return(
+    <div style={{marginBottom:24}}>
+      {/* 小型装饰线，传递"章节分隔符"的情报文件感 */}
+      <div style={{width:28,height:2,background:'#2A9D8F',borderRadius:1,marginBottom:12}} />
+      <h2 style={{
+        fontFamily:"'Playfair Display',serif",
+        fontSize:28, fontWeight:800,
+        color:'#F0E6C8', margin:'0 0 4px',
+        letterSpacing:'-0.02em', lineHeight:1.1,
+      }}>{t}</h2>
+      {s&&<p style={{fontSize:13,color:'rgba(240,230,200,.3)',margin:0,lineHeight:1.6}}>{s}</p>}
+    </div>
+  );
+}
+
+function SC({l,v,s,p,c}:{l:string;v:number;s?:string;p?:number;c:string}){
+  return(
+    <div className="bc" style={{padding:'22px 24px',display:'flex',flexDirection:'column',gap:6}}>
+      {/* 标签：全大写 + 等宽字感 */}
+      <span style={{
+        fontSize:10, fontWeight:700, letterSpacing:'.14em',
+        textTransform:'uppercase', color:'rgba(240,230,200,0.35)',
+        fontFamily:"'DM Sans',system-ui",
+      }}>{l}</span>
+      {/* 数字：从 32px 升到 44px，奶油暖白，Playfair 字体 */}
+      <span style={{
+        fontFamily:"'Playfair Display',serif",
+        fontSize:44, fontWeight:800,
+        color:'#F0E6C8', lineHeight:1,
+        fontFeatureSettings:'"tnum"',
+      }}><AN n={v} /></span>
+      {s&&<span style={{fontSize:11,color:'rgba(240,230,200,.3)',lineHeight:1.5}}>{s}</span>}
+      {p!==undefined&&(
+        <div style={{marginTop:6,height:3,borderRadius:2,background:'rgba(255,255,255,.06)',overflow:'hidden'}}>
+          <div style={{
+            width:`${Math.min(100,p)}%`, height:'100%', borderRadius:2,
+            background:`linear-gradient(90deg,${c},${c}88)`,
+            transition:'width 1.2s cubic-bezier(.22,1,.36,1)',
+            boxShadow:`0 0 8px ${c}50`,
+          }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LB({h}:{h:number}){return<div style={{height:h,borderRadius:14,background:'rgba(26,45,74,.4)',animation:'pulse 1.5s ease-in-out infinite'}} />;}

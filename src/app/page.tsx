@@ -21,6 +21,7 @@ import AiToggle from '@/components/layout/AiToggle';
 import LangSwitcher from '@/components/layout/LangSwitcher';
 import type { CableHoverInfo } from '@/components/map/CesiumGlobe';
 import BRICSDropdown from '@/components/layout/BRICSDropdown';
+import HeroSection from '@/components/layout/HeroSection';
 import MobileUI from '@/components/mobile/MobileUI';
 
 const CesiumGlobe = dynamic(() => import('@/components/map/CesiumGlobe'), { ssr: false });
@@ -76,6 +77,11 @@ function HomeContent() {
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+
+      {/* 全屏英雄落地区：每次 session 首次进入时显示，覆盖在最顶层 */}
+      <HeroSection />
+
+      {/* ── 导航栏
 
       {/* ── 导航栏 ── */}
       <nav style={{
