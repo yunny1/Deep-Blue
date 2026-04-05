@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
   const cables = await prisma.cable.findMany({
     where: {
       isApproximateRoute: true,
-      routeGeojson: { not: null },
       reviewStatus: { notIn: ['ROUTE_FIXED', 'ROUTE_REVIEWED', 'MANUALLY_ADDED'] },
     },
     select: {
