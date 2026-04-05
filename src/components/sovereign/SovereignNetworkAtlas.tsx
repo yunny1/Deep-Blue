@@ -805,9 +805,17 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compac
   compact?: boolean;
 }) {
   // compact 模式只显示三列，去掉"评级"列（信息和风险评分高度重复）
-  const headers = compact
-    ? [t.tableCol1, t.tableCol2, t.tableCol3]
-    : [t.tableCol1, t.tableCol2, t.tableCol3, t.tableCol4];
+  // compact 模式保留四列，但评级列用单字缩写，控制总宽度
+  const headers = [t.tableCol1, t.tableCol2, t.tableCol3, t.tableCol4];
+
+  // compact 模式下的评级缩写（单字，节省列宽）
+  const compactRatingLabel = (score: number): string => {
+    if (score <= 20) return isZh ? '低' : 'L';
+    if (score <= 40) return isZh ? '中' : 'M';
+    if (score <= 60) return isZh ? '中' : 'M';
+    if (score <= 75) return isZh ? '较' : 'H';
+    return isZh ? '极' : '!';
+  };
 
   return (
     <div style={{
@@ -901,17 +909,26 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compac
                   {cable.routeCount}
                 </td>
 
-                {/* 评级列：仅非 compact 模式显示 */}
-                {!compact && (
-                  <td style={{ padding:'10px', textAlign:'center' }}>
-                    <span style={{ fontSize:10, padding:'2px 8px', borderRadius:12, fontWeight:600,
-                      background:cable.score<=40?'rgba(16,112,86,.25)':cable.score<=60?'rgba(120,90,10,.25)':'rgba(120,20,20,.25)',
-                      color:cable.score<=40?'#4ade80':cable.score<=60?'#fbbf24':'#f87171',
-                      border:`1px solid ${cable.score<=40?'rgba(74,222,128,.3)':cable.score<=60?'rgba(251,191,36,.3)':'rgba(248,113,113,.3)'}`}}>
-                      {t.tableRiskLabel(cable.score)}
-                    </span>
-                  </td>
-                )}
+                {/* 评级列：compact 模式用单字缩写 + 极小 badge，全宽模式用完整标签 */}
+                <td style={{ padding: compact ? '8px 4px' : '10px', textAlign:'center' }}>
+                  <span style={{
+                    fontSize: compact ? 10 : 10,
+                    padding: compact ? '2px 5px' : '2px 8px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    background: cable.score<=40 ? 'rgba(16,112,86,.25)'
+                      : cable.score<=60 ? 'rgba(120,90,10,.25)' : 'rgba(120,20,20,.25)',
+                    color: cable.score<=40 ? '#4ade80'
+                      : cable.score<=60 ? '#fbbf24' : '#f87171',
+                    border: `1px solid ${cable.score<=40 ? 'rgba(74,222,128,.3)'
+                      : cable.score<=60 ? 'rgba(251,191,36,.3)' : 'rgba(248,113,113,.3)'}`,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {compact ? compactRatingLabel(cable.score) : t.tableRiskLabel(cable.score)}
+                  </span>
+                </td>
+
+
               </tr>
             );
           })}
