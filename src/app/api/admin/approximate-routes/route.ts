@@ -48,7 +48,6 @@ export async function POST(req: NextRequest) {
   const where = body.all
     ? {
         isApproximateRoute: true,
-        routeGeojson: { not: null },
         reviewStatus: { notIn: ['ROUTE_FIXED', 'ROUTE_REVIEWED', 'MANUALLY_ADDED'] },
       }
     : { slug: { in: body.slugs! } };
