@@ -7,7 +7,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
-import LangSwitcher from '@/components/layout/LangSwitcher';
+import SubPageHeader from '@/components/layout/SubPageHeader';
 
 interface CountryImpact {
   countryCode: string; countryName: string; impactLevel: string;
@@ -78,21 +78,12 @@ function SimulateContent() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0D1B2A', color: '#EDF2F7' }}>
-      <nav style={{ height: 56, backgroundColor: 'rgba(13,27,42,0.95)', borderBottom: '1px solid rgba(42,157,143,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #1E6091, #2A9D8F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'white' }}>DB</div>
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#EDF2F7' }}>DEEP BLUE</span>
-          </a>
-          <span style={{ fontSize: 13, color: '#EF4444', padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            {locale === 'zh' ? '⚡ 断缆模拟器' : '⚡ Outage Simulator'}
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <a href="/" style={{ fontSize: 12, color: '#6B7280', textDecoration: 'none' }}>{locale === 'zh' ? '← 返回地图' : '← Back to Map'}</a>
-          <LangSwitcher />
-        </div>
-      </nav>
+      <SubPageHeader
+        badgeZh="分析工具"
+        badgeEn="Analysis Tool"
+        titleZh="断缆模拟器"
+        titleEn="Outage Simulator"
+      />
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: 24 }}>
         {/* 搜索框 */}

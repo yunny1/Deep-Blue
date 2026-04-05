@@ -7,7 +7,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
-import LangSwitcher from '@/components/layout/LangSwitcher';
+import SubPageHeader from '@/components/layout/SubPageHeader';
 import CountryCodeBadge from '@/components/ui/CountryCodeBadge';
 import MultiCountryExport from '@/components/country/MultiCountryExport';
 
@@ -607,37 +607,14 @@ function CountryContent() {
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
       `}</style>
 
-      {/* 导航栏 */}
-      <nav style={{ height: 56, backgroundColor: 'rgba(13,27,42,0.97)', borderBottom: '1px solid rgba(42,157,143,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(12px)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/icons/deep-blue-icon.png" alt="Deep Blue" style={{ width: 28, height: 28, borderRadius: 5 }} />
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#EDF2F7' }}>DEEP BLUE</span>
-          </a>
-          <span style={{ fontSize: 11, color: '#2A9D8F', padding: '3px 8px', borderRadius: 4, backgroundColor: 'rgba(42,157,143,0.08)', border: '1px solid rgba(42,157,143,0.2)', fontWeight: 600, letterSpacing: 0.5 }}>
-            {zh ? '国家海缆分析' : 'Country Analysis'}
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <a href="/" style={{ fontSize: 12, color: '#6B7280', textDecoration: 'none' }}>{zh ? '← 返回地图' : '← Back to Map'}</a>
-          <LangSwitcher />
-        </div>
-      </nav>
+      <SubPageHeader
+        badgeZh="分析工具"
+        badgeEn="Analysis Tool"
+        titleZh="国家海缆分析"
+        titleEn="Country Analysis"
+      />
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
-
-        {/* ── 页面标题 ── */}
-        <div style={{ marginBottom: 28, animation: 'fadeInUp 0.5s ease' }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#EDF2F7', margin: '0 0 8px', lineHeight: 1.3 }}>
-            {zh ? '全球海缆国家分析' : 'Global Cable Country Analysis'}
-          </h1>
-          <p style={{ fontSize: 14, color: '#6B7280', margin: 0, lineHeight: 1.6 }}>
-            {zh
-              ? '按国家维度查看登陆站、海缆类型与连接关系，支持中英文数据导出。'
-              : 'View landing stations, cable types and connectivity by country, with CSV export.'
-            }
-          </p>
-        </div>
 
         {/* ── 全局海缆类型统计横幅 ── */}
         {globalStats && (

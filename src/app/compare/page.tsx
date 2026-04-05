@@ -6,7 +6,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
-import LangSwitcher from '@/components/layout/LangSwitcher';
+import SubPageHeader from '@/components/layout/SubPageHeader';
 
 interface CableData {
   name: string; slug: string; status: string; lengthKm: number | null;
@@ -86,26 +86,12 @@ function CompareContent() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0D1B2A', color: '#EDF2F7' }}>
 
-      {/* 导航栏 */}
-      <nav style={{
-        height: 56, backgroundColor: 'rgba(13,27,42,0.95)',
-        borderBottom: '1px solid rgba(42,157,143,0.2)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/icons/deep-blue-icon.png" alt="Deep Blue" style={{ width: 28, height: 28, borderRadius: 5 }} />
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#EDF2F7' }}>DEEP BLUE</span>
-          </a>
-          <span style={{ fontSize: 12, color: '#6B7280', padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            {zh ? '海缆对比' : 'Cable Comparison'}
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <a href="/" style={{ fontSize: 12, color: '#6B7280', textDecoration: 'none' }}>{zh ? '← 返回地图' : '← Back to Map'}</a>
-          <LangSwitcher />
-        </div>
-      </nav>
+      <SubPageHeader
+        badgeZh="分析工具"
+        badgeEn="Analysis Tool"
+        titleZh="海缆对比"
+        titleEn="Cable Comparison"
+      />
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
 
