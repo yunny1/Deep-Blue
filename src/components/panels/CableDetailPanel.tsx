@@ -103,8 +103,6 @@ export default function CableDetailPanel() {
 
   return (
     <>
-      {/* 背景遮罩已移除：保留遮罩会拦截地球上的所有点击事件，导致面板无法关闭时意外关闭。
-          关闭面板请使用右上角的 ✕ 按钮。 */}
       <div style={{
         position: 'fixed', top: 56, right: 0, bottom: 0, width: 420,
         paddingTop: 'env(safe-area-inset-top, 0px)',
@@ -210,21 +208,16 @@ export default function CableDetailPanel() {
                 </div>
               )}
 
-              {/* Stations — 中文页面优先显示 nameZh */}
+              {/* Stations */}
               {activeTab === 'stations' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {cable.landingStations && cable.landingStations.length > 0 ? (
                     cable.landingStations.map((ls, i) => {
                       const station  = ls.landingStation;
-                      // 中文页面：优先 nameZh，没有则显示英文名并标注
-                      const dispName = zh
-                        ? (station.nameZh || station.name)
-                        : station.name;
-                      // 国家名
+                      const dispName = zh ? (station.nameZh || station.name) : station.name;
                       const dispCountry = zh
                         ? (station.country?.nameZh || station.country?.nameEn || station.countryCode)
                         : (station.country?.nameEn || station.countryCode);
-                      // 无中文名时在英文名后加灰色角标
                       const noZh = zh && !station.nameZh;
 
                       return (
@@ -296,7 +289,7 @@ export default function CableDetailPanel() {
                             </div>
                           )}
                           <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6 }}>
-                            {t('common.source')}: {item.source}
+                            {item.source}
                           </div>
                         </a>
                       ))}
@@ -310,8 +303,11 @@ export default function CableDetailPanel() {
                       </div>
                     </div>
                   )}
+                  {/* 数据来源说明——不再使用翻译 key，直接写死两语版本 */}
                   <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(42, 157, 143, 0.04)', border: '1px solid var(--border-accent)', fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    {t('detail.newsSource')}
+                    {zh
+                      ? '数据来源：SubTel Forum 和 Submarine Networks RSS'
+                      : 'Source: SubTel Forum and Submarine Networks RSS'}
                   </div>
                 </div>
               )}

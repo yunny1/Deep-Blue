@@ -55,7 +55,6 @@ function CountBar({ count, maxCount, color }: { count: number; maxCount: number;
   );
 }
 
-// 年份范围组件（年代模式 + 叠加筛选复用）
 function YearRangeFilter({ zh, filterYearRange, setFilterYearRange }: { zh: boolean; filterYearRange: [number, number]; setFilterYearRange: (r: [number, number]) => void }) {
   return (
     <div>
@@ -117,6 +116,14 @@ export default function FilterPanel() {
     { key: 'year',     label: zh ? '年代'   : 'Age'      },
   ];
 
+  // 一键清除所有筛选条件，恢复默认状态
+  const clearAllFilters = useCallback(() => {
+    setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: true });
+    setFilterVendors([]);
+    setFilterOperators([]);
+    setFilterYearRange([1990, 2030]);
+  }, [setFilterStatuses, setFilterVendors, setFilterOperators, setFilterYearRange]);
+
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
     const activeStatuses = Object.entries(filterStatuses).filter(([, v]) => v).map(([k]) => k);
@@ -175,8 +182,7 @@ export default function FilterPanel() {
   const togglePrimary = (key: string) => {
     if (colorMode === 'status') {
       const current = filterStatuses[key as keyof typeof filterStatuses] ?? true;
-      const activeCount = Object.values(filterStatuses).filter(Boolean).length;
-      if (current && activeCount === 1) return;
+      // 移除"至少保留一个"的守卫——允许全部取消选中（地球显示空）
       setFilterStatuses({ ...filterStatuses, [key]: !current });
     } else if (colorMode === 'vendor') {
       if (filterVendors.length === 0) {
@@ -209,8 +215,8 @@ export default function FilterPanel() {
   const toggleSelectAll = () => {
     if (colorMode === 'status') {
       if (isAllSelected()) {
-        // 取消全选时至少保留一个，保留在役
-        setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: false, PLANNED: false, DECOMMISSIONED: false });
+        // 真正的取消全选：全部设为 false
+        setFilterStatuses({ IN_SERVICE: false, UNDER_CONSTRUCTION: false, PLANNED: false, DECOMMISSIONED: false });
       } else {
         setFilterStatuses({ IN_SERVICE: true, UNDER_CONSTRUCTION: true, PLANNED: true, DECOMMISSIONED: true });
       }
@@ -248,8 +254,9 @@ export default function FilterPanel() {
       <div style={{ backgroundColor: 'rgba(13,27,42,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(42,157,143,0.2)', borderRadius: 12, width: 240, overflow: 'hidden', transition: 'all 0.3s ease' }}>
 
         {/* 标题栏 */}
-        <div onClick={() => setIsExpanded(!isExpanded)} style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: isExpanded ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isExpanded ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+          {/* 左侧标题区可点击展开/收起 */}
+          <div onClick={() => setIsExpanded(!isExpanded)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1 }}>
             <span style={{ fontSize: 14 }}>🔧</span>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#2A9D8F', textTransform: 'uppercase' as const, letterSpacing: 1 }}>
               {t('filter.title')}
@@ -260,7 +267,26 @@ export default function FilterPanel() {
               </span>
             )}
           </div>
-          <span style={{ fontSize: 14, color: '#6B7280', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</span>
+          {/* 一键清除按钮（有筛选项时显示） */}
+          {activeFilterCount > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); clearAllFilters(); }}
+              style={{
+                fontSize: 9, color: '#EF4444', cursor: 'pointer',
+                padding: '2px 7px', borderRadius: 4, marginRight: 6,
+                border: '1px solid rgba(239,68,68,0.3)',
+                backgroundColor: 'rgba(239,68,68,0.08)',
+                fontWeight: 500, letterSpacing: 0.3,
+                transition: 'all 0.15s',
+              }}
+            >
+              {zh ? '× 清除全部' : '× Clear all'}
+            </button>
+          )}
+          <span
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{ fontSize: 14, color: '#6B7280', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', cursor: 'pointer' }}
+          >▾</span>
         </div>
 
         {isExpanded && (
@@ -369,8 +395,7 @@ export default function FilterPanel() {
                         const count  = options?.statuses?.find((s: any) => s.key === key)?.count ?? 0;
                         return (
                           <div key={key} onClick={() => {
-                            const activeCount = Object.values(filterStatuses).filter(Boolean).length;
-                            if (active && activeCount === 1) return;
+                            // 跨维度状态也移除"至少保留一个"守卫
                             setFilterStatuses({ ...filterStatuses, [key]: !active });
                           }} style={{
                             display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px',
