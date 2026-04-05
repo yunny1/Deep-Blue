@@ -16,6 +16,14 @@ const GOLD = '#D4AF37'; const GOLD_LIGHT = '#F0E6C8'; const GOLD_DIM = '#D4AF372
 const NAVY = '#0A1628'; const CARD_BG = 'rgba(26,45,74,.5)';
 const FLAGS = ['#0066B3','#D32F2F','#FFC107','#388E3C','#F57C00'];
 
+// ── 已取消/死在计划中的海缆 ────────────────────────────────────────────────
+// 这里维护一个名称集合，视觉上标注为"不可用"但数据保留供参考。
+// 如果未来有更多海缆取消，直接在这里追加名称即可，不需要改任何其他地方。
+const CANCELLED_CABLES = new Set([
+  'BtoBE',
+  'BtoB-E',   // 可能的别名变体
+]);
+
 // ── i18n 文案 ────────────────────────────────────────────────────────────────
 const T = {
   zh: {
@@ -265,17 +273,31 @@ export default function SovereignNetworkAtlas() {
   }), [routes, filterSafety, filterFrom, filterTo]);
 
   const allUniqueCables = useMemo(() => {
-    const seen = new Map<string, { name: string; score: number; routeCount: number }>();
+    const seen = new Map<string, { name: string; score: number; routeCount: number; isCancelled: boolean }>();
     for (const r of filtered) {
-    const cables = (r.cables ?? '').split(' | ').filter(Boolean);
-    const scores = (r.riskScores ?? '').split(' | ').map(Number);
+      const cables = (r.cables ?? '').split(' | ').filter(Boolean);
+      const scores = (r.riskScores ?? '').split(' | ').map(Number);
       cables.forEach((cable, i) => {
         const key = cable.trim().toLowerCase();
-        if (!seen.has(key)) seen.set(key, { name: cable.trim(), score: scores[i] ?? r.maxRisk, routeCount: 1 });
-        else seen.get(key)!.routeCount++;
+        const name = cable.trim();
+        if (!seen.has(key)) {
+          seen.set(key, {
+            name,
+            score: scores[i] ?? r.maxRisk,
+            routeCount: 1,
+            // 检查名称是否在已取消集合里（大小写不敏感）
+            isCancelled: CANCELLED_CABLES.has(name),
+          });
+        } else {
+          seen.get(key)!.routeCount++;
+        }
       });
     }
-    return Array.from(seen.values()).sort((a, b) => b.score - a.score);
+    // 已取消的海缆排到最后（仍然可见，但不占主要位置）
+    return Array.from(seen.values()).sort((a, b) => {
+      if (a.isCancelled !== b.isCancelled) return a.isCancelled ? 1 : -1;
+      return b.score - a.score;
+    });
   }, [filtered]);
 
   const fromOpts = useMemo(() => [...new Set(routes.map(r => r.from))].sort(), [routes]);
@@ -499,6 +521,8 @@ export default function SovereignNetworkAtlas() {
                 ? <div style={{ padding:24, textAlign:'center', fontSize:13, color:'rgba(255,255,255,.3)' }}>{t.noRoute}</div>
                 : filtered.map(r => {
                   const isSel = selectedId === r.id;
+                  // 检查这条路径是否依赖了已取消的海缆
+                  const hasCancelled = (r.cables ?? '').split(' | ').some(c => CANCELLED_CABLES.has(c.trim()));
                   return (
                     <button key={r.id} className={`sna-route${isSel?' sel':''}`} onClick={() => handleSelect(isSel?null:r.id)}>
                       <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
@@ -508,6 +532,17 @@ export default function SovereignNetworkAtlas() {
                           overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                           {xlate(r.from,isZh)} → {xlate(r.to,isZh)}
                         </span>
+                        {/* 路径含已取消海缆时显示警告角标，放在安全等级 badge 之前 */}
+                        {hasCancelled && (
+                          <span style={{
+                            fontSize:9, padding:'1px 5px', borderRadius:4, fontWeight:600,
+                            background:'rgba(107,114,128,.18)', border:'1px solid rgba(107,114,128,.3)',
+                            color:'rgba(156,163,175,.8)', flexShrink:0,
+                            letterSpacing:'.03em',
+                          }} title={isZh ? '该路径包含已取消的海缆，实际可用性存疑' : 'Route contains cancelled cable'}>
+                            {isZh ? '含取消缆' : 'CANCELLED'}
+                          </span>
+                        )}
                         <Badge safety={r.safety} isZh={isZh}/>
                       </div>
                       <div style={{ fontSize:10, color:'rgba(255,255,255,.22)',
@@ -806,7 +841,7 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
 //   1↔2 列展开：每个 td 内部 div 的 max-width + opacity 过渡
 //               （不直接对 td 做动画，因为 table 布局会忽略 width transition）
 function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compact = false }: {
-  cables: { name: string; score: number; routeCount: number }[];
+  cables: { name: string; score: number; routeCount: number; isCancelled?: boolean }[];
   total: number; filtered: number; isZh: boolean; t: typeof T.zh;
   onCableClick: (n: string, s: number, r: number) => void;
   compact?: boolean;
@@ -948,7 +983,9 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compac
 
           <tbody>
             {cables.map((cable, i) => {
-              const color = riskColor(cable.score);
+              const cancelled = cable.isCancelled ?? false;
+              // 已取消的海缆用灰色替代风险颜色，不传达风险等级（因为它不会建成）
+              const color = cancelled ? 'rgba(107,114,128,.6)' : riskColor(cable.score);
               return (
                 <tr
                   key={i}
@@ -956,50 +993,68 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compac
                   style={{
                     borderBottom: '1px solid rgba(255,255,255,.03)',
                     cursor: 'pointer', transition: 'background .12s',
+                    // 已取消的行整体降低对比度
+                    opacity: cancelled ? 0.55 : 1,
                   }}
                   onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = `${GOLD}07`}
                   onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}
                 >
-
-                  {/* ── 名称列：彩色圆点（隐式表达评级）+ 截断名称 ── */}
-                  {/* 圆点的颜色本身就是评级信息，不需要额外文字 */}
-                  <td style={{ padding: '8px 14px', color: 'rgba(255,255,255,.85)' }}>
+                  {/* ── 名称列 ── */}
+                  <td style={{ padding: '8px 14px', color: cancelled ? 'rgba(156,163,175,.7)' : 'rgba(255,255,255,.85)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {/* 圆点：已取消时无辉光，颜色为灰 */}
                       <span style={{
                         width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                        background: color, boxShadow: `0 0 6px ${color}90`,
+                        background: color,
+                        boxShadow: cancelled ? 'none' : `0 0 6px ${color}90`,
                       }} />
                       <span style={{
                         overflow: 'hidden', textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap', maxWidth: 112, display: 'block',
                         fontSize: 12,
+                        // 已取消：删除线 + 降低对比度
+                        textDecoration: cancelled ? 'line-through' : 'none',
+                        textDecorationColor: 'rgba(107,114,128,.5)',
                       }} title={cable.name}>{cable.name}</span>
+                      {/* 已取消 badge */}
+                      {cancelled && (
+                        <span style={{
+                          fontSize: 8, padding: '1px 4px', borderRadius: 3, fontWeight: 700,
+                          background: 'rgba(107,114,128,.15)', border: '1px solid rgba(107,114,128,.25)',
+                          color: 'rgba(156,163,175,.8)', flexShrink: 0, letterSpacing: '.03em',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {isZh ? '已取消' : 'CANCELLED'}
+                        </span>
+                      )}
                     </div>
                   </td>
 
-                  {/* ── 评分列：数字 + 细条形 ── */}
+                  {/* ── 评分列：已取消时显示"—"替代数字 ── */}
                   <td style={{ padding: '8px 8px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color, lineHeight: 1 }}>
-                        {cable.score}
-                      </span>
-                      <div style={{
-                        width: 28, height: 3,
-                        background: 'rgba(255,255,255,.07)', borderRadius: 2, overflow: 'hidden',
-                      }}>
-                        <div style={{ width: `${cable.score}%`, height: '100%', background: color, borderRadius: 2 }} />
+                    {cancelled ? (
+                      <span style={{ fontSize: 11, color: 'rgba(107,114,128,.5)' }}>—</span>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color, lineHeight: 1 }}>
+                          {cable.score}
+                        </span>
+                        <div style={{
+                          width: 28, height: 3,
+                          background: 'rgba(255,255,255,.07)', borderRadius: 2, overflow: 'hidden',
+                        }}>
+                          <div style={{ width: `${cable.score}%`, height: '100%', background: color, borderRadius: 2 }} />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </td>
 
-                  {/* ── 路径数列：inner div 做 max-width 滑入动画 ── */}
-                  {/* Level 1→2 时从 max-width:0 过渡到 max-width:50px，视觉上是列从右侧滑出 */}
+                  {/* ── 路径数列（Level 2 滑入）── */}
                   <td style={{ padding: 0, overflow: 'hidden', textAlign: 'center' }}>
                     <div style={{
                       maxWidth: isFull ? '50px' : '0px',
                       opacity: isFull ? 1 : 0,
                       overflow: 'hidden',
-                      // 轻微的延迟让标题先动，数据列跟上，视觉更有层次感
                       transition: 'max-width 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease 0.08s',
                       padding: isFull ? '8px 6px' : '8px 0',
                       fontSize: 12, color: 'rgba(255,255,255,.45)',
@@ -1009,7 +1064,7 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compac
                     </div>
                   </td>
 
-                  {/* ── 评级列：和路径数列同步滑入，但稍有延迟 ── */}
+                  {/* ── 评级列（Level 2 滑入，已取消时显示"—"）── */}
                   <td style={{ padding: 0, overflow: 'hidden', textAlign: 'center' }}>
                     <div style={{
                       maxWidth: isFull ? '60px' : '0px',
@@ -1019,20 +1074,23 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compac
                       padding: isFull ? '8px 4px' : '8px 0',
                       whiteSpace: 'nowrap',
                     }}>
-                      <span style={{
-                        fontSize: 9, padding: '2px 5px', borderRadius: 6, fontWeight: 700,
-                        background: cable.score <= 40 ? 'rgba(16,112,86,.25)'
-                          : cable.score <= 60 ? 'rgba(120,90,10,.25)' : 'rgba(120,20,20,.25)',
-                        color: cable.score <= 40 ? '#4ade80'
-                          : cable.score <= 60 ? '#fbbf24' : '#f87171',
-                        border: `1px solid ${cable.score <= 40 ? 'rgba(74,222,128,.3)'
-                          : cable.score <= 60 ? 'rgba(251,191,36,.3)' : 'rgba(248,113,113,.3)'}`,
-                      }}>
-                        {t.tableRiskLabel(cable.score)}
-                      </span>
+                      {cancelled ? (
+                        <span style={{ fontSize: 9, color: 'rgba(107,114,128,.5)' }}>—</span>
+                      ) : (
+                        <span style={{
+                          fontSize: 9, padding: '2px 5px', borderRadius: 6, fontWeight: 700,
+                          background: cable.score <= 40 ? 'rgba(16,112,86,.25)'
+                            : cable.score <= 60 ? 'rgba(120,90,10,.25)' : 'rgba(120,20,20,.25)',
+                          color: cable.score <= 40 ? '#4ade80'
+                            : cable.score <= 60 ? '#fbbf24' : '#f87171',
+                          border: `1px solid ${cable.score <= 40 ? 'rgba(74,222,128,.3)'
+                            : cable.score <= 60 ? 'rgba(251,191,36,.3)' : 'rgba(248,113,113,.3)'}`,
+                        }}>
+                          {t.tableRiskLabel(cable.score)}
+                        </span>
+                      )}
                     </div>
                   </td>
-
                 </tr>
               );
             })}
