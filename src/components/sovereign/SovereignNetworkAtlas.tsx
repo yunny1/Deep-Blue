@@ -540,7 +540,7 @@ export default function SovereignNetworkAtlas() {
         )}
 
         {/* ── Tab 内容：海缆汇总 ────────────────────── */}
-        {leftTab === 'cables' && (
+         {leftTab === 'cables' && (
           <div style={{ flex:1, overflowY:'auto' }}>
             <AllCablesTable
               cables={allUniqueCables}
@@ -549,6 +549,7 @@ export default function SovereignNetworkAtlas() {
               isZh={isZh}
               t={t}
               onCableClick={handleTableCableClick}
+              compact={true}
             />
           </div>
         )}
@@ -799,10 +800,12 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
 }
 
 // ── AllCablesTable ────────────────────────────────────────────────────────────
-function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick }: {
+function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compact = false }: {
   cables: { name: string; score: number; routeCount: number }[];
-  total: number; filtered: number; isZh: boolean; t: typeof T.zh;
+  total: number; filtered: number; isZh: boolean;
+  t: typeof T.zh;
   onCableClick: (n: string, s: number, r: number) => void;
+  compact?: boolean;  // true = 面板内紧凑模式，隐藏提示文字，截断长名称
 }) {
   return (
     <div style={{ background:CARD_BG, border:`1px solid ${GOLD_DIM}`, borderRadius:14, backdropFilter:'blur(12px)', padding:'20px 24px' }}>
@@ -833,14 +836,20 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick }: {
                 style={{ borderBottom:'1px solid rgba(255,255,255,.04)', cursor:'pointer', transition:'background .1s' }}
                 onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background='rgba(212,175,55,.06)'}
                 onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
-                <td style={{ padding:'10px', color:'rgba(255,255,255,.85)' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <td style={{ padding: compact ? '7px 8px' : '10px', color:'rgba(255,255,255,.85)' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <span style={{ width:6, height:6, borderRadius:'50%', background:color, boxShadow:`0 0 5px ${color}`, flexShrink:0 }}/>
-                    {cable.name}
-                    <span style={{ fontSize:10, color:'rgba(255,255,255,.25)' }}>{t.tableMapHint}</span>
+                    <span style={{
+                      overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                      maxWidth: compact ? 120 : 'none',
+                    }} title={cable.name}>{cable.name}</span>
+                    {/* compact 模式下隐藏"↗ 地图定位"提示，通过 cursor:pointer 已足够传达可点击性 */}
+                    {!compact && (
+                      <span style={{ fontSize:10, color:'rgba(255,255,255,.25)', flexShrink:0 }}>{t.tableMapHint}</span>
+                    )}
                   </div>
                 </td>
-                <td style={{ padding:'10px', textAlign:'center' }}>
+                <td style={{ padding: compact ? '7px 6px' : '10px', textAlign:'center' }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
                     <span style={{ fontSize:13, fontWeight:700, color }}>{cable.score}</span>
                     <div style={{ width:48, height:4, background:'rgba(255,255,255,.08)', borderRadius:2, overflow:'hidden' }}>
@@ -848,8 +857,8 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick }: {
                     </div>
                   </div>
                 </td>
-                <td style={{ padding:'10px', textAlign:'center', color:'rgba(255,255,255,.5)' }}>{cable.routeCount}</td>
-                <td style={{ padding:'10px', textAlign:'center' }}>
+                <td style={{ padding: compact ? '7px 6px' : '10px', textAlign:'center', color:'rgba(255,255,255,.5)' }}>{cable.routeCount}</td>
+                <td style={{ padding: compact ? '7px 6px' : '10px', textAlign:'center' }}>
                   <span style={{ fontSize:10, padding:'2px 8px', borderRadius:12, fontWeight:600,
                     background:cable.score<=40?'rgba(16,112,86,.25)':cable.score<=60?'rgba(120,90,10,.25)':'rgba(120,20,20,.25)',
                     color:cable.score<=40?'#4ade80':cable.score<=60?'#fbbf24':'#f87171',
