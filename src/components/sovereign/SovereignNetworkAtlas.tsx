@@ -413,26 +413,22 @@ export default function SovereignNetworkAtlas() {
           {FLAGS.map(c => <div key={c} style={{ flex:1, background:c }} />)}
         </div>
 
-        {/* 面板头部：badge + 标题 + 上传按钮 */}
+        {/* 面板头部：badge + 标题（xlsx 上传按钮已移除）*/}
         <div style={{ padding:'16px 18px 14px', flexShrink:0, borderBottom:`1px solid ${GOLD}10` }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'4px 12px',
-              background:`${GOLD}08`, border:`1px solid ${GOLD}22`, borderRadius:20 }}>
-              <span style={{ width:6, height:6, borderRadius:'50%', background:GOLD,
-                boxShadow:`0 0 8px ${GOLD}80`, display:'inline-block' }}/>
-              <span style={{ fontSize:10, color:`${GOLD}BB`, letterSpacing:'.1em',
-                textTransform:'uppercase' as const, fontWeight:600 }}>{t.badge}</span>
-            </div>
-            {/* xlsx 上传按钮：紧凑版，放右上角 */}
-            <label style={{ cursor:'pointer', fontSize:10, color:`${GOLD}80`,
-              padding:'3px 8px', borderRadius:6, border:`1px solid ${GOLD}20`,
-              background:`${GOLD}06`, transition:'all .15s' }}
-              title={t.uploadBtn}>
-              ↑ xlsx
-              <input type="file" accept=".xlsx" onChange={handleUpload} style={{ display:'none' }} />
-            </label>
+          {/* Badge 独占一行，不与任何控件竞争空间 */}
+          <div style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'4px 12px',
+            background:`${GOLD}08`, border:`1px solid ${GOLD}22`, borderRadius:20, marginBottom:10 }}>
+            <span style={{ width:6, height:6, borderRadius:'50%', background:GOLD,
+              boxShadow:`0 0 8px ${GOLD}80`, display:'inline-block' }}/>
+            <span style={{ fontSize:10, color:`${GOLD}BB`, letterSpacing:'.1em',
+              textTransform:'uppercase' as const, fontWeight:600 }}>{t.badge}</span>
           </div>
-          <h1 style={{ fontSize:18, fontWeight:800, color:GOLD_LIGHT, margin:0, lineHeight:1.1 }}>{t.title}</h1>
+          {/* 标题：Playfair Display，与其他子页面保持一致的字体感 */}
+          <h1 style={{
+            fontFamily:"'Playfair Display',serif",
+            fontSize:22, fontWeight:800, color:GOLD_LIGHT,
+            margin:0, lineHeight:1.1, letterSpacing:'-0.01em',
+          }}>{t.title}</h1>
         </div>
 
         {/* AI 去重消息提示 */}
@@ -540,7 +536,7 @@ export default function SovereignNetworkAtlas() {
         )}
 
         {/* ── Tab 内容：海缆汇总 ────────────────────── */}
-         {leftTab === 'cables' && (
+        {leftTab === 'cables' && (
           <div style={{ flex:1, overflowY:'auto' }}>
             <AllCablesTable
               cables={allUniqueCables}
@@ -800,31 +796,62 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
 }
 
 // ── AllCablesTable ────────────────────────────────────────────────────────────
+// compact=true 时：三列（名称/评分/路径数），隐藏评级列，表头不换行，名称截断
+// compact=false 时：四列完整显示（用于未来可能的宽屏视图）
 function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compact = false }: {
   cables: { name: string; score: number; routeCount: number }[];
-  total: number; filtered: number; isZh: boolean;
-  t: typeof T.zh;
+  total: number; filtered: number; isZh: boolean; t: typeof T.zh;
   onCableClick: (n: string, s: number, r: number) => void;
-  compact?: boolean;  // true = 面板内紧凑模式，隐藏提示文字，截断长名称
+  compact?: boolean;
 }) {
+  // compact 模式只显示三列，去掉"评级"列（信息和风险评分高度重复）
+  const headers = compact
+    ? [t.tableCol1, t.tableCol2, t.tableCol3]
+    : [t.tableCol1, t.tableCol2, t.tableCol3, t.tableCol4];
+
   return (
-    <div style={{ background:CARD_BG, border:`1px solid ${GOLD_DIM}`, borderRadius:14, backdropFilter:'blur(12px)', padding:'20px 24px' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+    <div style={{
+      background: compact ? 'transparent' : CARD_BG,
+      border: compact ? 'none' : `1px solid ${GOLD_DIM}`,
+      borderRadius: compact ? 0 : 14,
+      backdropFilter: compact ? 'none' : 'blur(12px)',
+      padding: compact ? '12px 10px' : '20px 24px',
+    }}>
+      {/* 标题行：compact 模式下更紧凑 */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+        marginBottom: compact ? 10 : 16 }}>
         <div>
-          <div style={{ fontSize:11, fontWeight:600, letterSpacing:'.08em', textTransform:'uppercase', color:`${GOLD}80`, marginBottom:4 }}>{t.tableTitle}</div>
-          <h2 style={{ fontSize:18, fontWeight:700, color:GOLD_LIGHT, margin:'0 0 2px', fontFamily:"'Playfair Display',serif" }}>{t.tableSubtitle}</h2>
-          <p style={{ fontSize:11, color:'rgba(255,255,255,.3)', margin:0 }}>{t.tableHint}</p>
+          <div style={{ fontSize:10, fontWeight:600, letterSpacing:'.08em',
+            textTransform:'uppercase' as const, color:`${GOLD}80`, marginBottom: compact ? 2 : 4 }}>
+            {t.tableTitle}
+          </div>
+          {!compact && (
+            <>
+              <h2 style={{ fontSize:18, fontWeight:700, color:GOLD_LIGHT, margin:'0 0 2px',
+                fontFamily:"'Playfair Display',serif" }}>{t.tableSubtitle}</h2>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,.3)', margin:0 }}>{t.tableHint}</p>
+            </>
+          )}
         </div>
         <div style={{ textAlign:'right' }}>
-          <div style={{ fontSize:22, fontWeight:700, color:GOLD_LIGHT }}>{cables.length}</div>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,.3)' }}>{filtered}/{total}</div>
+          <div style={{ fontSize: compact ? 18 : 22, fontWeight:700, color:GOLD_LIGHT }}>{cables.length}</div>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,.3)' }}>{filtered}/{total}</div>
         </div>
       </div>
-      <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+
+      <table style={{ width:'100%', borderCollapse:'collapse', fontSize: compact ? 11 : 12 }}>
         <thead>
           <tr style={{ borderBottom:'1px solid rgba(255,255,255,.08)' }}>
-            {[t.tableCol1, t.tableCol2, t.tableCol3, t.tableCol4].map(h => (
-              <th key={h} style={{ padding:'8px 10px', textAlign:h===t.tableCol1?'left':'center', fontSize:10, fontWeight:600, letterSpacing:'.06em', textTransform:'uppercase', color:`${GOLD}70` }}>{h}</th>
+            {headers.map((h, hi) => (
+              <th key={h} style={{
+                padding: compact ? '6px 6px' : '8px 10px',
+                textAlign: hi === 0 ? 'left' : 'center',
+                fontSize: 9, fontWeight:600,
+                letterSpacing:'.05em', textTransform:'uppercase' as const,
+                color:`${GOLD}70`,
+                // 关键：阻止表头文字换行，防止列头竖排
+                whiteSpace:'nowrap',
+              }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -832,40 +859,59 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compac
           {cables.map((cable, i) => {
             const color = riskColor(cable.score);
             return (
-              <tr key={i} onClick={() => onCableClick(cable.name, cable.score, cable.routeCount)}
+              <tr key={i}
+                onClick={() => onCableClick(cable.name, cable.score, cable.routeCount)}
                 style={{ borderBottom:'1px solid rgba(255,255,255,.04)', cursor:'pointer', transition:'background .1s' }}
                 onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background='rgba(212,175,55,.06)'}
                 onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
-                <td style={{ padding: compact ? '7px 8px' : '10px', color:'rgba(255,255,255,.85)' }}>
+
+                {/* 名称列：compact 模式截断，hover 显示完整名 */}
+                <td style={{ padding: compact ? '8px 6px' : '10px', color:'rgba(255,255,255,.85)' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                    <span style={{ width:6, height:6, borderRadius:'50%', background:color, boxShadow:`0 0 5px ${color}`, flexShrink:0 }}/>
+                    <span style={{ width:6, height:6, borderRadius:'50%', background:color,
+                      boxShadow:`0 0 5px ${color}`, flexShrink:0 }}/>
                     <span style={{
                       overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-                      maxWidth: compact ? 120 : 'none',
+                      maxWidth: compact ? 110 : undefined,
+                      display:'block',
                     }} title={cable.name}>{cable.name}</span>
-                    {/* compact 模式下隐藏"↗ 地图定位"提示，通过 cursor:pointer 已足够传达可点击性 */}
+                    {/* 全宽模式保留地图定位提示 */}
                     {!compact && (
-                      <span style={{ fontSize:10, color:'rgba(255,255,255,.25)', flexShrink:0 }}>{t.tableMapHint}</span>
+                      <span style={{ fontSize:10, color:'rgba(255,255,255,.25)', flexShrink:0 }}>
+                        {t.tableMapHint}
+                      </span>
                     )}
                   </div>
                 </td>
-                <td style={{ padding: compact ? '7px 6px' : '10px', textAlign:'center' }}>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-                    <span style={{ fontSize:13, fontWeight:700, color }}>{cable.score}</span>
-                    <div style={{ width:48, height:4, background:'rgba(255,255,255,.08)', borderRadius:2, overflow:'hidden' }}>
+
+                {/* 风险评分列：数字 + 条形 */}
+                <td style={{ padding: compact ? '8px 6px' : '10px', textAlign:'center' }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
+                    <span style={{ fontSize: compact ? 12 : 13, fontWeight:700, color }}>{cable.score}</span>
+                    <div style={{ width: compact ? 32 : 48, height:3, background:'rgba(255,255,255,.08)',
+                      borderRadius:2, overflow:'hidden' }}>
                       <div style={{ width:`${cable.score}%`, height:'100%', background:color, borderRadius:2 }}/>
                     </div>
                   </div>
                 </td>
-                <td style={{ padding: compact ? '7px 6px' : '10px', textAlign:'center', color:'rgba(255,255,255,.5)' }}>{cable.routeCount}</td>
-                <td style={{ padding: compact ? '7px 6px' : '10px', textAlign:'center' }}>
-                  <span style={{ fontSize:10, padding:'2px 8px', borderRadius:12, fontWeight:600,
-                    background:cable.score<=40?'rgba(16,112,86,.25)':cable.score<=60?'rgba(120,90,10,.25)':'rgba(120,20,20,.25)',
-                    color:cable.score<=40?'#4ade80':cable.score<=60?'#fbbf24':'#f87171',
-                    border:`1px solid ${cable.score<=40?'rgba(74,222,128,.3)':cable.score<=60?'rgba(251,191,36,.3)':'rgba(248,113,113,.3)'}`}}>
-                    {t.tableRiskLabel(cable.score)}
-                  </span>
+
+                {/* 出现路径数列 */}
+                <td style={{ padding: compact ? '8px 6px' : '10px', textAlign:'center',
+                  color:'rgba(255,255,255,.5)', fontSize: compact ? 11 : 12 }}>
+                  {cable.routeCount}
                 </td>
+
+                {/* 评级列：仅非 compact 模式显示 */}
+                {!compact && (
+                  <td style={{ padding:'10px', textAlign:'center' }}>
+                    <span style={{ fontSize:10, padding:'2px 8px', borderRadius:12, fontWeight:600,
+                      background:cable.score<=40?'rgba(16,112,86,.25)':cable.score<=60?'rgba(120,90,10,.25)':'rgba(120,20,20,.25)',
+                      color:cable.score<=40?'#4ade80':cable.score<=60?'#fbbf24':'#f87171',
+                      border:`1px solid ${cable.score<=40?'rgba(74,222,128,.3)':cable.score<=60?'rgba(251,191,36,.3)':'rgba(248,113,113,.3)'}`}}>
+                      {t.tableRiskLabel(cable.score)}
+                    </span>
+                  </td>
+                )}
               </tr>
             );
           })}
