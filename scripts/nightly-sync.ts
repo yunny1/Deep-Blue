@@ -233,17 +233,72 @@ async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
   // v8: 检测状态变更
   const statusChangeFields = await detectStatusChange(tg.id, status);
 
-  // TG 强制覆盖写入
+  // 查询现有记录的保护状态
+  // ROUTE_FIXED    → 路线已人工绘制，TG 的 routeGeojson 不得覆盖
+  // MANUALLY_ADDED → 全部核心字段人工维护，TG 只更新 lastSyncedAt
+  const existingProtect = await prisma.cable.findUnique({
+    where: { id: tg.id },
+    select: { reviewStatus: true, routeGeojson: true, status: true, lengthKm: true, rfsDate: true },
+  });
+  const protectStatus   = existingProtect?.reviewStatus ?? null;
+  const isRouteFixed    = protectStatus === 'ROUTE_FIXED';
+  const isManuallyAdded = protectStatus === 'MANUALLY_ADDED';
+
+  // 冲突检测：保护字段有差异时写入治理面板，不抛出异常、不阻断同步
+  if (existingProtect && (isRouteFixed || isManuallyAdded)) {
+    const conflictFields: Array<{ field: string; current: any; incoming: any }> = [];
+
+    if (isRouteFixed && tg.geoJson) {
+      // 路线保护：TG 带来了新路线，但我们不会写入
+      conflictFields.push({
+        field: 'routeGeojson',
+        current: '(已绑定人工路线)',
+        incoming: '(TG 来源路线，已拦截)',
+      });
+    }
+    if (isManuallyAdded) {
+      if (status !== existingProtect.status)
+        conflictFields.push({ field: 'status', current: existingProtect.status, incoming: status });
+      if (lengthKm != null && existingProtect.lengthKm != null
+          && Math.abs(lengthKm - existingProtect.lengthKm) > 100)
+        conflictFields.push({ field: 'lengthKm', current: existingProtect.lengthKm, incoming: lengthKm });
+    }
+
+    if (conflictFields.length > 0) {
+      log('WARN', `  [保护] "${tg.name}" (${protectStatus}) — 拦截 ${conflictFields.length} 个冲突字段`);
+      await writeGovernanceEntry('conflict', {
+        id: `conflict-${tg.id}-${Date.now()}`,
+        timestamp: SYNC_TIMESTAMP.toISOString(),
+        cableSlug: slugify(tg.name),
+        cableName: tg.name,
+        reviewStatus: protectStatus,
+        conflictFields,
+        resolved: false,
+      });
+    }
+  }
+
+  // 构建 update 数据：根据保护状态排除受保护字段
+  const updateData: Record<string, any> = {
+    name: tg.name, slug: slugify(tg.name),
+    vendorId, notes: tg.notes || null,
+    dataSource: 'TELEGEOGRAPHY',
+    lastSyncedAt: SYNC_TIMESTAMP,   // v8: 标记本轮同步确认
+    ...statusChangeFields,           // v8: 状态变更追踪
+  };
+  // ROUTE_FIXED / MANUALLY_ADDED：都不覆盖路线
+  if (!isRouteFixed && !isManuallyAdded) updateData.routeGeojson = tg.geoJson;
+  // MANUALLY_ADDED：核心物理字段由人工维护，不覆盖
+  if (!isManuallyAdded) {
+    updateData.status   = status;
+    updateData.lengthKm = lengthKm;
+    updateData.rfsDate  = rfsDate;
+  }
+
+  // TG 写入（create 路径仍是全量，因为新建时没有保护状态）
   await prisma.cable.upsert({
     where: { id: tg.id },
-    update: {
-      name: tg.name, slug: slugify(tg.name), status,
-      lengthKm, rfsDate, routeGeojson: tg.geoJson,
-      vendorId, notes: tg.notes || null,
-      dataSource: 'TELEGEOGRAPHY',
-      lastSyncedAt: SYNC_TIMESTAMP,   // v8: 标记本轮同步确认
-      ...statusChangeFields,           // v8: 状态变更追踪
-    },
+    update: updateData,
     create: {
       id: tg.id, name: tg.name, slug: slugify(tg.name), status,
       lengthKm, rfsDate, routeGeojson: tg.geoJson,
@@ -253,6 +308,7 @@ async function upsertTier1Cable(tg: TGCable, status: string): Promise<string> {
       firstSeenAt: SYNC_TIMESTAMP,     // v8: 新增记录标记入库时间
     },
   });
+  
 
   // 写入登陆站
   for (const lp of tg.landing_points || []) {
@@ -660,6 +716,24 @@ async function cleanupOrphans(): Promise<number> {
   }
 }
 
+// ── 治理日志写入（冲突 + 同步记录 → /admin/governance 展示）────────
+// 非致命：Redis 写失败不影响同步主流程
+async function writeGovernanceEntry(
+  type: 'log' | 'conflict',
+  entry: Record<string, any>,
+): Promise<void> {
+  try {
+    const { Redis } = await import('@upstash/redis');
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    });
+    const key    = type === 'conflict' ? 'sync:conflicts' : 'sync:log';
+    const maxLen = type === 'conflict' ? 99 : 49;
+    await redis.lpush(key, JSON.stringify(entry));
+    await redis.ltrim(key, 0, maxLen);
+  } catch (_) {}
+}
 // ════════════════════════════════════════════════════════════════
 // 主流程
 // ════════════════════════════════════════════════════════════════
@@ -864,6 +938,15 @@ async function main() {
     log('OK', 'Vercel: 缓存刷新完成');
   } catch {}
 
+  // 写入本次同步运行记录到治理面板（/admin/governance → 更新日志 tab）
+  await writeGovernanceEntry('log', {
+    id: `sync-${SYNC_TIMESTAMP.toISOString()}`,
+    timestamp: SYNC_TIMESTAMP.toISOString(),
+    type: 'sync_run',
+    summary: `TG 写入 ${stats.tgWritten} 条 · SN 合并 ${stats.snMatched} / 新增 ${stats.snNewAdded} / 待审 ${stats.snPendingReview} · 活跃海缆 ${activeCableCount} 条 · 耗时 ${elapsed}s`,
+    details: { ...stats, activeCableCount, elapsed },
+  });
+  
   await prisma.$disconnect();
 }
 
