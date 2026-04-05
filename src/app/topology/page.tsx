@@ -6,7 +6,7 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
-import LangSwitcher from '@/components/layout/LangSwitcher';
+import SubPageHeader from '@/components/layout/SubPageHeader';
 
 interface TopoNode { id: string; name: string; cableCount: number; connectionCount: number; x: number; y: number; }
 interface TopoEdge { source: string; target: string; cables: string[]; cableCount: number; }
@@ -127,23 +127,12 @@ function TopologyContent() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#060B14', color: '#C8D6E5', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* ═══ 顶部导航 ═══ */}
-      <nav style={{ height: 48, background: 'linear-gradient(180deg, #0B1526 0%, #060B14 100%)', borderBottom: '1px solid #111D33', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: 'linear-gradient(135deg, #1E6091, #2A9D8F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white' }}>DB</div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#8BA3C7' }}>DEEP BLUE</span>
-          </a>
-          <div style={{ width: 1, height: 16, backgroundColor: '#1A2744' }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#5A7899' }}>{zh ? '全球海缆网络拓扑分析' : 'Global Cable Network Topology'}</span>
-        </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <a href="/" style={{ fontSize: 11, color: '#3D5A80', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, border: '1px solid #152238', transition: 'all 0.2s' }}>
-            {zh ? '← 返回地图' : '← Back to Map'}
-          </a>
-          <LangSwitcher />
-        </div>
-      </nav>
+      <SubPageHeader
+        badgeZh="分析工具"
+        badgeEn="Analysis Tool"
+        titleZh="网络拓扑"
+        titleEn="Network Topology"
+      />
 
       {loading ? (
         <div style={{ height: 'calc(100vh - 48px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
