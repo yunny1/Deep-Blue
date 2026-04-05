@@ -1,10 +1,12 @@
 'use client';
 // src/components/layout/SubPageHeader.tsx
 // 分析工具子页面的统一头部组件
-// 设计参考自主权网络 header 风格：badge 左、返回地图 + 语言切换 右、大标题 h1
-// 无五色条（仅 BRICS 战略页面有五色条）
+// 语言切换机制与 LangSwitcher 完全一致：
+//   - 通过 useTranslation() 拿 locale + setLocale（更新 I18nProvider context）
+//   - 额外写 localStorage + 派发事件，通知地图组件（CesiumGlobe / MapLibre2D 等）
+//   - 这样页面内所有用 useTranslation() 的组件都会随 context 更新而重新渲染
 
-import { useState, useCallback } from 'react';
+import { useTranslation, type Locale } from '@/lib/i18n';
 
 interface SubPageHeaderProps {
   badgeZh: string;
@@ -14,23 +16,18 @@ interface SubPageHeaderProps {
 }
 
 export default function SubPageHeader({ badgeZh, badgeEn, titleZh, titleEn }: SubPageHeaderProps) {
-  // 独立语言状态：读 localStorage 初始值，toggle 时写回并广播给 I18nProvider
-  // 与 SovereignNetworkAtlas / BRICSDashboard 保持完全一致的模式
-  const [isZh, setIsZh] = useState<boolean>(() =>
-    typeof window !== 'undefined'
-      ? (localStorage.getItem('deep-blue-locale') ?? 'zh') === 'zh'
-      : true
-  );
+  const { locale, setLocale } = useTranslation();
+  const zh = locale === 'zh';
 
-  const toggleLang = useCallback(() => {
-    setIsZh(prev => {
-      const next = !prev;
-      localStorage.setItem('deep-blue-locale', next ? 'zh' : 'en');
-      // 广播给页面内其他监听语言变化的组件（含 I18nProvider）
-      window.dispatchEvent(new Event('deep-blue-locale-changed'));
-      return next;
-    });
-  }, []);
+  const handleToggle = () => {
+    const next: Locale = zh ? 'en' : 'zh';
+    // 1. 更新 React context → 触发所有 useTranslation() 消费者重新渲染
+    setLocale(next);
+    // 2. 写 localStorage → 供不能用 hook 的地图组件读取（与 LangSwitcher 保持一致）
+    localStorage.setItem('deep-blue-locale', next);
+    // 3. 派发事件 → 通知 CesiumGlobe / MapLibre2D / BRICSMap 刷新标注
+    window.dispatchEvent(new Event('deep-blue-locale-changed'));
+  };
 
   return (
     <div style={{
@@ -40,6 +37,7 @@ export default function SubPageHeader({ badgeZh, badgeEn, titleZh, titleEn }: Su
     }}>
       {/* 顶部一行：badge 左，返回地图 + 语言切换 右 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+
         {/* Badge */}
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -55,7 +53,7 @@ export default function SubPageHeader({ badgeZh, badgeEn, titleZh, titleEn }: Su
             fontSize: 11, color: '#2A9D8F',
             letterSpacing: '.1em', textTransform: 'uppercase' as const, fontWeight: 600,
           }}>
-            {isZh ? badgeZh : badgeEn}
+            {zh ? badgeZh : badgeEn}
           </span>
         </div>
 
@@ -71,10 +69,10 @@ export default function SubPageHeader({ badgeZh, badgeEn, titleZh, titleEn }: Su
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
           >
-            ← {isZh ? '返回地图' : 'Back to Map'}
+            ← {zh ? '返回地图' : 'Back to Map'}
           </a>
           <button
-            onClick={toggleLang}
+            onClick={handleToggle}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
@@ -85,7 +83,7 @@ export default function SubPageHeader({ badgeZh, badgeEn, titleZh, titleEn }: Su
             onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(42,157,143,0.18)')}
             onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(42,157,143,0.1)')}
           >
-            {isZh ? '🌐 EN' : '🌐 中文'}
+            {zh ? '🌐 EN' : '🌐 中文'}
           </button>
         </div>
       </div>
@@ -96,7 +94,7 @@ export default function SubPageHeader({ badgeZh, badgeEn, titleZh, titleEn }: Su
         color: '#EDF2F7', margin: 0, lineHeight: 1.1,
         fontFamily: "'Playfair Display', 'Georgia', serif",
       }}>
-        {isZh ? titleZh : titleEn}
+        {zh ? titleZh : titleEn}
       </h1>
     </div>
   );
