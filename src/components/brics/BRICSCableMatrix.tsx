@@ -199,14 +199,6 @@ export default function BRICSCableMatrix() {
         ))}
       </div>
 
-      {/* ── 主权说明 ─────────────────────────────────────────── */}
-      <div style={{ backgroundColor: 'rgba(26,45,74,0.3)', border: `1px solid ${C.gold}10`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>
-        {isZh
-          ? '主权评级基于海缆建造商（vendor）和运营商（operators）是否为金砖国家企业。🟢 主权安全：建造商为金砖企业 | 🟡 混合依赖：金砖与西方企业共同参与 | 🔴 西方主导：建造商为西方企业'
-          : 'Sovereignty rating is based on whether the cable vendor and operators are BRICS-country companies. 🟢 Sovereign: Built by BRICS company | 🟡 Partial: Mixed BRICS & Western participation | 🔴 Dependent: Built by Western company'
-        }
-      </div>
-
       {/* ── 过滤控制栏 ───────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -395,11 +387,6 @@ export default function BRICSCableMatrix() {
         })}
       </div>
 
-      <div style={{ marginTop: 12, fontSize: 10, color: 'rgba(255,255,255,0.2)', lineHeight: 1.6 }}>
-        {isZh
-          ? '主权评级基于建造商和运营商的企业国籍自动分类，仅供参考。数据来源：TeleGeography · Deep Blue'
-          : 'Sovereignty ratings are auto-classified based on vendor/operator country of origin and are for reference only. Source: TeleGeography · Deep Blue'}
-      </div>
     </div>
   );
 }

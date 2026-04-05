@@ -766,11 +766,6 @@ export default function BRICSTransitAnalysis() {
         </div>
       )}
 
-      <div style={{ marginTop: 16, fontSize: 10, color: 'rgba(255,255,255,0.15)', lineHeight: 1.6 }}>
-        {isZh
-          ? '路径枚举范围：最多2段中转（3跳），每对最多20条路径。主权评级基于建造商和运营商国籍，仅供参考。数据来源：TeleGeography · Deep Blue'
-          : 'Path enumeration: up to 2 transits (3 hops), max 20 paths per pair. Sovereignty ratings based on vendor/operator nationality, for reference only. Source: TeleGeography · Deep Blue'}
-      </div>
     </div>
   );
 }
