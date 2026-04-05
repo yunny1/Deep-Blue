@@ -796,26 +796,266 @@ function SelectedRouteDetail({ route, isZh, t, onCableClick, allCables }: {
 }
 
 // ── AllCablesTable ────────────────────────────────────────────────────────────
-// compact=true 时：三列（名称/评分/路径数），隐藏评级列，表头不换行，名称截断
-// compact=false 时：四列完整显示（用于未来可能的宽屏视图）
+// 三级折叠系统：
+//   Level 0 = 完全收起，只显示标题栏和箭头
+//   Level 1 = 简化展示（默认）：名称（彩色圆点表达评级） + 评分+条形
+//   Level 2 = 完整展示：在 Level 1 基础上新增"路径数"列和"评级"列（从右侧滑入）
+//
+// 动画原理：
+//   0↔1 折叠：容器 div 的 max-height 过渡（0 → 600px）
+//   1↔2 列展开：每个 td 内部 div 的 max-width + opacity 过渡
+//               （不直接对 td 做动画，因为 table 布局会忽略 width transition）
 function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compact = false }: {
   cables: { name: string; score: number; routeCount: number }[];
   total: number; filtered: number; isZh: boolean; t: typeof T.zh;
   onCableClick: (n: string, s: number, r: number) => void;
   compact?: boolean;
 }) {
-  // compact 模式只显示三列，去掉"评级"列（信息和风险评分高度重复）
-  // compact 模式保留四列，但评级列用单字缩写，控制总宽度
-  const headers = [t.tableCol1, t.tableCol2, t.tableCol3, t.tableCol4];
+  // 状态机：0=收起, 1=简化(默认), 2=完整
+  const [level, setLevel] = useState<0 | 1 | 2>(1);
 
-  // compact 模式下的评级缩写（单字，节省列宽）
-  const compactRatingLabel = (score: number): string => {
-    if (score <= 20) return isZh ? '低' : 'L';
-    if (score <= 40) return isZh ? '中' : 'M';
-    if (score <= 60) return isZh ? '中' : 'M';
-    if (score <= 75) return isZh ? '较' : 'H';
-    return isZh ? '极' : '!';
+  const isOpen = level > 0;
+  const isFull = level === 2;
+
+  // 点击标题栏箭头：在 0 和 1 之间切换
+  const toggleOpen = () => setLevel(prev => prev === 0 ? 1 : 0);
+
+  // 点击"路径数"列标题：在 1 和 2 之间切换，阻止冒泡避免触发 toggleOpen
+  const toggleFull = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLevel(prev => prev === 2 ? 1 : 2);
   };
+
+  return (
+    <div>
+
+      {/* ── 标题栏：始终可见，点击折叠/展开 ─────────────────────────── */}
+      <div
+        onClick={toggleOpen}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 14px 9px', cursor: 'pointer',
+          borderTop: '1px solid rgba(255,255,255,.05)',
+          userSelect: 'none' as const,
+          transition: 'background .15s',
+        }}
+        onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = `${GOLD}04`}
+        onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* 箭头：收起时指右，展开时旋转 90° 向下 */}
+          <span style={{
+            display: 'inline-block', fontSize: 9, color: `${GOLD}70`,
+            transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)',
+            lineHeight: 1,
+          }}>▶</span>
+          <span style={{
+            fontSize: 10, fontWeight: 600, letterSpacing: '.08em',
+            textTransform: 'uppercase' as const, color: `${GOLD}80`,
+          }}>{t.tableTitle}</span>
+        </div>
+        {/* 右侧：当前模式提示 + 计数 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {isOpen && (
+            <span style={{
+              fontSize: 9, color: isFull ? '#2A9D8F' : 'rgba(255,255,255,.2)',
+              letterSpacing: '.04em', transition: 'color 0.2s',
+            }}>
+              {isFull ? (isZh ? '完整' : 'Full') : (isZh ? '简化' : 'Compact')}
+            </span>
+          )}
+          <span style={{
+            fontSize: 14, fontWeight: 700, color: GOLD_LIGHT,
+            fontFeatureSettings: '"tnum"', lineHeight: 1,
+          }}>{cables.length}</span>
+        </div>
+      </div>
+
+      {/* ── 可折叠主体：max-height 过渡实现展开/收起 ──────────────── */}
+      {/* max-height 用一个足够大的值（而不是 auto），这样浏览器才能做过渡 */}
+      <div style={{
+        maxHeight: isOpen ? '700px' : '0px',
+        overflow: 'hidden',
+        transition: 'max-height 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+
+              {/* 名称列标题 */}
+              <th style={{
+                padding: '5px 14px', textAlign: 'left',
+                fontSize: 9, fontWeight: 600, letterSpacing: '.05em',
+                textTransform: 'uppercase' as const,
+                color: `${GOLD}55`, whiteSpace: 'nowrap',
+              }}>{t.tableCol1}</th>
+
+              {/* 评分列标题 */}
+              <th style={{
+                padding: '5px 8px', textAlign: 'center',
+                fontSize: 9, fontWeight: 600, letterSpacing: '.05em',
+                textTransform: 'uppercase' as const,
+                color: `${GOLD}55`, whiteSpace: 'nowrap',
+              }}>{t.tableCol2}</th>
+
+              {/* 路径数列标题：可点击，触发 Level 1↔2 */}
+              {/* 折叠时显示"+ 路径数 ▾"提示用户可以展开；展开时显示正式列名 */}
+              <th
+                onClick={toggleFull}
+                title={isZh ? '点击展开/收起路径数与评级' : 'Click to expand/collapse details'}
+                style={{
+                  padding: '5px 8px', textAlign: 'center',
+                  fontSize: 9, fontWeight: 600, letterSpacing: '.05em',
+                  textTransform: 'uppercase' as const,
+                  color: isFull ? '#2A9D8F' : `${GOLD}30`,
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'color 0.25s',
+                  userSelect: 'none' as const,
+                }}
+              >
+                {isFull
+                  ? (isZh ? '路径数' : 'Routes')
+                  : (isZh ? '+ 展开' : '+ More')}
+                {/* 小三角跟随状态旋转 */}
+                <span style={{
+                  display: 'inline-block', marginLeft: 3, fontSize: 8,
+                  transform: isFull ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                  verticalAlign: 'middle',
+                }}>▾</span>
+              </th>
+
+              {/* 评级列标题：Level 2 时随路径数列一起滑入 */}
+              <th style={{
+                padding: 0, textAlign: 'center', overflow: 'hidden',
+                fontSize: 9, fontWeight: 600, letterSpacing: '.05em',
+                textTransform: 'uppercase' as const, whiteSpace: 'nowrap',
+              }}>
+                <div style={{
+                  maxWidth: isFull ? '60px' : '0px',
+                  opacity: isFull ? 1 : 0,
+                  overflow: 'hidden',
+                  transition: 'max-width 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease 0.05s',
+                  color: '#2A9D8F',
+                  padding: isFull ? '5px 6px' : '5px 0',
+                }}>
+                  {isZh ? '评级' : 'Grade'}
+                </div>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {cables.map((cable, i) => {
+              const color = riskColor(cable.score);
+              return (
+                <tr
+                  key={i}
+                  onClick={() => onCableClick(cable.name, cable.score, cable.routeCount)}
+                  style={{
+                    borderBottom: '1px solid rgba(255,255,255,.03)',
+                    cursor: 'pointer', transition: 'background .12s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = `${GOLD}07`}
+                  onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}
+                >
+
+                  {/* ── 名称列：彩色圆点（隐式表达评级）+ 截断名称 ── */}
+                  {/* 圆点的颜色本身就是评级信息，不需要额外文字 */}
+                  <td style={{ padding: '8px 14px', color: 'rgba(255,255,255,.85)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{
+                        width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                        background: color, boxShadow: `0 0 6px ${color}90`,
+                      }} />
+                      <span style={{
+                        overflow: 'hidden', textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap', maxWidth: 112, display: 'block',
+                        fontSize: 12,
+                      }} title={cable.name}>{cable.name}</span>
+                    </div>
+                  </td>
+
+                  {/* ── 评分列：数字 + 细条形 ── */}
+                  <td style={{ padding: '8px 8px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color, lineHeight: 1 }}>
+                        {cable.score}
+                      </span>
+                      <div style={{
+                        width: 28, height: 3,
+                        background: 'rgba(255,255,255,.07)', borderRadius: 2, overflow: 'hidden',
+                      }}>
+                        <div style={{ width: `${cable.score}%`, height: '100%', background: color, borderRadius: 2 }} />
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* ── 路径数列：inner div 做 max-width 滑入动画 ── */}
+                  {/* Level 1→2 时从 max-width:0 过渡到 max-width:50px，视觉上是列从右侧滑出 */}
+                  <td style={{ padding: 0, overflow: 'hidden', textAlign: 'center' }}>
+                    <div style={{
+                      maxWidth: isFull ? '50px' : '0px',
+                      opacity: isFull ? 1 : 0,
+                      overflow: 'hidden',
+                      // 轻微的延迟让标题先动，数据列跟上，视觉更有层次感
+                      transition: 'max-width 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease 0.08s',
+                      padding: isFull ? '8px 6px' : '8px 0',
+                      fontSize: 12, color: 'rgba(255,255,255,.45)',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {cable.routeCount}
+                    </div>
+                  </td>
+
+                  {/* ── 评级列：和路径数列同步滑入，但稍有延迟 ── */}
+                  <td style={{ padding: 0, overflow: 'hidden', textAlign: 'center' }}>
+                    <div style={{
+                      maxWidth: isFull ? '60px' : '0px',
+                      opacity: isFull ? 1 : 0,
+                      overflow: 'hidden',
+                      transition: 'max-width 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease 0.12s',
+                      padding: isFull ? '8px 4px' : '8px 0',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      <span style={{
+                        fontSize: 9, padding: '2px 5px', borderRadius: 6, fontWeight: 700,
+                        background: cable.score <= 40 ? 'rgba(16,112,86,.25)'
+                          : cable.score <= 60 ? 'rgba(120,90,10,.25)' : 'rgba(120,20,20,.25)',
+                        color: cable.score <= 40 ? '#4ade80'
+                          : cable.score <= 60 ? '#fbbf24' : '#f87171',
+                        border: `1px solid ${cable.score <= 40 ? 'rgba(74,222,128,.3)'
+                          : cable.score <= 60 ? 'rgba(251,191,36,.3)' : 'rgba(248,113,113,.3)'}`,
+                      }}>
+                        {t.tableRiskLabel(cable.score)}
+                      </span>
+                    </div>
+                  </td>
+
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* 底部提示：点击任意行查看详情 */}
+        <div style={{ padding: '6px 14px 8px', fontSize: 9, color: 'rgba(255,255,255,.18)' }}>
+          {t.tableHint}
+        </div>
+      </div>
+    </div>
+  );
+}
+  cables: { name: string; score: number; routeCount: number }[];
+  total: number; filtered: number; isZh: boolean; t: typeof T.zh;
+  onCableClick: (n: string, s: number, r: number) => void;
+  compact?: boolean;
+}) {
+  // compact 模式只显示三列，去掉"评级"列（信息和风险评分高度重复）
+  const headers = compact
+    ? [t.tableCol1, t.tableCol2, t.tableCol3]
+    : [t.tableCol1, t.tableCol2, t.tableCol3, t.tableCol4];
 
   return (
     <div style={{
@@ -909,26 +1149,17 @@ function AllCablesTable({ cables, total, filtered, isZh, t, onCableClick, compac
                   {cable.routeCount}
                 </td>
 
-                {/* 评级列：compact 模式用单字缩写 + 极小 badge，全宽模式用完整标签 */}
-                <td style={{ padding: compact ? '8px 4px' : '10px', textAlign:'center' }}>
-                  <span style={{
-                    fontSize: compact ? 10 : 10,
-                    padding: compact ? '2px 5px' : '2px 8px',
-                    borderRadius: 8,
-                    fontWeight: 700,
-                    background: cable.score<=40 ? 'rgba(16,112,86,.25)'
-                      : cable.score<=60 ? 'rgba(120,90,10,.25)' : 'rgba(120,20,20,.25)',
-                    color: cable.score<=40 ? '#4ade80'
-                      : cable.score<=60 ? '#fbbf24' : '#f87171',
-                    border: `1px solid ${cable.score<=40 ? 'rgba(74,222,128,.3)'
-                      : cable.score<=60 ? 'rgba(251,191,36,.3)' : 'rgba(248,113,113,.3)'}`,
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {compact ? compactRatingLabel(cable.score) : t.tableRiskLabel(cable.score)}
-                  </span>
-                </td>
-
-
+                {/* 评级列：仅非 compact 模式显示 */}
+                {!compact && (
+                  <td style={{ padding:'10px', textAlign:'center' }}>
+                    <span style={{ fontSize:10, padding:'2px 8px', borderRadius:12, fontWeight:600,
+                      background:cable.score<=40?'rgba(16,112,86,.25)':cable.score<=60?'rgba(120,90,10,.25)':'rgba(120,20,20,.25)',
+                      color:cable.score<=40?'#4ade80':cable.score<=60?'#fbbf24':'#f87171',
+                      border:`1px solid ${cable.score<=40?'rgba(74,222,128,.3)':cable.score<=60?'rgba(251,191,36,.3)':'rgba(248,113,113,.3)'}`}}>
+                      {t.tableRiskLabel(cable.score)}
+                    </span>
+                  </td>
+                )}
               </tr>
             );
           })}
