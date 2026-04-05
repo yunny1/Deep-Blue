@@ -287,7 +287,6 @@ export default function SovereignNetworkAtlas() {
             name,
             score: scores[i] ?? r.maxRisk,
             routeCount: 1,
-            // 检查名称是否在已取消集合里（大小写不敏感）
             isCancelled: CANCELLED_CABLES.has(name),
           });
         } else {
@@ -295,11 +294,24 @@ export default function SovereignNetworkAtlas() {
         }
       });
     }
-    // 已取消的海缆排到最后（仍然可见，但不占主要位置）
-    return Array.from(seen.values()).sort((a, b) => {
+
+    // 已取消的海缆排到最后
+    const result = Array.from(seen.values()).sort((a, b) => {
       if (a.isCancelled !== b.isCancelled) return a.isCancelled ? 1 : -1;
       return b.score - a.score;
     });
+
+    // 把 CANCELLED_CABLES 里未被任何路径引用的海缆强制追加到列表末尾。
+    // 这样即使路径数据里没有提到它，用户仍然能看到它——并且带着"已取消"标注。
+    // score:0 + routeCount:0 表达"这条海缆没有出现在任何可用路径里"这个现实。
+    for (const name of CANCELLED_CABLES) {
+      const key = name.toLowerCase();
+      if (!seen.has(key)) {
+        result.push({ name, score: 0, routeCount: 0, isCancelled: true });
+      }
+    }
+
+    return result;
   }, [filtered]);
 
   const fromOpts = useMemo(() => [...new Set(routes.map(r => r.from))].sort(), [routes]);
