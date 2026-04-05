@@ -315,7 +315,7 @@ export default function HeroSection() {
               {zh ? `${countdown}s 后自动进入` : `AUTO IN ${countdown}s`}
             </span>
           </div>
-        )}
+        
       </div>
 
       {/* ── 底部角标 ─────────────────────────────────────────────────── */}
