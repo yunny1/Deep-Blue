@@ -96,40 +96,32 @@ export default function HeroSection() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@400;500;600&display=swap');
 
-        /* 诗句出场：从模糊收焦 + 字间距轻微收紧，像在黑暗中对焦 */
+        
         @keyframes poem-appear {
-          from {
-            opacity: 0;
-            filter: blur(8px);
-            letter-spacing: 0.35em;
-          }
-          to {
-            opacity: 1;
-            filter: blur(0px);
-            letter-spacing: 0.22em;
-          }
+          from { opacity: 0; filter: blur(8px); }
+          to   { opacity: 1; filter: blur(0px); }
         }
 
-        /* 通用淡入（用于出处行、统计行等次要元素）*/
+       
         @keyframes fade-gentle {
           from { opacity: 0; transform: translateY(6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* 按钮呼吸光 */
+        
         @keyframes btn-breathe {
           0%,100% { box-shadow: 0 0 0 0 rgba(42,157,143,0); border-color: rgba(42,157,143,0.5); }
           50%     { box-shadow: 0 0 20px 4px rgba(42,157,143,0.25); border-color: rgba(42,157,143,0.9); }
         }
 
-        /* 扫光线 */
+        
         @keyframes scan {
           0%   { left: -4px; opacity: 0.6; }
           80%  { opacity: 0.6; }
           100% { left: 100vw; opacity: 0; }
         }
 
-        /* 小圆点呼吸 */
+       
         @keyframes dot-pulse {
           0%,100% { opacity: 1; }
           50%     { opacity: 0.2; }

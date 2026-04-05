@@ -38,6 +38,9 @@ export interface CableHoverInfo { name: string; status: string; lengthKm: number
 interface CesiumGlobeProps {
   onHover?: (cable: CableHoverInfo | null, position: { x: number; y: number }) => void;
   onClick?: (cableSlug: string | null) => void;
+  // 英雄区显示期间，Cesium 的 loading 遮罩没有存在的意义（英雄区盖着它）
+  // 传入 true 可以跳过 loading 遮罩，让地球在背后静默加载，英雄区结束后直接呈现
+  suppressLoadingIndicator?: boolean;
 }
 
 function getCableColor(mode: string, status: string, vendorName: string | null, ownerNames: string[], rfsYear: number | null): [number, number, number, number] {
@@ -49,7 +52,7 @@ function getCableColor(mode: string, status: string, vendorName: string | null, 
   }
 }
 
-export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
+export default function CesiumGlobe({ onHover, onClick, suppressLoadingIndicator = false }: CesiumGlobeProps) {
 
   // v9: Helper — 恢复海缆正常材质（区分虚线近似路由和实线真实路由）
   function restoreCableMaterial(Cesium: any, entity: any, meta: any, cm: string) {
@@ -334,88 +337,6 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
     return () => { if (viewerRef.current) { viewerRef.current.destroy(); viewerRef.current = null; } };
      }, []);
 
-      // ── 英雄动效：响应 HeroSection 派发的阶段事件 ──────────────────────────────
-      // 与 deep-blue-locale-changed 完全一样的事件总线模式。
-      // 使用 refs 访问 Cesium 对象，确保闭包不过期，也不会触发任何 React 重渲染。
-      useEffect(() => {
-        const handleHeroPhase = (e: Event) => {
-          const Cesium  = cesiumRef.current;
-          const viewer  = viewerRef.current;
-          if (!Cesium || !viewer) return;
-
-          const phase = (e as CustomEvent).detail?.phase ?? 0;
-
-          switch (phase) {
-            case 2: {
-              // Act 2："日月之行" — 开启大气光照，晨昏线自然浮现
-              if (viewer.scene.globe) viewer.scene.globe.enableLighting = true;
-              if (viewer.scene.sun)   viewer.scene.sun.show = true;
-              // 将时钟定格在亚太地区黎明时分，让晨昏线落在亚太/印度洋之间
-              try {
-                viewer.clock.currentTime = Cesium.JulianDate.fromIso8601('2026-04-05T22:00:00Z');
-                viewer.clock.shouldAnimate = false;
-              } catch {}
-              break;
-            }
-
-            case 3: {
-              // Act 3："星汉灿烂" — 所有海缆切换为 PolylineGlowMaterial，发光如星河
-              for (const entity of allEntitiesRef.current) {
-                if (!entity.polyline) continue;
-                try {
-                  entity.polyline.material = new Cesium.PolylineGlowMaterialProperty({
-                    glowPower: 0.22,       // 辉光强度：足够耀眼但不过曝
-                    taperPower: 0.8,       // 线段两端轻微收细，更像光纤
-                    color: new Cesium.Color(0.02, 0.84, 0.63, 1.0), // 海鸥绿 #06D6A0
-                  });
-                  entity.polyline.width = new Cesium.ConstantProperty(3.5);
-                } catch {}
-              }
-              break;
-            }
-
-            case 4: {
-              // Act 4："权力掌控，系统就绪" — 镜头飞向亚太枢纽上空
-              try {
-                viewer.camera.flyTo({
-                  // 南海 / 东南亚枢纽区域：新加坡、香港、吕宋海峡一带
-                  destination: Cesium.Cartesian3.fromDegrees(112, 12, 6500000),
-                  duration: 3.5,
-                  easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
-                });
-              } catch {}
-              break;
-            }
-
-            case 0: {
-              // 英雄结束：恢复全部默认设置
-              if (viewer.scene.globe) viewer.scene.globe.enableLighting = false;
-              if (viewer.scene.sun)   viewer.scene.sun.show = false;
-              try {
-                // 恢复相机到初始全球视角
-                viewer.camera.flyTo({
-                  destination: Cesium.Cartesian3.fromDegrees(110, 20, 20000000),
-                  duration: 1.5,
-                });
-              } catch {}
-              // 恢复所有海缆材质
-              for (const entity of allEntitiesRef.current) {
-                const meta = entityMetaRef.current.get(entity);
-                if (!meta || !entity.polyline) continue;
-                try {
-                  restoreCableMaterial(Cesium, entity, meta, useMapStore.getState().colorMode);
-                } catch {}
-              }
-              break;
-            }
-          }
-        };
-
-        window.addEventListener('deep-blue-hero-phase', handleHeroPhase);
-        return () => window.removeEventListener('deep-blue-hero-phase', handleHeroPhase);
-      }, []); // 只注册一次，refs 保证拿到最新 Cesium 对象
-
-  // ── 面板关闭时清除高亮 ─────────────────────────────────────────
 
   // ── 面板关闭时清除高亮 ─────────────────────────────────────────
   // 当用户点击 CableDetailPanel 的关闭按钮时，selectedCableId 变为 null。
@@ -697,8 +618,8 @@ export default function CesiumGlobe({ onHover, onClick }: CesiumGlobeProps) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-      {loading && (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(3,4,8,0.9)', flexDirection: 'column', gap: 16 }}>
+      {loading && !suppressLoadingIndicator && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(3,4,8,0.9)', flexDirection: 'column', gap: 16 }}>
           <div style={{ width: 40, height: 40, border: '3px solid rgba(42,157,143,0.2)', borderTopColor: '#2A9D8F', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           <div style={{ fontSize: 13, color: '#2A9D8F', letterSpacing: 2 }}>Loading global submarine cable network...</div>

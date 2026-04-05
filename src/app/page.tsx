@@ -38,6 +38,10 @@ interface Stats {
 function HomeContent() {
   const [stats, setStats] = useState<Stats | null>(null);
   const { viewMode, setSelectedCable, selectedCableId } = useMapStore();
+  const [heroIsActive] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return !sessionStorage.getItem('db-hero-seen');
+  });
   const [hoverCable, setHoverCable] = useState<CableHoverInfo | null>(null);
   const [hoverPos, setHoverPos]     = useState({ x: 0, y: 0 });
   const { t, locale } = useTranslation();
@@ -151,7 +155,11 @@ function HomeContent() {
         onTransitionEnd={handleGlobeTransitionEnd}
       >
         {viewMode === '3d' ? (
-          <CesiumGlobe onHover={handleHover} onClick={handleClick} />
+          <CesiumGlobe
+            onHover={handleHover}
+            onClick={handleClick}
+            suppressLoadingIndicator={heroIsActive}
+          />
         ) : (
           <MapLibre2D onHover={handleHover} onClick={handleClick} />
         )}
