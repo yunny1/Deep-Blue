@@ -177,10 +177,30 @@ export async function GET(request: NextRequest) {
       for (const qc of queryCodes) breakdown[qc] = stations.filter(s => s.countryCode === qc).length;
     }
 
+    // 台湾数据排在末尾：CN_WITH_TW 场景下，台湾专属海缆和台湾登陆站排在各自列表最后
+    // 这样前端显示、CSV 导出、综合情报导出全部自动有序，无需在多处重复排序
+    let sortedCables = cables;
+    let sortedStations = stationsFormatted;
+    if (code === 'CN_WITH_TW') {
+      sortedCables = [...cables].sort((a: any, b: any) => {
+        // 仅当本地站点全部在台湾时才排到末尾；横跨大陆/港/澳/台的海缆保持原序
+        const aIsTW = a.stationsInCountry.length > 0 && a.stationsInCountry.every((s: any) => s.countryCode === 'TW');
+        const bIsTW = b.stationsInCountry.length > 0 && b.stationsInCountry.every((s: any) => s.countryCode === 'TW');
+        if (aIsTW !== bIsTW) return aIsTW ? 1 : -1;
+        return 0;
+      });
+      sortedStations = [...stationsFormatted].sort((a: any, b: any) => {
+        const aIsTW = a.countryCode === 'TW';
+        const bIsTW = b.countryCode === 'TW';
+        if (aIsTW !== bIsTW) return aIsTW ? 1 : -1;
+        return 0;
+      });
+    }
+
     return NextResponse.json({
       country: { code: responseCode, nameEn: displayNameEn, nameZh: displayNameZh },
       summary: { ...summary, breakdown: breakdown ?? null },
-      cables, stations: stationsFormatted,
+      cables: sortedCables, stations: sortedStations,
     });
   } catch (error) {
     console.error('[Country Analysis]', error);

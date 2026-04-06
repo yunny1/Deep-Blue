@@ -1,6 +1,6 @@
 // src/app/country/page.tsx
 // 国家海缆分析页面 — 完整重设计版
-// 结构：全球统计动画 → 推荐国家标签 → 国家详细数据（中国有台湾专属选项）
+// 结构：全球统计动画 → 推荐国家标签 → 国家详细数据（中国始终包含大陆+港+澳+台，台湾数据排在末尾）
 
 'use client';
 
@@ -385,7 +385,17 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
   ? ['海缆名称', '类型', '状态', '长度(km)', '投产年份', '容量(Tbps)', '光纤对数', '建造商', '运营商', '本地登陆站', '全部登陆站', ...(isChinaGroup ? ['所属地区'] : []), '覆盖国家数']
   : ['Cable Name', 'Type', 'Status', 'Length (km)', 'RFS Year', 'Capacity (Tbps)', 'Fiber Pairs', 'Vendor', 'Owners', 'Local Stations', 'All Stations', ...(isChinaGroup ? ['Region'] : []), 'Country Count'];
 
-  const cableRows = data.cables.map(c => [
+  // 台湾数据排在末尾（仅当中国分组时生效）
+  const sortedCablesForExport = [...data.cables].sort((a, b) => {
+    if (isChinaGroup) {
+      const aIsTW = a.stationsInCountry.length > 0 && a.stationsInCountry.every(s => s.countryCode === 'TW');
+      const bIsTW = b.stationsInCountry.length > 0 && b.stationsInCountry.every(s => s.countryCode === 'TW');
+      if (aIsTW !== bIsTW) return aIsTW ? 1 : -1;
+    }
+    return 0;
+  });
+
+  const cableRows = sortedCablesForExport.map(c => [
     c.name,
     zh ? TYPE_LABELS[c.type]?.zh : TYPE_LABELS[c.type]?.en,
     zh ? STATUS_LABELS[c.status]?.zh : STATUS_LABELS[c.status]?.en,
@@ -411,7 +421,14 @@ function exportCSV(data: AnalysisData, locale: 'zh' | 'en') {
     ? ['登陆站名称', ...(isChinaGroup ? ['所属地区'] : []), '国家代码', '纬度', '经度', '接入海缆数']
     : ['Station Name', ...(isChinaGroup ? ['Region'] : []), 'Code', 'Lat', 'Lng', 'Cables'];
 
-  const stationRows = data.stations.map(s => [
+  const stationRows = [...data.stations].sort((a, b) => {
+    if (isChinaGroup) {
+      const aIsTW = a.countryCode === 'TW';
+      const bIsTW = b.countryCode === 'TW';
+      if (aIsTW !== bIsTW) return aIsTW ? 1 : -1;
+    }
+    return 0;
+  }).map(s => [
     stationName(s, zh),
     ...(isChinaGroup ? [s.regionLabel || s.countryCode] : []),
     s.countryCode, s.latitude.toFixed(4), s.longitude.toFixed(4), s.cableCount,
@@ -533,8 +550,7 @@ function CountryContent() {
   const [activeTab, setActiveTab] = useState<'cables' | 'stations'>('cables');
   const [typeFilter, setTypeFilter] = useState<'all' | 'international' | 'domestic' | 'branch'>('all');
   const [exporting, setExporting] = useState(false);
-  // 中国专属：是否包含台湾
-  const [includeTaiwan, setIncludeTaiwan] = useState(false);
+  // 中国分析始终包含大陆、香港、澳门、台湾（台湾数据排在列表末尾）
 
   const heroRef = useRef<HTMLDivElement>(null);
 
@@ -560,21 +576,29 @@ function CountryContent() {
   useEffect(() => {
     if (!selectedCode) return;
     setLoading(true); setData(null);
-    // 中国时根据台湾勾选状态决定请求哪个 code
-    const code = selectedCode === 'CN' ? (includeTaiwan ? 'CN_WITH_TW' : 'CN') : selectedCode;
+    // 中国始终请求 CN_WITH_TW（包含大陆+港+澳+台），台湾数据由后端排在末尾
+    const code = selectedCode === 'CN' ? 'CN_WITH_TW' : selectedCode;
     fetch(`/api/analysis/country?code=${code}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
     router.replace(`/country?code=${selectedCode}`);
-  }, [selectedCode, includeTaiwan]);
+  }, [selectedCode]);
 
   const isChinaSelected = selectedCode === 'CN';
   const isChinaGroup = data?.country.code?.startsWith('CN') || false;
 
-  const filteredCables = data?.cables.filter(c =>
+  // 台湾数据排在末尾：只有 stationsInCountry 全部是台湾的海缆才排最后
+  const filteredCables = (data?.cables.filter(c =>
     typeFilter === 'all' ? true : c.type === typeFilter
-  ) || [];
+  ) || []).sort((a, b) => {
+    if (isChinaGroup) {
+      const aIsTW = a.stationsInCountry.length > 0 && a.stationsInCountry.every(s => s.countryCode === 'TW');
+      const bIsTW = b.stationsInCountry.length > 0 && b.stationsInCountry.every(s => s.countryCode === 'TW');
+      if (aIsTW !== bIsTW) return aIsTW ? 1 : -1;
+    }
+    return 0;
+  });
 
   const filteredCountries = countries.filter(c =>
     c.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -592,7 +616,6 @@ function CountryContent() {
     setSelectedCode(code);
     setTypeFilter('all');
     setActiveTab('cables');
-    if (code !== 'CN') setIncludeTaiwan(false);
     // 平滑滚动到数据区
     setTimeout(() => {
       document.getElementById('data-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -747,31 +770,6 @@ function CountryContent() {
         {/* ── 数据区 ── */}
         <div id="data-section">
 
-          {/* 中国专属：台湾选项框 */}
-          {isChinaSelected && (
-            <div style={{ marginBottom: 24, padding: '16px 20px', backgroundColor: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', animation: 'fadeInUp 0.3s ease' }}>
-              <span style={{ fontSize: 13, color: '#9CA3AF', flex: 1 }}>
-                {zh
-                  ? '中国的分析默认包含大陆、香港、澳门。是否同时纳入台湾地区？'
-                  : 'China analysis includes Mainland, Hong Kong, and Macao by default. Include Taiwan?'
-                }
-              </span>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flexShrink: 0 }}>
-                <div onClick={() => setIncludeTaiwan(!includeTaiwan)} style={{
-                  width: 44, height: 24, borderRadius: 12,
-                  backgroundColor: includeTaiwan ? '#2A9D8F' : 'rgba(255,255,255,0.1)',
-                  position: 'relative', cursor: 'pointer', transition: 'background-color 0.2s',
-                  border: `1px solid ${includeTaiwan ? '#2A9D8F' : 'rgba(255,255,255,0.2)'}`,
-                }}>
-                  <div style={{ position: 'absolute', top: 2, left: includeTaiwan ? 22 : 2, width: 18, height: 18, borderRadius: '50%', backgroundColor: 'white', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
-                </div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: includeTaiwan ? '#2A9D8F' : '#6B7280' }}>
-                  {zh ? (includeTaiwan ? '已包含台湾' : '不含台湾') : (includeTaiwan ? 'Taiwan included' : 'Exclude Taiwan')}
-                </span>
-              </label>
-            </div>
-          )}
-
           {!selectedCode && (
             <div style={{ textAlign: 'center', padding: '60px 0', color: '#4B5563' }}>
               <div style={{ fontSize: 40, marginBottom: 16 }}>👆</div>
@@ -803,7 +801,7 @@ function CountryContent() {
                         { label: zh ? '大陆' : 'Mainland', code: 'CN', count: data.summary.breakdown.CN, color: '#EF4444' },
                         { label: zh ? '香港' : 'HK', code: 'HK', count: data.summary.breakdown.HK, color: '#3B82F6' },
                         { label: zh ? '澳门' : 'MO', code: 'MO', count: data.summary.breakdown.MO, color: '#10B981' },
-                        ...(includeTaiwan ? [{ label: zh ? '台湾' : 'TW', code: 'TW', count: data.summary.breakdown.TW, color: '#F59E0B' }] : []),
+                        { label: zh ? '台湾' : 'TW', code: 'TW', count: data.summary.breakdown.TW ?? 0, color: '#F59E0B' },
                       ].map(r => (
                         <span key={r.code} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, backgroundColor: `${r.color}15`, color: r.color, border: `1px solid ${r.color}30` }}>
                           {r.label} {r.count}
@@ -827,7 +825,7 @@ function CountryContent() {
                     onClick={async () => {
                       setExporting(true);
                       try {
-                        const code = selectedCode === 'CN' ? (includeTaiwan ? 'CN_WITH_TW' : 'CN') : selectedCode;
+                        const code = selectedCode === 'CN' ? 'CN_WITH_TW' : selectedCode;
                         const res = await fetch(`/api/country/intel-export?code=${code}&locale=${locale}`);
                         const json = await res.json();
                         generateIntelCSV(json, locale as 'zh' | 'en');
@@ -972,7 +970,15 @@ function CountryContent() {
                     <div>{zh ? '缆数' : 'Cables'}</div>
                     <div>{zh ? '接入海缆' : 'Cable List'}</div>
                   </div>
-                  {data.stations.map((station, i) => (
+                  {/* 台湾登陆站排在末尾 */}
+                  {[...data.stations].sort((a, b) => {
+                    if (isChinaGroup) {
+                      const aIsTW = a.countryCode === 'TW';
+                      const bIsTW = b.countryCode === 'TW';
+                      if (aIsTW !== bIsTW) return aIsTW ? 1 : -1;
+                    }
+                    return 0;
+                  }).map((station, i) => (
                     <div key={station.id} style={{ display: 'grid', gridTemplateColumns: `2fr ${isChinaGroup ? '90px ' : ''}110px 110px 50px 3fr`, padding: '11px 16px', borderBottom: i < data.stations.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
                       <div style={{ fontSize: 13, color: '#EDF2F7', fontWeight: 500 }}>{stationName(station, zh)}</div>
                       {isChinaGroup && (

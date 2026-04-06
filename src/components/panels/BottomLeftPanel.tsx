@@ -233,7 +233,7 @@ function InternetHealthSubPanel({ zh }: { zh: boolean }) {
       <div onClick={() => setIsExpanded(!isExpanded)} style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: isExpanded ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: config.color, boxShadow: hasOutage ? `0 0 8px ${config.color}` : 'none', animation: 'pulse 2s infinite' }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>{zh ? '互联网中断监测' : 'Internet Outage Monitor'}</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>{zh ? '光纤中断监测' : 'Fiber Outage Monitor'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {loading ? (
@@ -251,7 +251,7 @@ function InternetHealthSubPanel({ zh }: { zh: boolean }) {
         <div style={{ overflowY: 'auto', maxHeight: 280 }}>
           {!data || data.activeOutages === 0 ? (
             <div style={{ padding: '12px 14px', fontSize: 12, color: '#6B7280', lineHeight: 1.6 }}>
-              {zh ? '✓ 当前无互联网中断事件' : '✓ No active internet disruptions'}
+              {zh ? '✓ 当前无光纤中断事件' : '✓ No active fiber disruptions'}
             </div>
           ) : data.events.map((event, i) => (
             <div key={event.id || i} style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
