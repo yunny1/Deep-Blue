@@ -1,28 +1,13 @@
 // src/middleware.ts
-//
-// 全站身份验证中间件
-//
-// 工作原理：
-//   所有请求经过此中间件时，检查 httpOnly Cookie "db-session" 是否存在且有效。
-//   有效 → 放行；无效或不存在 → 重定向到 /login。
-//
-// 不受保护的路径（任何人都可访问）：
-//   /login          — 登录页面
-//   /api/auth/*     — 登录/登出 API
-//   /_next/*        — Next.js 静态资源
-//   /cesium/*       — CesiumJS 地球资源
-//   /favicon.ico    — 图标
-//
-// 安全说明：
-//   JWT 使用 HS256 算法，密钥由 AUTH_SESSION_SECRET 环境变量提供。
-//   Cookie 设置 httpOnly + Secure + SameSite=Lax，防止 XSS 和 CSRF。
-//   Session 有效期 8 小时，到期自动重定向至登录页。
+// 合并了两套验证逻辑：
+//   1. /admin/* 路径 → 使用管理员 JWT（admin_token cookie，原 proxy.ts 的逻辑）
+//   2. 其他所有路径 → 使用全站登录 JWT（db-session cookie，新增的访客登录逻辑）
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// 不需要认证的路径前缀
+// 不需要任何验证的公开路径
 const PUBLIC_PREFIXES = [
   '/login',
   '/api/auth/',
@@ -31,41 +16,60 @@ const PUBLIC_PREFIXES = [
   '/favicon.ico',
 ];
 
+// 管理员后台专用的 JWT 密钥（与原 proxy.ts 完全一致）
+const ADMIN_JWT_SECRET = new TextEncoder().encode(
+  process.env.ADMIN_JWT_SECRET || 'deepblue_admin_secret_change_this'
+);
+
+// 全站登录的 JWT 密钥（新增）
+const SESSION_SECRET = new TextEncoder().encode(
+  process.env.AUTH_SESSION_SECRET || 'CHANGE_THIS_SECRET_IN_PRODUCTION'
+);
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 公开路径直接放行
+  // ── 公开路径直接放行 ──────────────────────────────────────────
   if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get('db-session')?.value;
+  // ── /admin 路径：使用原有管理员 JWT 验证 ─────────────────────
+  // 这段逻辑与原 proxy.ts 完全一致，不改变管理员后台的行为
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+    const adminToken = request.cookies.get('admin_token')?.value;
+    if (!adminToken) {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+    try {
+      await jwtVerify(adminToken, ADMIN_JWT_SECRET);
+      return NextResponse.next();
+    } catch {
+      const response = NextResponse.redirect(new URL('/admin/login', request.url));
+      response.cookies.delete('admin_token');
+      return response;
+    }
+  }
 
-  // 没有 Token → 重定向到登录页，并记录原始路径便于登录后跳回
-  if (!token) {
+  // ── 其他所有路径：使用全站登录验证 ───────────────────────────
+  const sessionToken = request.cookies.get('db-session')?.value;
+  if (!sessionToken) {
     const loginUrl = new URL('/login', request.url);
     if (pathname !== '/') loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
   }
-
-  // 验证 JWT
   try {
-    const secret = new TextEncoder().encode(
-      process.env.AUTH_SESSION_SECRET || 'CHANGE_THIS_SECRET_IN_PRODUCTION'
-    );
-    await jwtVerify(token, secret);
+    await jwtVerify(sessionToken, SESSION_SECRET);
     return NextResponse.next();
   } catch {
-    // Token 无效或已过期：清除 Cookie 并重定向到登录页
-    const loginUrl = new URL('/login', request.url);
-    const response = NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(new URL('/login', request.url));
     response.cookies.delete('db-session');
     return response;
   }
 }
 
 export const config = {
-  // 匹配所有路径，但排除 Next.js 内部路径和静态文件
+  // 匹配所有路径，排除静态资源
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|cesium|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf)$).*)',
   ],
