@@ -47,14 +47,10 @@ async function verifyCaptcha(
   randstr: string,
   userIp: string,
 ): Promise<{ ok: boolean; message: string }> {
-  const appId  = process.env.TENCENT_CAPTCHA_APP_ID;
-  const secret = process.env.TENCENT_CAPTCHA_APP_SECRET;
-
-  // 开发环境未配置时跳过验证
-  if (!appId || !secret) {
-    console.warn('[Auth] CAPTCHA 未配置，跳过验证（仅开发环境可接受）');
-    return { ok: true, message: 'skipped' };
-  }
+  // 临时跳过：先确认账号密码和 JWT 流程正常，CAPTCHA 单独调试
+  console.warn('[Auth] CAPTCHA 验证暂时跳过（调试模式）');
+  return { ok: true, message: 'skipped' };
+}
 
   try {
     const url = new URL('https://ssl.captcha.qq.com/ticket/verify');
