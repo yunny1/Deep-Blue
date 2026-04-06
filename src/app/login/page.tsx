@@ -102,7 +102,7 @@ function LoginForm() {
     e.preventDefault();
     if (!username.trim()) { setError('请输入账号'); return; }
     if (!password)        { setError('请输入密码'); return; }
-    if (!captchaDone)     { setError('请先完成人机验证'); return; }
+    
 
     setLoading(true);
     setError('');
@@ -114,8 +114,7 @@ function LoginForm() {
         body: JSON.stringify({
           username: username.trim(),
           password,
-          ticket:   captchaTicket,
-          randstr:  captchaRandstr,
+          
         }),
       });
 
