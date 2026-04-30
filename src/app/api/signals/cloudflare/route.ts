@@ -32,10 +32,10 @@ async function writeToRedis(data: any): Promise<void> {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return;
   try {
-    await fetch(`${url}/set/${encodeURIComponent(CACHE_KEY)}`, {
+    await fetch(`${url}/set/${encodeURIComponent(CACHE_KEY)}?EX=${CACHE_TTL}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify([JSON.stringify(data), 'EX', CACHE_TTL]),
+      body: JSON.stringify(data),
       cache: 'no-store',
     });
   } catch {}
