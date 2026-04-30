@@ -51,7 +51,7 @@ async function fetchFromCloudflare(): Promise<any> {
   // 最近24小时的互联网中断事件
   const since = new Date(Date.now() - 24*60*60*1000).toISOString();
   const res = await fetch(
-    `https://api.cloudflare.com/client/v4/radar/annotations/outages?since=${since}&limit=20`,
+    `https://api.cloudflare.com/client/v4/radar/annotations/outages?dateRange=1d&limit=20`,
     {
       headers: { Authorization: `Bearer ${CF_TOKEN}`, 'Content-Type': 'application/json' },
       cache: 'no-store',
