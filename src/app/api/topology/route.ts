@@ -1,20 +1,26 @@
 // src/app/api/topology/route.ts
 // 网络拓扑API — 返回国家之间的海缆连接关系图数据
 // 用于绘制抽象网络拓扑视图
+//
+// v2(本轮): 修复关键 bug — 之前的 where 条件没有排除 mergedInto 标记的合并缆,
+//          导致已合并的重复缆仍然出现在拓扑图里。
+//          改用 src/lib/cable-filters.ts 的 OPERATIONAL_CABLE_FILTER。
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { OPERATIONAL_CABLE_FILTER } from '@/lib/cable-filters';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const country = searchParams.get('country'); // 可选：只返回某国的拓扑
+  const country = searchParams.get('country'); // 可选:只返回某国的拓扑
   const limit = parseInt(searchParams.get('limit') || '50');
 
   try {
-    // 获取所有在役海缆及其登陆站国家
+    // 获取所有在役/在建海缆及其登陆站国家
+    // v2: 改用统一的 OPERATIONAL_CABLE_FILTER,补上之前缺失的 mergedInto 排除
     const cables = await prisma.cable.findMany({
       where: {
-        status: { in: ['IN_SERVICE', 'UNDER_CONSTRUCTION'] },
+        ...OPERATIONAL_CABLE_FILTER,
         ...(country ? {
           landingStations: { some: { landingStation: { countryCode: country.toUpperCase() } } },
         } : {}),
@@ -28,7 +34,7 @@ export async function GET(request: NextRequest) {
       take: limit * 5, // 获取更多数据以便后续筛选
     });
 
-    // 构建节点（国家）和边（海缆连接）
+    // 构建节点(国家)和边(海缆连接)
     const countryMap = new Map<string, { code: string; name: string; cableCount: number; connections: Set<string> }>();
     const edges: Array<{ source: string; target: string; cables: string[]; cableCount: number }> = [];
     const edgeMap = new Map<string, Set<string>>();
@@ -50,7 +56,7 @@ export async function GET(request: NextRequest) {
         countryMap.get(cc)!.cableCount++;
       }
 
-      // 添加边（国家对之间的连接）
+      // 添加边(国家对之间的连接)
       for (let i = 0; i < countries.length; i++) {
         for (let j = i + 1; j < countries.length; j++) {
           const key = [countries[i], countries[j]].sort().join('-');

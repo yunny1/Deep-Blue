@@ -1,20 +1,16 @@
 // src/app/api/stats/route.ts
-// 统计数据 API — Redis 缓存1小时，包含精确海缆分类
+// 统计数据 API — Redis 缓存1小时,包含精确海缆分类
 // v8: 排除 REMOVED + mergedInto
+// v9(本轮): 改用 src/lib/cable-filters.ts 中的统一过滤器,与全平台一致
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { ACTIVE_CABLE_FILTER, IN_SERVICE_FILTER, withInService } from '@/lib/cable-filters';
 
 const CACHE_KEY = 'stats:global';
 const CACHE_TTL = 60 * 60;
 
-// 大中华区国家/地区代码：这些代码之间的海缆自动归为国内线
+// 大中华区国家/地区代码:这些代码之间的海缆自动归为国内线
 const CHINA_DOMESTIC_GROUP = ['CN', 'TW', 'HK', 'MO'];
-
-// v8: 基础过滤条件 — 排除已合并 + 已移除 + 待审核
-const ACTIVE_FILTER = {
-  mergedInto: null,
-  status: { notIn: ['PENDING_REVIEW', 'REMOVED'] as string[] },
-};
 
 async function getFromRedis(): Promise<any | null> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -56,19 +52,20 @@ export async function GET() {
       });
     }
 
-    // v8: 所有查询使用统一的 ACTIVE_FILTER
+    // v9: 总数用 ACTIVE_CABLE_FILTER(包含历史数据);
+    //     分项计数用 withInService 等组合工具,避免硬编码 mergedInto: null
     const [totalCables, inService, underConstruction, planned, decommissioned, totalStations, totalCountries] = await Promise.all([
-      prisma.cable.count({ where: ACTIVE_FILTER }),
-      prisma.cable.count({ where: { status: 'IN_SERVICE', mergedInto: null } }),
-      prisma.cable.count({ where: { status: 'UNDER_CONSTRUCTION', mergedInto: null } }),
-      prisma.cable.count({ where: { status: 'PLANNED', mergedInto: null } }),
-      prisma.cable.count({ where: { status: 'DECOMMISSIONED', mergedInto: null } }),
+      prisma.cable.count({ where: ACTIVE_CABLE_FILTER }),
+      prisma.cable.count({ where: { mergedInto: null, status: 'IN_SERVICE' } }),
+      prisma.cable.count({ where: { mergedInto: null, status: 'UNDER_CONSTRUCTION' } }),
+      prisma.cable.count({ where: { mergedInto: null, status: 'PLANNED' } }),
+      prisma.cable.count({ where: { mergedInto: null, status: 'DECOMMISSIONED' } }),
       prisma.landingStation.count(),
       prisma.country.count({ where: { landingStations: { some: {} } } }),
     ]);
 
     const inServiceCables = await prisma.cable.findMany({
-      where: { status: 'IN_SERVICE', mergedInto: null },
+      where: IN_SERVICE_FILTER, // v9: 使用统一的 IN_SERVICE 过滤器
       select: {
         slug: true,
         landingStations: {
@@ -89,7 +86,7 @@ export async function GET() {
 
     const lengthResult = await prisma.cable.aggregate({
       _sum: { lengthKm: true },
-      where: ACTIVE_FILTER,
+      where: ACTIVE_CABLE_FILTER, // v9: 使用统一过滤器
     });
     const totalLengthKm = Math.round((lengthResult._sum.lengthKm || 0) / 10000) * 10000;
 

@@ -5,10 +5,14 @@
 //    → 管理后台更新路径后，地图自动同步，无需改代码
 // 2. 多策略名称匹配，修复含斜杠/特殊格式的海缆（如 ASE/Cahaya Malaysia）匹配失败问题
 // 3. 结果去重，防止多个 OR 条件匹配到同一条缆
+// 4. v2(本轮): 修复过滤策略不一致 — 之前的 where 条件只排除了 status='REMOVED',
+//    没有排除 mergedInto 标记的合并缆,也没排除 PENDING_REVIEW。
+//    改用 src/lib/cable-filters.ts 的 ACTIVE_CABLE_FILTER 与全平台对齐。
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { CANONICAL_CABLE_NAMES } from '@/lib/sovereign-routes';
+import { ACTIVE_CABLE_FILTER } from '@/lib/cable-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +34,6 @@ async function redisGet(key: string): Promise<string | null> {
 }
 
 // ── 从 Redis 路径数据中动态提取所有涉及的海缆名称 ────────────────────────────
-// 这样管理后台更新路径后，地图会自动展示新路径里引用的海缆，不需要手动改代码。
 async function getCableNamesFromRedis(): Promise<string[] | null> {
   const raw = await redisGet('sovereign-routes:v1');
   if (!raw) return null;
@@ -40,7 +43,6 @@ async function getCableNamesFromRedis(): Promise<string[] | null> {
     const names  = new Set<string>();
 
     for (const route of routes) {
-      // cables 字段格式："Cable A | Cable B | Cable C"
       (route.cables ?? '').split(' | ').forEach(c => {
         const trimmed = c.trim();
         if (trimmed) names.add(trimmed);
@@ -54,13 +56,6 @@ async function getCableNamesFromRedis(): Promise<string[] | null> {
 }
 
 // ── 多策略名称匹配条件构建 ────────────────────────────────────────────────────
-// 原来只有一种策略（去掉括号后 contains），有两个缺陷：
-//   1. "Asia Submarine-cable Express (ASE)/Cahaya Malaysia" 去括号后变成
-//      "Asia Submarine-cable Express /Cahaya Malaysia"（斜杠前多一个空格），
-//      数据库里没有这个格式，匹配失败。
-//   2. 斜杠分隔的双名海缆（一条缆有两个名字）无法用任一个名字单独命中。
-//
-// 新策略：对每个名字生成多个候选条件，取并集（OR），再在代码层面去重。
 function buildMatchConditions(names: string[]) {
   const condMap = new Map<string, { name: { contains: string; mode: 'insensitive' } }>();
 
@@ -71,10 +66,8 @@ function buildMatchConditions(names: string[]) {
   };
 
   for (const name of names) {
-    // 策略 1：完整名称直接 contains
     addContains(name);
 
-    // 策略 2：去掉括号 + 规范化空格和斜杠两侧空格
     const noParens = name
       .replace(/\s*\([^)]+\)/g, '')
       .replace(/\s+/g, ' ')
@@ -82,11 +75,9 @@ function buildMatchConditions(names: string[]) {
       .trim();
     if (noParens !== name) addContains(noParens);
 
-    // 策略 3：提取括号里的缩写（如 "ASE"）
     const abbrs = [...name.matchAll(/\(([^)]+)\)/g)].map(m => m[1]);
     abbrs.forEach(abbr => addContains(abbr));
 
-    // 策略 4：斜杠分段，分别尝试斜杠两侧的名字
     if (name.includes('/')) {
       name.split('/').forEach(part => {
         const cleaned = part.replace(/\s*\([^)]+\)/g, '').replace(/\s+/g, ' ').trim();
@@ -101,17 +92,20 @@ function buildMatchConditions(names: string[]) {
 // ── 主处理函数 ────────────────────────────────────────────────────────────────
 export async function GET() {
   try {
-    // 优先从 Redis 提取路径里真实引用的海缆名（自动与管理后台同步）
-    // 若 Redis 为空（首次部署或被清空），退回到源代码里的静态名单兜底
     const redisCableNames = await getCableNamesFromRedis();
     const cableNames      = redisCableNames ?? CANONICAL_CABLE_NAMES;
 
     const matchConditions = buildMatchConditions(cableNames);
 
+    // v2: 把名称匹配 OR 条件 + 全平台统一的 ACTIVE_CABLE_FILTER 组合起来。
+    // ACTIVE_CABLE_FILTER 同时排除 mergedInto + PENDING_REVIEW + REMOVED,
+    // 而旧代码只排除了 REMOVED。
     const cables = await prisma.cable.findMany({
       where: {
-        OR: matchConditions,
-        status: { not: 'REMOVED' },
+        AND: [
+          { OR: matchConditions },
+          ACTIVE_CABLE_FILTER,
+        ],
       },
       select: {
         slug:         true,
@@ -145,7 +139,7 @@ export async function GET() {
       },
     });
 
-    // 去重：多个 OR 条件可能匹配到同一条缆，以 slug 为主键去重
+    // 去重:多个 OR 条件可能匹配到同一条缆,以 slug 为主键去重
     const seenSlugs  = new Set<string>();
     const uniqueCables = cables.filter(c => {
       if (seenSlugs.has(c.slug)) return false;

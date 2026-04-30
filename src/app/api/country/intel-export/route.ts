@@ -14,15 +14,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { BRICS_ALL, BRICS_COUNTRY_META, normalizeBRICS, isBRICSCountry } from '@/lib/brics-constants';
+import { OPERATIONAL_CABLE_FILTER } from '@/lib/cable-filters';
 
 export const dynamic = 'force-dynamic';
 
 const CHINA_GROUP = new Set(['CN', 'TW', 'HK', 'MO']);
-
-const ACTIVE_FILTER = {
-  mergedInto: null,
-  status: { notIn: ['PENDING_REVIEW', 'REMOVED', 'RETIRED', 'DECOMMISSIONED'] as string[] },
-};
 
 // ── 主权分级（与其他模块保持一致）─────────────────────────────────
 const BRICS_COMPANIES = new Set([
@@ -111,7 +107,7 @@ export async function GET(req: NextRequest) {
     // ── Part A：该国海缆完整数据 ──────────────────────────────────
     const cables = await prisma.cable.findMany({
       where: {
-        ...ACTIVE_FILTER,
+        ...OPERATIONAL_CABLE_FILTER,
         landingStations: {
           some: { landingStation: { countryCode: { in: [...matchCodes] } } },
         },
@@ -179,7 +175,7 @@ export async function GET(req: NextRequest) {
     if (isTargetBRICS) {
       // 构建全局连接图（与 transit-analysis 路由逻辑一致）
       const allCables = await prisma.cable.findMany({
-        where: ACTIVE_FILTER,
+        where: OPERATIONAL_CABLE_FILTER,
         select: {
           slug: true, name: true, status: true, lengthKm: true, rfsDate: true,
           vendor: { select: { name: true } },

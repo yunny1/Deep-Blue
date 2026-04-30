@@ -1,10 +1,13 @@
 // src/app/api/cables/route.ts
-// 海缆数据 API v4 — Redis 缓存优先
-// v9: 新增 isApproximateRoute 标记（大圆弧近似路由用虚线渲染）
-// v8: 排除 REMOVED + mergedInto，返回 isNew / statusChanged 标记
+// 海缆数据 API v5 — Redis 缓存优先
+// v9: 新增 isApproximateRoute 标记(大圆弧近似路由用虚线渲染)
+// v8: 排除 REMOVED + mergedInto,返回 isNew / statusChanged 标记
+// v5(本轮): 过滤条件改用 src/lib/cable-filters.ts 的 ACTIVE_CABLE_FILTER,
+//        与全平台保持一致
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { ACTIVE_CABLE_FILTER } from '@/lib/cable-filters';
 
 const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -71,10 +74,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const cables = await prisma.cable.findMany({
-      where: {
-        status: { notIn: ['PENDING_REVIEW', 'REMOVED'] },  // v8: 排除 REMOVED
-        mergedInto: null,
-      },
+      where: ACTIVE_CABLE_FILTER, // v5: 改用统一过滤器,与全平台一致
       select: {
         id: true, name: true, slug: true, status: true,
         rfsDate: true, lengthKm: true, designCapacityTbps: true, fiberPairs: true,
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
       isNew: c.firstSeenAt ? (now - new Date(c.firstSeenAt).getTime()) < SEVEN_DAYS_MS : false,
       // v8: 7天内状态变更 → 变更标记
       statusChanged: c.statusChangedAt ? (now - new Date(c.statusChangedAt).getTime()) < SEVEN_DAYS_MS : false,
-      // v9: 近似路由标记（前端用虚线渲染）
+      // v9: 近似路由标记(前端用虚线渲染)
       isApproximateRoute: (c as any).isApproximateRoute ?? false,
     }));
 

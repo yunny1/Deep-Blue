@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { BRICS_MEMBERS, BRICS_PARTNERS, BRICS_ALL, BRICS_COUNTRY_META, normalizeBRICS } from '@/lib/brics-constants';
+import { OPERATIONAL_CABLE_FILTER } from '@/lib/cable-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,15 +107,10 @@ function classifySovereignty(vendor: string | null, operators: string[]): Sovere
 // ── 主处理函数 ─────────────────────────────────────────────────────
 export async function GET() {
   try {
-    const ACTIVE_FILTER = {
-      mergedInto: null,
-      status: { notIn: ['PENDING_REVIEW', 'REMOVED', 'RETIRED', 'DECOMMISSIONED'] as string[] },
-    };
-
     // 查询所有有金砖国家登陆站的海缆，带完整建造商和运营商信息
     const cables = await prisma.cable.findMany({
       where: {
-        ...ACTIVE_FILTER,
+        ...OPERATIONAL_CABLE_FILTER,
         landingStations: {
           some: { landingStation: { countryCode: { in: [...BRICS_ALL] } } },
         },

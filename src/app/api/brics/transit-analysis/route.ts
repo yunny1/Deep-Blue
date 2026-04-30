@@ -17,6 +17,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { OPERATIONAL_CABLE_FILTER } from '@/lib/cable-filters';
 import {
   BRICS_MEMBERS, BRICS_PARTNERS, BRICS_ALL,
   BRICS_COUNTRY_META, normalizeBRICS, isBRICSCountry,
@@ -215,15 +216,9 @@ export async function GET() {
         headers: { 'X-Cache': 'HIT' },
       });
     }
-
-    const ACTIVE_FILTER = {
-      mergedInto: null,
-      status: { notIn: ['PENDING_REVIEW', 'REMOVED', 'RETIRED', 'DECOMMISSIONED'] as string[] },
-    };
-
     // 1. 查询所有海缆，带建造商、运营商、登陆国信息
     const cables = await prisma.cable.findMany({
-      where: ACTIVE_FILTER,
+      where: OPERATIONAL_CABLE_FILTER,
       select: {
         slug: true, name: true, status: true, lengthKm: true, rfsDate: true,
         vendor: { select: { name: true } },

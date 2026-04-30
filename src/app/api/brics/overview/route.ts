@@ -1,18 +1,21 @@
+// src/app/api/brics/overview/route.ts
+// v2(本轮): 改用 src/lib/cable-filters.ts 的 OPERATIONAL_CABLE_FILTER,
+//          与全平台统一(语义上仍是排除 PENDING_REVIEW + REMOVED + RETIRED + DECOMMISSIONED + mergedInto)
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { BRICS_MEMBERS, BRICS_ALL, normalizeBRICS, isBRICSCountry, isBRICSInternalCable, isDomesticCable  } from '@/lib/brics-constants';
+import { OPERATIONAL_CABLE_FILTER } from '@/lib/cable-filters';
 
 export const revalidate = 3600;
-const AF = { mergedInto: null, status: { notIn: ['PENDING_REVIEW','REMOVED','RETIRED','DECOMMISSIONED'] as string[] } };
 
 export async function GET() {
   try {
     const [totalCables, totalStations] = await Promise.all([
-      prisma.cable.count({ where: AF }), prisma.landingStation.count(),
+      prisma.cable.count({ where: OPERATIONAL_CABLE_FILTER }), prisma.landingStation.count(),
     ]);
 
     const raw = await prisma.cable.findMany({
-      where: AF,
+      where: OPERATIONAL_CABLE_FILTER,
       select: {
         id:true, slug:true, name:true, status:true, lengthKm:true,
         rfsDate:true, fiberPairs:true, designCapacityTbps:true,
@@ -56,7 +59,7 @@ export async function GET() {
 
     const sovereigntyIndex = allBrics.length > 0 ? Math.round(((internal.length + domestic.length) / allBrics.length) * 100) : 0;
 
-    // 供地图使用：每条海缆的分类 + 基本信息
+    // 供地图使用:每条海缆的分类 + 基本信息
     const cableMap: Record<string, { cat: string; name: string; status: string; lengthKm: number | null; vendor: string | null; owners: string[]; stations: { name: string; country: string | null; city: string | null }[]; fiberPairs: number | null; capacityTbps: number | null; rfsDate: string | null }> = {};
     for (const c of internal) cableMap[c.slug] = { cat:'internal', name:c.name, status:c.status, lengthKm:c.lengthKm, vendor:c.vendor, owners:c.owners, stations:c.stations, fiberPairs:c.fiberPairs, capacityTbps:c.capacityTbps, rfsDate:c.rfsDate?.toISOString()?.slice(0,10) ?? null };
     for (const c of domestic) cableMap[c.slug] = { cat:'domestic', name:c.name, status:c.status, lengthKm:c.lengthKm, vendor:c.vendor, owners:c.owners, stations:c.stations, fiberPairs:c.fiberPairs, capacityTbps:c.capacityTbps, rfsDate:c.rfsDate?.toISOString()?.slice(0,10) ?? null };

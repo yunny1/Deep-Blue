@@ -1,32 +1,21 @@
 // src/app/api/admin/cable-save/route.ts
-// 海缆录入保存接口（完整版）v2
+// 海缆录入保存接口（完整版）v3
 //
-// v2 修复：
+// v3 修复（本轮变更）:
+// 1. 移除本地的 clearMapCache 函数,改用 src/lib/cache-invalidation.ts 中的
+//    invalidateCableCaches。这样除了清地图层缓存,还会清除 transit:analysis:v1
+//    (金砖中转分析,TTL 6h),保证 admin 改完海缆后金砖战略页立刻反映。
+//
+// v2 修复:
 // 1. 登陆站关联改为「全量替换」（先删后增），防止多次保存累积重复记录
-// 2. 保存成功后自动清除 Redis 地图缓存，主页地球立即反映新路由
+// 2. 保存成功后自动清除 Redis 地图缓存,主页地球立即反映新路由
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyAdminJWT } from '@/lib/admin-auth';
+import { invalidateCableCaches } from '@/lib/cache-invalidation';
 
 export const dynamic = 'force-dynamic';
-
-// ── Redis 缓存清除 ────────────────────────────────────────────────────────────
-async function clearMapCache() {
-  const url   = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return;
-  await fetch(`${url}/pipeline`, {
-    method:  'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify([
-      ['del', 'cables:geo:details'],
-      ['del', 'cables:geo'],
-      ['del', 'cables:list'],
-      ['del', 'stats:global'],
-    ]),
-  }).catch(() => {});
-}
 
 function toSlug(name: string): string {
   return name.trim().toLowerCase()
@@ -58,21 +47,21 @@ export async function POST(req: NextRequest) {
   if (!name?.trim())
     return NextResponse.json({ error: '海缆名称为必填项' }, { status: 400 });
 
-  // routeGeojson：字符串 → JSON 对象
+  // routeGeojson:字符串 → JSON 对象
   let routeGeojson: object | undefined;
   if (routeGeojsonStr?.trim()) {
     try { routeGeojson = JSON.parse(routeGeojsonStr); }
-    catch { return NextResponse.json({ error: 'routeGeojson 格式错误，请粘贴合法的 GeoJSON' }, { status: 400 }); }
+    catch { return NextResponse.json({ error: 'routeGeojson 格式错误,请粘贴合法的 GeoJSON' }, { status: 400 }); }
   }
 
-  // rfsDate：年份字符串 → DateTime
+  // rfsDate:年份字符串 → DateTime
   let rfsDt: Date | undefined;
   if (rfsDate?.trim()) {
     const yr = parseInt(rfsDate);
     if (!isNaN(yr) && yr > 1980 && yr < 2060) rfsDt = new Date(yr, 0, 1);
   }
 
-  // vendor：按名字 upsert Company
+  // vendor:按名字 upsert Company
   let vendorId: string | null = null;
   if (vendor?.trim()) {
     const c = await prisma.company.upsert({
@@ -81,7 +70,7 @@ export async function POST(req: NextRequest) {
     vendorId = c.id;
   }
 
-  // owners：逗号分隔，逐个 upsert Company
+  // owners:逗号分隔,逐个 upsert Company
   const ownerNames = (owners ?? '').split(',').map(s => s.trim()).filter(Boolean);
   const ownerCompanies = await Promise.all(
     ownerNames.map(n =>
@@ -107,7 +96,7 @@ export async function POST(req: NextRequest) {
   let finalSlug: string;
 
   if (mergeIntoSlug) {
-    // 合并模式：更新现有记录（undefined 字段 Prisma 自动跳过，不清空原有值）
+    // 合并模式:更新现有记录(undefined 字段 Prisma 自动跳过,不清空原有值)
     const updated = await prisma.cable.update({ where: { slug: mergeIntoSlug }, data: cableData });
     cableId = updated.id; finalSlug = updated.slug;
   } else {
@@ -119,7 +108,7 @@ export async function POST(req: NextRequest) {
     cableId = created.id; finalSlug = created.slug;
   }
 
-  // owners：先清空旧关联，再重建
+  // owners:先清空旧关联,再重建
   if (ownerCompanies.length > 0) {
     await prisma.cableOwnership.deleteMany({ where: { cableId } });
     await prisma.cableOwnership.createMany({
@@ -128,14 +117,14 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // ── 登陆站关联：全量替换（先删后增）─────────────────────────────────────
-  // 关键修复：从「只追加」改为「全量替换」。
+  // ── 登陆站关联:全量替换(先删后增)──────────────────────────────────
+  // 关键修复:从「只追加」改为「全量替换」。
   //
-  // 旧策略的问题：每次保存都追加，多次保存后站点数量不断累积
-  //（比如第一次 9 个，第二次又追加 9 个变成 15 个，skipDuplicates 只过滤完全相同的 ID）。
+  // 旧策略的问题:每次保存都追加,多次保存后站点数量不断累积
+  //(比如第一次 9 个,第二次又追加 9 个变成 15 个,skipDuplicates 只过滤完全相同的 ID)。
   //
-  // 新策略：把鱼骨拓扑编辑器的输出作为"当前这条缆应该有哪些登陆站"的唯一事实来源，
-  // 每次保存都先清空再重建，保证数据库和编辑器的状态完全一致。
+  // 新策略:把鱼骨拓扑编辑器的输出作为"当前这条缆应该有哪些登陆站"的唯一事实来源,
+  // 每次保存都先清空再重建,保证数据库和编辑器的状态完全一致。
   if (landingStationIds.length > 0) {
     // 先删除该缆的所有登陆站关联
     await prisma.cableLandingStation.deleteMany({ where: { cableId } });
@@ -146,9 +135,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 清除 Redis 地图缓存（fire and forget，不阻断响应）
-  // 清除 Redis 地图缓存（await 确保在函数返回前执行完）
-  await clearMapCache();
+  // ── 缓存清除 ─────────────────────────────────────────────────────────
+  // v3 变更:从 clearMapCache(只清地图层4个 key)升级为 invalidateCableCaches
+  //(同时清除 transit:analysis:v1,保证金砖战略页立即更新)。
+  //
+  // 必须 await:Vercel serverless 函数返回响应后实例立即回收,
+  // fire-and-forget 的 fetch 可能根本没发出去。
+  await invalidateCableCaches();
 
   return NextResponse.json({
     ok: true, slug: finalSlug, cableId,

@@ -1,11 +1,18 @@
 // src/app/api/simulate/route.ts
 // 延迟模拟器API — 模拟某条海缆断裂后对全球互联网连接的影响
 // 计算受影响的国家、替代路由、延迟增加量等
+//
+// v2(本轮): 修复关键 bug
+//   1. 之前查目标海缆时完全没加过滤,即使该缆已被 REMOVED / merged 也能被模拟
+//   2. 之前查替代缆时只过滤 status=IN_SERVICE,没排除 mergedInto,
+//      导致重复的合并缆被算作"独立可用替代"
+//   改用 src/lib/cable-filters.ts 的 ACTIVE / IN_SERVICE 过滤器
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { ACTIVE_CABLE_FILTER, IN_SERVICE_FILTER } from '@/lib/cable-filters';
 
-// 简化的全球互联网延迟基准（毫秒，基于公开的全球延迟测量数据）
+// 简化的全球互联网延迟基准(毫秒,基于公开的全球延迟测量数据)
 // 这些是直连路由的典型RTT值
 const BASE_LATENCY: Record<string, Record<string, number>> = {
   'US': { 'GB': 75, 'DE': 90, 'JP': 120, 'SG': 180, 'AU': 200, 'BR': 130, 'IN': 220, 'AE': 200, 'ZA': 230 },
@@ -14,12 +21,12 @@ const BASE_LATENCY: Record<string, Record<string, number>> = {
   'JP': { 'US': 120, 'SG': 70, 'AU': 120, 'KR': 30, 'TW': 40, 'GB': 220 },
 };
 
-// 当海缆断裂时，流量需要绕行的额外延迟（基于替代路由长度估算）
+// 当海缆断裂时,流量需要绕行的额外延迟(基于替代路由长度估算)
 function estimateRerouteLatency(
   countryA: string, countryB: string, brokenCableLength: number | null
 ): { addedLatencyMs: number; rerouteDescription: string } {
   // 基于断裂海缆长度估算绕行延迟
-  // 光在光纤中的传播速度约200,000 km/s，RTT需要×2
+  // 光在光纤中的传播速度约200,000 km/s,RTT需要×2
   // 绕行通常增加50-200%的路径长度
   const lengthKm = brokenCableLength || 5000;
   const directLatency = (lengthKm / 200000) * 1000 * 2; // 直连RTT (ms)
@@ -42,25 +49,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 获取目标海缆的完整信息
-    let cable = await prisma.cable.findUnique({
-      where: { slug: cableSlug },
+    // ── 修复 1:查目标海缆时叠加 ACTIVE_CABLE_FILTER ────────────────────────
+    // 之前 findUnique 没加过滤,导致即使该缆已被 REMOVED / merged 也能被查到。
+    // 现在改用 findFirst,叠加 ACTIVE_CABLE_FILTER + (slug OR id),
+    // 让被删除的缆从模拟器里彻底消失。
+    let cable = await prisma.cable.findFirst({
+      where: {
+        ...ACTIVE_CABLE_FILTER,
+        OR: [{ slug: cableSlug }, { id: cableSlug }],
+      },
       include: {
         landingStations: {
           include: { landingStation: { include: { country: true } } },
         },
       },
     });
-    if (!cable) {
-      cable = await prisma.cable.findUnique({
-        where: { id: cableSlug },
-        include: {
-          landingStations: {
-            include: { landingStation: { include: { country: true } } },
-          },
-        },
-      });
-    }
+
     if (!cable) return NextResponse.json({ error: 'Cable not found' }, { status: 404 });
 
     const affectedCountries = [...new Set(cable.landingStations.map(ls => ls.landingStation.countryCode))];
@@ -69,10 +73,13 @@ export async function GET(request: NextRequest) {
     const alternativesByCountry: Record<string, { total: number; names: string[] }> = {};
 
     for (const cc of affectedCountries) {
+      // ── 修复 2:替代缆查询用 IN_SERVICE_FILTER(已包含 mergedInto: null)──
+      // 之前的 where 只写了 status: 'IN_SERVICE',没排除 mergedInto,
+      // 导致重复的合并缆被算作"独立可用替代",虚增冗余度。
       const alternatives = await prisma.cable.findMany({
         where: {
+          ...IN_SERVICE_FILTER,
           id: { not: cable.id },
-          status: 'IN_SERVICE',
           landingStations: {
             some: { landingStation: { countryCode: cc } },
           },

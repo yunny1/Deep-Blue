@@ -1,9 +1,11 @@
 // src/app/api/cables/filter-options/route.ts
-// 返回各筛选维度的海缆数量，支持跨维度过滤后的实时计数
+// 返回各筛选维度的海缆数量,支持跨维度过滤后的实时计数
 // v8: 排除 REMOVED + mergedInto
+// v9(本轮): 改用 src/lib/cable-filters.ts 的 ACTIVE_CABLE_FILTER 与全平台一致
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { ACTIVE_CABLE_FILTER } from '@/lib/cable-filters';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -14,10 +16,9 @@ export async function GET(request: NextRequest) {
   const yearMin       = parseInt(searchParams.get('yearMin') || '1990');
   const yearMax       = parseInt(searchParams.get('yearMax') || '2030');
 
-  // v8: 基础条件排除 PENDING_REVIEW + REMOVED + 已合并
+  // v9: 把 ACTIVE_CABLE_FILTER 和年份范围合并为基础 where
   const baseWhere: any = {
-    status: { notIn: ['PENDING_REVIEW', 'REMOVED'] },
-    mergedInto: null,
+    ...ACTIVE_CABLE_FILTER,
     OR: [
       { rfsDate: null },
       {
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
         by: ['status'],
         where: {
           ...baseWhere,
-          status: { notIn: ['PENDING_REVIEW', 'REMOVED'] },
+          ...ACTIVE_CABLE_FILTER, // v9: 显式叠加,确保即便外层 baseWhere 被覆写也保留过滤
         },
         _count: true,
       }),
