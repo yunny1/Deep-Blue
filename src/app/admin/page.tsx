@@ -4,6 +4,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import GenerateRoutesButton from '@/components/admin/GenerateRoutesButton';
 
 interface SyncLog {
   runAt: string; tgTotal: number; snTotal: number;
@@ -504,6 +505,15 @@ export default function AdminPage() {
           </div>
         )}
 
+      </div>
+      <div style={{ marginTop: 24, background: 'rgba(26,45,74,.5)', borderRadius: 14, padding: '20px 24px' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: '#3B82F680', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+          近似路由生成
+        </div>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 14, lineHeight: 1.6 }}>
+          为所有有登陆站坐标但缺少路由的海缆自动生成近似路线。nightly-sync 后可手动触发，也会被服务器每日自动调用。
+        </p>
+        <GenerateRoutesButton />
       </div>
     </div>
   );

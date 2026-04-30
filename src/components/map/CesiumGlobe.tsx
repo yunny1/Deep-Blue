@@ -78,10 +78,12 @@ export default function CesiumGlobe({ onHover, onClick, suppressLoadingIndicator
   const allEntitiesRef = useRef<any[]>([]);
   const quakeRippleRef = useRef<any[]>([]);
   const quakeAnimRef   = useRef<any>(null);
-  // 当前高亮的海缆信息，用组件级 ref 存储
-  // 这样 useEffect（监听面板关闭）也能访问到，而不只是 initCesium 闭包内部
+  // 当前 hover 高亮的海缆(鼠标悬停产生的临时高亮,鼠标离开会清除)
   const lastHoveredRef     = useRef<any>(null);
   const lastHoveredSlugRef = useRef<string | null>(null);
+  // 当前 click 锁定高亮的海缆(持久高亮,只有点击其他缆或关闭面板才会清除)
+  // 这是修复"hover 离开后高亮不消失"bug 的关键:把"临时高亮"和"持久高亮"分成两个 ref
+  const stickySlugRef      = useRef<string | null>(null);
   // flyTo 하이라이트 중인 slug 추적 (검색 effect가 덮어쓰지 않도록)
   const flyHighlightRef    = useRef<string | null>(null);
 
@@ -241,35 +243,55 @@ export default function CesiumGlobe({ onHover, onClick, suppressLoadingIndicator
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
       // ── MOUSE_MOVE ───────────────────────────────────────────────────────
-      // 规则：悬浮只负责"第一次触发高亮"。
-      // 一旦某条缆被高亮，鼠标移到其他缆上不会改变高亮。
-      // 高亮只有两种方式清除：点击别的缆、或点击关闭按钮。
+      // 修复后的规则:
+      //   1. 鼠标悬停在某条缆上 → 临时高亮(lastHoveredSlugRef)
+      //   2. 鼠标离开该缆 → 临时高亮自动清除,恢复原色
+      //   3. 但如果该缆是被点击/搜索锁定的(stickySlugRef),则保持高亮不动
       handler.setInputAction((m: any) => {
         const picked = viewer.scene.pick(m.endPosition);
+        const Cesium = cesiumRef.current;
 
+        // 当前指向哪条缆(可能为 null = 空白区域)
+        let currentSlug: string | null = null;
+        let currentEntity: any = null;
         if (Cesium.defined(picked) && picked.id?.polyline) {
-          const e    = picked.id;
-          const slug = entityMetaRef.current.get(e)?.slug ?? null;
+          currentEntity = picked.id;
+          currentSlug = entityMetaRef.current.get(currentEntity)?.slug ?? null;
+        }
 
-          // 如果当前已经有高亮缆，悬浮不做任何切换，只更新 cursor 和 hover 信息卡
-          if (lastHoveredSlugRef.current !== null) {
-            viewer.scene.canvas.style.cursor = 'pointer';
-            if (onHover && e.properties) {
-              onHover({
-                name: e.name || 'Unknown',
-                status: e.properties.status?.getValue() || 'IN_SERVICE',
-                lengthKm: e.properties.lengthKm?.getValue() || null,
-                fiberPairs: e.properties.fiberPairs?.getValue() || null,
-              }, { x: m.endPosition.x, y: m.endPosition.y });
-            }
-            return; // ← 关键：已有高亮时直接返回，不做任何高亮变更
+        // 如果指向的缆和上次 hover 的相同,只更新 hover 卡位置即可
+        if (currentSlug && currentSlug === lastHoveredSlugRef.current) {
+          if (onHover && currentEntity?.properties) {
+            onHover({
+              name: currentEntity.name || 'Unknown',
+              status: currentEntity.properties.status?.getValue() || 'IN_SERVICE',
+              lengthKm: currentEntity.properties.lengthKm?.getValue() || null,
+              fiberPairs: currentEntity.properties.fiberPairs?.getValue() || null,
+            }, { x: m.endPosition.x, y: m.endPosition.y });
           }
+          viewer.scene.canvas.style.cursor = 'pointer';
+          return;
+        }
 
-          // 没有高亮时，悬浮触发第一次高亮
-          if (slug && slug !== lastHoveredSlugRef.current) {
-            lastHoveredRef.current     = e;
-            lastHoveredSlugRef.current = slug;
-            const siblings = entitiesMapRef.current.get(slug) || [];
+        // 鼠标离开了上次 hover 的缆 → 恢复其原色
+        // 但如果它是被点击锁定的(sticky),不动它
+        if (lastHoveredSlugRef.current && lastHoveredSlugRef.current !== stickySlugRef.current) {
+          const oldSlug = lastHoveredSlugRef.current;
+          const oldSiblings = entitiesMapRef.current.get(oldSlug) || [];
+          for (const sibling of oldSiblings) {
+            const meta = entityMetaRef.current.get(sibling);
+            if (!meta) continue;
+            try { restoreCableMaterial(Cesium, sibling, meta, useMapStore.getState().colorMode); } catch {}
+          }
+        }
+        lastHoveredRef.current = null;
+        lastHoveredSlugRef.current = null;
+
+        // 如果鼠标移到了一条新缆上 → 给它加临时高亮
+        if (currentSlug && currentEntity) {
+          // 不要重复高亮已经被点击锁定的缆(它已经亮着)
+          if (currentSlug !== stickySlugRef.current) {
+            const siblings = entitiesMapRef.current.get(currentSlug) || [];
             for (const sibling of siblings) {
               try {
                 sibling.polyline.material = new Cesium.Color(1, 1, 1, 1);
@@ -277,35 +299,38 @@ export default function CesiumGlobe({ onHover, onClick, suppressLoadingIndicator
               } catch {}
             }
           }
+          lastHoveredRef.current     = currentEntity;
+          lastHoveredSlugRef.current = currentSlug;
 
-          if (onHover && e.properties) {
+          if (onHover && currentEntity.properties) {
             onHover({
-              name: e.name || 'Unknown',
-              status: e.properties.status?.getValue() || 'IN_SERVICE',
-              lengthKm: e.properties.lengthKm?.getValue() || null,
-              fiberPairs: e.properties.fiberPairs?.getValue() || null,
+              name: currentEntity.name || 'Unknown',
+              status: currentEntity.properties.status?.getValue() || 'IN_SERVICE',
+              lengthKm: currentEntity.properties.lengthKm?.getValue() || null,
+              fiberPairs: currentEntity.properties.fiberPairs?.getValue() || null,
             }, { x: m.endPosition.x, y: m.endPosition.y });
           }
           viewer.scene.canvas.style.cursor = 'pointer';
         } else {
-          // 鼠标移到空白区域：只重置 cursor 和 hover 卡，不影响高亮
+          // 鼠标移到空白区域
           if (onHover) onHover(null, { x: 0, y: 0 });
           viewer.scene.canvas.style.cursor = 'default';
         }
       }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
       // ── LEFT_CLICK ───────────────────────────────────────────────────────
-      // 点击缆：将高亮切换到被点击的缆，然后打开详情面板
-      // 点击空白：关闭面板（面板关闭会触发 useEffect 清除高亮）
+      // 点击缆:把高亮锁定到被点击的缆(stickySlugRef),打开详情面板
+      // 点击空白:关闭面板(useEffect 清除高亮)
       handler.setInputAction((c: any) => {
         const picked = viewer.scene.pick(c.position);
+        const Cesium = cesiumRef.current;
         if (Cesium.defined(picked) && picked.id?.properties) {
           const slug = picked.id.properties.cableSlug?.getValue();
           if (!slug) return;
 
-          // 如果点击的是和当前高亮不同的缆，先恢复旧缆，再高亮新缆
-          if (lastHoveredSlugRef.current && lastHoveredSlugRef.current !== slug) {
-            const oldSiblings = entitiesMapRef.current.get(lastHoveredSlugRef.current) || [];
+          // 如果之前有锁定的(sticky)缆且不是当前点击的,先把它恢复
+          if (stickySlugRef.current && stickySlugRef.current !== slug) {
+            const oldSiblings = entitiesMapRef.current.get(stickySlugRef.current) || [];
             for (const sibling of oldSiblings) {
               const meta = entityMetaRef.current.get(sibling);
               if (!meta) continue;
@@ -313,7 +338,8 @@ export default function CesiumGlobe({ onHover, onClick, suppressLoadingIndicator
             }
           }
 
-          // 高亮被点击的缆
+          // 锁定被点击的缆
+          stickySlugRef.current      = slug;
           lastHoveredRef.current     = picked.id;
           lastHoveredSlugRef.current = slug;
           const newSiblings = entitiesMapRef.current.get(slug) || [];
@@ -326,7 +352,7 @@ export default function CesiumGlobe({ onHover, onClick, suppressLoadingIndicator
 
           if (onClick) onClick(slug);
         } else {
-          // 点击空白：关闭面板（selectedCableId → null → useEffect 清除高亮）
+          // 点击空白:关闭面板(selectedCableId → null → useEffect 清除高亮)
           if (onClick) onClick(null);
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -338,13 +364,13 @@ export default function CesiumGlobe({ onHover, onClick, suppressLoadingIndicator
      }, []);
 
 
-  // ── 面板关闭时清除高亮 ─────────────────────────────────────────
-  // 当用户点击 CableDetailPanel 的关闭按钮时，selectedCableId 变为 null。
-  // 此时恢复被高亮的那条缆的正常材质，完成"关闭面板 → 清除高亮"这个退出路径。
+  // ── 面板关闭时清除 sticky 高亮 ─────────────────────────────────
+  // 当用户点击 CableDetailPanel 的关闭按钮时,selectedCableId 变为 null。
+  // 此时清除 stickySlugRef 锁定,并恢复那条缆的正常材质。
   useEffect(() => {
     const Cesium = cesiumRef.current;
     if (!Cesium || selectedCableId !== null) return;
-    const slug = lastHoveredSlugRef.current;
+    const slug = stickySlugRef.current;
     if (!slug) return;
     const siblings = entitiesMapRef.current.get(slug) || [];
     for (const sibling of siblings) {
@@ -352,6 +378,7 @@ export default function CesiumGlobe({ onHover, onClick, suppressLoadingIndicator
       if (!meta) continue;
       try { restoreCableMaterial(Cesium, sibling, meta, colorMode); } catch {}
     }
+    stickySlugRef.current      = null;
     lastHoveredRef.current     = null;
     lastHoveredSlugRef.current = null;
   }, [selectedCableId, colorMode]);
