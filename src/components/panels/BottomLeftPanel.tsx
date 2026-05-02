@@ -225,7 +225,10 @@ function InternetHealthSubPanel({ zh }: { zh: boolean }) {
     return () => clearInterval(interval);
   }, []);
 
-  coconst config = (data && OUTAGE_CONFIG[data.status]) || OUTAGE_CONFIG.NORMAL;;
+  // 严格区分三种状态:数据正常 / 数据格式异常 / 加载失败
+  const isLoadingError = !loading && !data;
+  const isMalformed = data && !OUTAGE_CONFIG[data.status];
+  const config = (data && OUTAGE_CONFIG[data.status]) || { color: '#6B7280', labelEn: 'Unknown', labelZh: '未知' };
   const hasOutage = data && data.activeOutages > 0;
 
   return (
@@ -249,11 +252,20 @@ function InternetHealthSubPanel({ zh }: { zh: boolean }) {
 
       <div style={{ maxHeight: isExpanded ? 280 : 0, overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.16,1,0.3,1)' }}>
         <div style={{ overflowY: 'auto', maxHeight: 280 }}>
-          {!data || data.activeOutages === 0 ? (
+          {isLoadingError ? (
+            <div style={{ padding: '12px 14px', fontSize: 12, color: '#EF4444', lineHeight: 1.6 }}>
+              {zh ? '⚠ 数据加载失败,无法判断当前状态' : '⚠ Failed to load data'}
+            </div>
+          ) : isMalformed ? (
+            <div style={{ padding: '12px 14px', fontSize: 12, color: '#F59E0B', lineHeight: 1.6 }}>
+              {zh ? `⚠ 数据格式异常 (status=${data.status})` : `⚠ Unexpected status: ${data.status}`}
+            </div>
+          ) : !data || data.activeOutages === 0 ? (
             <div style={{ padding: '12px 14px', fontSize: 12, color: '#6B7280', lineHeight: 1.6 }}>
               {zh ? '✓ 当前无光纤中断事件' : '✓ No active fiber disruptions'}
             </div>
           ) : data.events.map((event, i) => (
+
             <div key={event.id || i} style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
                 <p style={{ fontSize: 12, color: '#CBD5E1', lineHeight: 1.5, margin: 0, flex: 1 }}>{event.description}</p>
