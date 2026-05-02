@@ -225,7 +225,7 @@ function InternetHealthSubPanel({ zh }: { zh: boolean }) {
     return () => clearInterval(interval);
   }, []);
 
-  const config = data ? OUTAGE_CONFIG[data.status] : OUTAGE_CONFIG.NORMAL;
+  coconst config = (data && OUTAGE_CONFIG[data.status]) || OUTAGE_CONFIG.NORMAL;;
   const hasOutage = data && data.activeOutages > 0;
 
   return (
